@@ -1,4 +1,4 @@
-from ...src.tool.base import BaseTool
+from ...src.tool.base import BaseTool, DelayCountQueue
 
 
 class TestBaseTool:
@@ -55,10 +55,27 @@ class TestBaseTool:
         # 数值型会被转为字符串
         int_c = int(str_a)
         str_d = BaseTool.to_str(int_c)
-        ## 会生成新的对象
+        # 会生成新的对象
         assert id(int_c) != id(str_d)
-        ## 内容相同，但是引用不同
+        # 内容相同，但是引用不同
         assert str_a == str_d
         assert id(str_a) != id(str_d)
+        pass
+    pass
+
+
+class TestDelayCountQueue:
+    def test_average(self):
+        # 队列：[0]
+        queue_a = DelayCountQueue(0, max_len=2)
+        assert queue_a.average == 0
+
+        # 队列：[0, 2]
+        queue_a.newest = 2
+        assert abs(queue_a.average - 1) < 1e-4
+
+        # 队列：[2, 4],队列最大长度为2
+        queue_a.newest = 4
+        assert abs(queue_a.average - 3) < 1e-4
         pass
     pass
