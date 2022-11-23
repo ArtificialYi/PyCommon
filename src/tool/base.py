@@ -28,7 +28,7 @@ class BaseTool:
 
     @staticmethod
     def to_str(obj):
-        if type(obj) == str:  # pragma: no cover
+        if type(obj) == str:
             return obj
         return str(obj)
     pass
