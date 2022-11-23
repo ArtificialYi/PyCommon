@@ -1,6 +1,6 @@
 
 
-class StatisticsTool:  # pragma: no cover
+class StatisticsTool:
     @staticmethod
     def cal_var(n_pre: int, var_pre: float, avg_pre: float, avg_now: float, x: float):
         if n_pre <= 0:
@@ -53,8 +53,4 @@ class StatisticsContainer:
     @property
     def std(self):
         return self.__std_now
-    pass
-
-
-if __name__ == '__main__':
     pass

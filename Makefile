@@ -1,5 +1,5 @@
 .PHONY: test
-jobs = 1
+jobs = 3
 main: lint-local test-local clean
 
 lint: lint-local clean
