@@ -1,4 +1,5 @@
-from ...src.tool.base import BaseTool, DelayCountQueue
+from ...src.tool.base import BaseTool, DelayCountQueue, MatchCase
+import pytest
 
 
 class TestBaseTool:
@@ -77,5 +78,49 @@ class TestDelayCountQueue:
         # 队列：[2, 4],队列最大长度为2
         queue_a.newest = 4
         assert abs(queue_a.average - 3) < 1e-4
+        pass
+    pass
+
+
+class TestMatchCase:
+
+    @staticmethod
+    async def custom_err(key):
+        return key
+
+    @staticmethod
+    async def custom_coro():
+        return 123
+
+    @pytest.mark.timeout(1)
+    @pytest.mark.asyncio
+    async def test_match(self):
+        # 不存在的key，默认会抛出异常
+        match_case_a = MatchCase({})
+        key_input = 'tmp'
+        try:
+            await match_case_a.match(key_input)
+            assert False
+        except Exception:
+            assert True
+            pass
+
+        # 不存在key，执行自定义异步函数
+        match_case_b = MatchCase({}, TestMatchCase.custom_err)
+        res_custom_a = await match_case_b.match(key_input)
+        assert res_custom_a == key_input
+        assert id(res_custom_a) == id(key_input)
+
+        # 存在key，但是目标为None，则返回值为None
+        match_case_c = MatchCase({
+            key_input: None,
+        })
+        assert await match_case_c.match(key_input) is None
+
+        # 存在key，执行对应异步函数
+        match_case_d = MatchCase({
+            key_input: TestMatchCase.custom_coro,
+        })
+        assert await match_case_d.match(key_input) == 123
         pass
     pass

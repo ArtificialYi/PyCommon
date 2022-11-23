@@ -71,14 +71,14 @@ class MatchCase:
         pass
 
     async def match(self, key, *args, **kwds):
-        if key not in self.__case_set:  # pragma : no cover
+        if key not in self.__case_set:
             return await self.__default(key, *args, **kwds)
         coro = self.__case_dict[key]
         if coro is None:
             return
         return await coro(*args, **kwds)
 
-    async def __err_default(self, key, *args, **kwds):  # pragma : no cover
+    async def __err_default(self, key, *args, **kwds):
         raise Exception(f'{self}未知{key}异常:{args}|{kwds}')
         pass
     pass
