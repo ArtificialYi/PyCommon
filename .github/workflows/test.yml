@@ -1,0 +1,36 @@
+name: test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  codecov:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: 安装python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 安装pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-cov pytest-xdist pytest-timeout pytest-asyncio pytest_ordering
+          python -m pip install numpy torch
+      - name: 执行单元测试-2^7=128
+        run: make test-ci
+      - name: 上传至Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          name: 单测覆盖率
+          fail_ci_if_error: true
+          flags: unittests

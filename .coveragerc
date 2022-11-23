@@ -1,0 +1,10 @@
+[run]
+branch = True
+
+[report]
+# 设置报告精度
+precision = 2
+
+exclude_lines =
+    if __name__ == .__main__.:
+    pragma.?:.?no cover
