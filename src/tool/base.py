@@ -12,7 +12,11 @@ class BaseTool:
 
     @staticmethod
     def all_none_iter(obj: Iterable):
-        return not any(obj)
+        for item in obj:
+            if item is not None:
+                return False
+            pass
+        return True
 
     @staticmethod
     def isint(obj):
