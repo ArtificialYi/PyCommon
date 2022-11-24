@@ -90,11 +90,11 @@ class AsyncBase:
         return asyncio.get_event_loop().create_future()
 
     @staticmethod
-    def add_coro(coro):
+    def coro2task_exec(coro):
         return asyncio.get_event_loop().create_task(coro)
 
     @staticmethod
-    async def sync2async(func, *args, **kwds):
+    async def func2coro_exec(func, *args, **kwds):
         try:
             return await asyncio.to_thread(func, *args, **kwds)
         except asyncio.CancelledError as ce:

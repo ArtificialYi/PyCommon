@@ -142,10 +142,10 @@ class TestAsyncBase:
         assert id(res_a) == id(res_b)
         pass
 
-    async def future_set(self, future: Future, res):
+    async def afuture_set(self, future: Future, res):
         await asyncio.sleep(1)
         future.set_result(res)
-        pass
+        return res
 
     @pytest.mark.timeout(2)
     @pytest.mark.asyncio
@@ -158,8 +158,42 @@ class TestAsyncBase:
         """
         res_a = 123
         future = AsyncBase.get_future()
-        res_b, _ = await asyncio.gather(future, self.future_set(future, res_a))
-        assert res_a == res_b
-        assert id(res_a) == id(res_b)
+        res_b, res_c = await asyncio.gather(future, self.afuture_set(future, res_a))
+        assert res_a == res_b == res_c
+        assert id(res_a) == id(res_b) == id(res_c)
+        pass
+
+    @pytest.mark.timeout(2)
+    @pytest.mark.asyncio
+    async def test_add_cor_no_res(self):
+        """
+        1. 测试添加一个不需要返回值的coro
+        2. 测试有返回值的coro的返回值
+        """
+        # 测试添加一个不需要返回值的coro
+        res_a = 123
+        future = AsyncBase.get_future()
+        task = AsyncBase.coro2task_exec(self.afuture_set(future, res_a))
+        res_b = await future
+        res_c = await task
+        assert res_a == res_b == res_c
+        assert id(res_a) == id(res_b) == id(res_c)
+        pass
+
+    def future_set(self, future: Future, res):
+        future.set_result(res)
+        return res
+
+    @pytest.mark.timeout(1)
+    @pytest.mark.asyncio
+    async def test_sync2async(self):
+        # 同步转异步
+        res_a = 123
+        future = AsyncBase.get_future()
+        task = AsyncBase.coro2task_exec(AsyncBase.func2coro_exec(self.future_set, future, res_a))
+        res_b = await future
+        res_c = await task
+        assert res_a == res_b == res_c
+        assert id(res_a) == id(res_b) == id(res_c)
         pass
     pass

@@ -54,7 +54,7 @@ class SignResultFlow:
         return self.__graph
 
     def __call__(self) -> Task:
-        return AsyncBase.add_coro(self._sign())
+        return AsyncBase.coro2task_exec(self._sign())
 
     async def _sign(self):
         """同一个对象同时执行一个信号接收器
