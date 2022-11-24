@@ -1,6 +1,6 @@
 from asyncio import Future
 import asyncio
-from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue, MatchCase
+from ...src.tool.base import AsyncBase, BaseTool, ConfigBase, DelayCountQueue, MatchCase
 import pytest
 
 
@@ -195,5 +195,30 @@ class TestAsyncBase:
         res_c = await task
         assert res_a == res_b == res_c
         assert id(res_a) == id(res_b) == id(res_c)
+        pass
+    pass
+
+
+class TestConfigBase:
+    def test_config(self):
+        """
+        1. 不存在的配置,期望不会报错，但是会什么数据都没有
+        2. 存在的单测文件
+        """
+        config_parse_a = ConfigBase.get_config('')
+        assert len(config_parse_a.sections()) == 0
+
+        config_parse_b = ConfigBase.get_config('./pytest.ini')
+        assert len(config_parse_b.sections()) == 1
+        pass
+
+    def test_value(self):
+        """单测文件测试
+        """
+        config_parse = ConfigBase.get_config('./pytest.ini')
+        res_a = ConfigBase.get_value('pytest', 'asyncio_mode', config_parse)
+        assert res_a == 'auto'
+        res_b = ConfigBase.get_value('pytest', 'unknown', config_parse)
+        assert res_b == ''
         pass
     pass
