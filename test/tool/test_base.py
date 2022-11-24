@@ -1,4 +1,6 @@
-from ...src.tool.base import BaseTool, DelayCountQueue, MatchCase
+from asyncio import Future
+import asyncio
+from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue, MatchCase
 import pytest
 
 
@@ -122,5 +124,42 @@ class TestMatchCase:
             key_input: TestMatchCase.custom_coro,
         })
         assert await match_case_d.match(key_input) == 123
+        pass
+    pass
+
+
+class TestAsyncBase:
+    @pytest.mark.timeout(1)
+    @pytest.mark.asyncio
+    async def test_future_one(self):
+        """future在单流程效果
+        """
+        res_a = 123
+        future = AsyncBase.get_future()
+        future.set_result(res_a)
+        res_b = await future
+        assert res_a == res_b
+        assert id(res_a) == id(res_b)
+        pass
+
+    async def future_set(self, future: Future, res):
+        await asyncio.sleep(1)
+        future.set_result(res)
+        pass
+
+    @pytest.mark.timeout(2)
+    @pytest.mark.asyncio
+    async def test_future_multi(self):
+        """future在多协程效果
+        action:
+            1. 第一个协程创建future & await future & 关闭协程
+            2. 第二个协程等待一段时间后set_result & 关闭协程
+        except: 顺利关闭
+        """
+        res_a = 123
+        future = AsyncBase.get_future()
+        res_b, _ = await asyncio.gather(future, self.future_set(future, res_a))
+        assert res_a == res_b
+        assert id(res_a) == id(res_b)
         pass
     pass

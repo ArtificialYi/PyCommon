@@ -97,7 +97,7 @@ class AsyncBase:
     async def sync2async(func, *args, **kwds):
         try:
             return await asyncio.to_thread(func, *args, **kwds)
-        except asyncio.CancelledError as ce:  # pragma : no cover
+        except asyncio.CancelledError as ce:
             print(f'协程被取消:{ce}|{func}|{args}|{kwds}')
             return func(*args, **kwds)
     pass
