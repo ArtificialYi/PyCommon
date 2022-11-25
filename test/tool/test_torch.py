@@ -12,19 +12,21 @@ class TestTorchTool:
         assert TorchTool.all_lt10(None)
         assert TorchTool.all_lt10(data_torch0)
 
-        # 存在一个inf就不通过
+        # 存在一个inf/-inf就不通过
         data_torch0[0] = np.inf
+        assert data_torch0[0] > 0
         assert torch.isinf(data_torch0[0])
+        assert not torch.isneginf(data_torch0[0])
         assert not TorchTool.all_lt10(data_torch0)
-        data_torch0[0] = -np.Inf
+        data_torch0[0] = -np.inf
+        assert data_torch0[0] < 0
         assert torch.isinf(data_torch0[0])
+        assert torch.isneginf(data_torch0[0])
         assert not TorchTool.all_lt10(data_torch0)
 
-        # 存在一个nan也通不过
+        # 存在一个nan也通不过，nan没有正负
         data_torch0[0] = np.nan
-        assert torch.isnan(data_torch0[0])
-        assert not TorchTool.all_lt10(data_torch0)
-        data_torch0[0] = -np.NaN
+        assert data_torch0[0] != data_torch0[0]
         assert torch.isnan(data_torch0[0])
         assert not TorchTool.all_lt10(data_torch0)
 
