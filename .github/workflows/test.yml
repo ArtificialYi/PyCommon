@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest pytest-cov pytest-xdist pytest-timeout pytest-asyncio pytest_ordering
           python -m pip install numpy torch
-      - name: 执行单元测试-2^4=16
+      - name: 执行单元测试-2^5=32
         run: make test-ci
       - name: 上传至Codecov
         uses: codecov/codecov-action@v2
