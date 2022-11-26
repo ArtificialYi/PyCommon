@@ -16,7 +16,7 @@ class TestGRUUnit:
 
         m0 = GRUUnit(input_num, output_num, hidden_num).double()
         named_parameters = list(m0.named_parameters())
-        assert len(named_parameters) == (hidden_num + 3) * 20
+        assert len(named_parameters) == (hidden_num + 3) * 50
 
         assert not m0.training
         input_data = torch.ones(input_num).double()
