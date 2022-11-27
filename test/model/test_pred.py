@@ -16,7 +16,7 @@ class TestPyramidOut:
         scale = 1.5
         m_feature = SeqModule(input_num, history_num, hidden_num, scale).eval()
         m_pred = PyramidOut(history_num, output_num, hidden_num).double().eval()
-        assert len(list(m_pred.named_parameters())) == (hidden_num + 3) * 4
+        assert len(list(m_pred.named_parameters())) == (hidden_num + 3) * 10
 
         input_data = torch.ones(input_num).double()
         history_data = m_feature(input_data, None)

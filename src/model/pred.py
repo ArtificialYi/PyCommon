@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from .base import MultiLinear
 
 
 class PyramidOut(nn.Module):
@@ -8,26 +9,22 @@ class PyramidOut(nn.Module):
     """
     def __init__(self, input_num: int, output_num: int, hidden_num: int):
         super().__init__()
-        self.fc_in = nn.Linear(input_num, input_num)
-        nn.init.xavier_normal_(self.fc_in.weight)
+        self.fc_in = MultiLinear(input_num, input_num)
         self.ln_in = nn.LayerNorm(input_num)
 
         self.hidden_layers = []
         for idx in range(hidden_num):
-            fc = nn.Linear(input_num, input_num)
+            fc = MultiLinear(input_num, input_num)
             ln = nn.LayerNorm(input_num)
             self.hidden_layers.append((fc, ln))
-            nn.init.xavier_normal_(fc.weight)
             self.add_module(f'fc_{idx}', fc)
             self.add_module(f'ln_{idx}', ln)
             pass
 
-        self.fc_x = nn.Linear(input_num, output_num)
-        nn.init.xavier_normal_(self.fc_x.weight)
+        self.fc_x = MultiLinear(input_num, output_num)
         self.ln_x = nn.LayerNorm(output_num)
 
-        self.fc_out = nn.Linear(input_num, output_num)
-        nn.init.xavier_normal_(self.fc_out.weight)
+        self.fc_out = MultiLinear(input_num, output_num)
         self.ln_out = nn.LayerNorm(output_num)
 
         self.__lr_dict = {
