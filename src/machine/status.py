@@ -72,11 +72,15 @@ class StatusGraph(object):
     def value_dict(self):
         return self.__value_dict
 
+    @property
+    def num_edge(self):
+        return len(self.__value_dict)
+
     def _gragh_init(self):
         self._gragh_key_init()
         self._gragh_value_init()
 
-        for edge, value in self.value_dict.items():
+        for edge, value in self.__value_dict.items():
             self.status_gragh[edge.start][edge.end] = value
             pass
         pass
@@ -101,9 +105,9 @@ class StatusGraph(object):
         self.__node_set.add(edge.start)
         self.__node_set.add(edge.end)
 
-        value_tmp = self.value_dict.get(edge, None)
+        value_tmp = self.__value_dict.get(edge, None)
         if value_tmp is None or value.weight < value_tmp.weight:
-            self.value_dict[edge] = value
+            self.__value_dict[edge] = value
             pass
         pass
 

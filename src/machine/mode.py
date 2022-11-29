@@ -1,10 +1,58 @@
 import asyncio
 from asyncio import Task
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 from .status import StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
 from .queue import NormManageQueue
+
+
+class FuncQueue:
+    """将普通的函数包装成队列函数
+    1. 默认当队列为空时，返回None
+    2. 如果指定了func_default，那么当队列为空时，会调用func_default
+    3. 如果指定了func_cond，那么当队列为空时，会判定func_cond为True时才会调用func_default
+    """
+    def __init__(self, func_queue: Callable, func_cond: Callable = lambda: True, func_default: Callable = lambda : None) -> None:
+        self.__queue = asyncio.Queue()
+        self.__func_cond = func_cond
+        self.__is_coro_cond = asyncio.iscoroutinefunction(self.__func_cond)
+        self.__func_queue = func_queue
+        self.__is_coro_inner = asyncio.iscoroutinefunction(self.__func_queue)
+        self.__func_default = func_default
+        self.__is_coro_default = asyncio.iscoroutinefunction(self.__func_default)
+        pass
+
+    async def __call__(self):
+        """queue的内置函数
+        """
+        if self.__queue.qsize() == 0 and await self.__cond():
+            return await self.__default()
+
+        future, args, kwds = await self.__queue.get()
+        res = await self.__inner(*args, **kwds)
+        future.set_result(res)
+        self.__queue.task_done()
+        return res
+
+    async def __cond(self):
+        res = self.__func_cond()
+        return await res if self.__is_coro_cond else res
+
+    async def __inner(self, *args, **kwds):
+        res = self.__func_queue(*args, **kwds)
+        return await res if self.__is_coro_inner else res
+
+    async def __default(self):
+        res = self.__func_default()
+        return await res if self.__is_coro_default else res
+
+    async def func(self, *args, **kwds):
+        # queue的对外函数
+        future = AsyncBase.get_future()
+        await self.__queue.put((future, args, kwds))
+        return await future
+    pass
 
 
 class GraphBase:
@@ -17,7 +65,12 @@ class GraphBase:
     def status_doing(self):
         return self.__doing_dict.get(self._status, None)
 
+    def status_inner(self) -> Union[FuncQueue, None]:
+        return self.__status_graph.get(self._status, self._status)
+
     def status_change(self, status):
+        if status == self._status:
+            return None
         value = self.__status_graph.get(self._status, status)
         return None if value is None or value.coro is None else value.coro
 
@@ -35,36 +88,6 @@ class GraphBase:
     def _doing_dict_init(self, doing_dict: Dict):
         self.__doing_dict = doing_dict
         pass
-    pass
-
-
-class GraphInner:
-    def __init__(self, queue: asyncio.Queue, func_inner: Callable) -> None:
-        self.__queue = queue
-        self.__func_inner = func_inner
-        self.__is_coro = asyncio.iscoroutinefunction(self.__func_inner)
-        pass
-
-    async def __call__(self):
-        # 状态机的内置函数
-        if self.__queue.qsize() == 0:
-            return None
-
-        future, args, kwds = await self.__queue.get()
-        res = await self.__inner(*args, **kwds)
-        future.set_result(res)
-        self.__queue.task_done()
-        return res
-
-    async def __inner(self, *args, **kwds):
-        res = self.__func_inner(*args, **kwds)
-        return await res if self.__is_coro else res
-
-    async def func(self, *args, **kwds):
-        # 状态机的对外函数
-        future = AsyncBase.get_future()
-        await self.__queue.put((future, args, kwds))
-        return await future
     pass
 
 
@@ -97,7 +120,7 @@ class SignResultFlow:
         """
         status = None
         while self._exit_status is None or status != self._exit_status:
-            while (self.__q_sign.qsize() == 0) and ((coro := self.__graph.status_doing()) is not None):
+            while (self.__q_sign.qsize() == 0) and ((coro := self.__graph.status_inner()) is not None):
                 await coro()
 
             # 执行一个命令

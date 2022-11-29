@@ -39,7 +39,7 @@ class TestStatusGragh(object):
         # 无效插入
         a.add(StatusEdge(0, 1), StatusValue(2, float('inf')))
         # 一条基本边
-        assert len(a.value_dict) == 1
+        assert a.num_edge == 1
         a.build()
         assert a.status_gragh[0][1].weight == 1
         assert a.status_gragh[1][0].weight == float('inf')
@@ -53,7 +53,7 @@ class TestStatusGragh(object):
         a.add(StatusEdge(0, 1), StatusValue(1, 3))
         a.add(StatusEdge(1, 2), StatusValue(2, 4))
         # 两条基本边
-        assert len(a.value_dict) == 2
+        assert a.num_edge == 2
         a.build()
         # 基本数值
         assert a.status_gragh[0][1].weight == 1
@@ -78,7 +78,7 @@ class TestStatusGragh(object):
         a.add(StatusEdge(1, 3), StatusValue(4, 5))
         a.add(StatusEdge(2, 3), StatusValue(1, 6))
         # 四条边
-        assert len(a.value_dict) == 4
+        assert a.num_edge == 4
         a.build()
         # 双边
         assert a.status_gragh[0][2].weight == 1 + 2
