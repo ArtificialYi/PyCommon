@@ -1,6 +1,61 @@
 
+import asyncio
 import itertools
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
+
+from ...src.tool.base import AsyncBase
+
+
+class FuncQueue:
+    """将普通的函数包装成队列函数
+    队列不为空时，会使用队列中的参数调用一次func_queue
+    1. 默认当队列为空时，返回None
+    2. 如果指定了func_default，那么当队列为空时，会调用func_default
+    3. 如果指定了func_cond，那么当队列为空时，会判定func_cond为True时才会调用func_default
+    """
+    def __init__(
+        self, func_queue: Callable,
+        func_cond: Callable = lambda: True, func_default: Callable = lambda: None,
+    ) -> None:
+        self.__queue = asyncio.Queue()
+        self.__func_cond = func_cond
+        self.__is_coro_cond = asyncio.iscoroutinefunction(self.__func_cond)
+        self.__func_queue = func_queue
+        self.__is_coro_inner = asyncio.iscoroutinefunction(self.__func_queue)
+        self.__func_default = func_default
+        self.__is_coro_default = asyncio.iscoroutinefunction(self.__func_default)
+        pass
+
+    async def __call__(self):
+        """queue的内置函数
+        """
+        if self.__queue.qsize() == 0 and await self.__cond():
+            return await self.__default()
+
+        future, args, kwds = await self.__queue.get()
+        res = await self.__inner(*args, **kwds)
+        future.set_result(res)
+        self.__queue.task_done()
+        return res
+
+    async def __cond(self):
+        res = self.__func_cond()
+        return await res if self.__is_coro_cond else res
+
+    async def __inner(self, *args, **kwds):
+        res = self.__func_queue(*args, **kwds)
+        return await res if self.__is_coro_inner else res
+
+    async def __default(self):
+        res = self.__func_default()
+        return await res if self.__is_coro_default else res
+
+    async def func(self, *args, **kwds):
+        # queue的对外函数
+        future = AsyncBase.get_future()
+        await self.__queue.put((future, args, kwds))
+        return await future
+    pass
 
 
 class StatusEdge(object):
@@ -29,9 +84,9 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, weight, coro, count=0) -> None:
+    def __init__(self, weight, func_queue, count=0) -> None:
         self.__weight = weight
-        self.__coro = coro
+        self.__func_queue = func_queue
         self.__count = count
         pass
 
@@ -41,7 +96,7 @@ class StatusValue(object):
 
     @property
     def coro(self):
-        return self.__coro
+        return self.__func_queue
 
     @property
     def count(self):
@@ -61,12 +116,12 @@ class StatusGraph(object):
     def __init__(self) -> None:
         self.__node_set = set()
         self.__value_dict: Dict[StatusEdge, StatusValue] = dict()
-        self.__gragh_dict: Dict[Any, Dict[Any, StatusValue]] = dict()
+        self.__status_graph: Dict[Any, Dict[Any, StatusValue]] = dict()
         pass
 
     @property
-    def status_gragh(self):
-        return self.__gragh_dict
+    def status_graph(self):
+        return self.__status_graph
 
     @property
     def value_dict(self):
@@ -81,20 +136,20 @@ class StatusGraph(object):
         self._gragh_value_init()
 
         for edge, value in self.__value_dict.items():
-            self.status_gragh[edge.start][edge.end] = value
+            self.__status_graph[edge.start][edge.end] = value
             pass
         pass
 
     def _gragh_key_init(self):
         for i in self.__node_set:
-            self.status_gragh[i] = dict()
+            self.__status_graph[i] = dict()
             pass
         pass
 
     def _gragh_value_init(self):
         max_tmp = StatusValue(float('inf'), None)
         for i, j in itertools.permutations(self.__node_set, 2):
-            self.status_gragh[i][j] = max_tmp
+            self.__status_graph[i][j] = max_tmp
             pass
         pass
 
@@ -126,14 +181,14 @@ class StatusGraph(object):
 
     def __gragh_build(self, count_max):
         for k, i, j in itertools.permutations(self.__node_set, 3):
-            weight_tmp = self.status_gragh[i][k].weight + self.status_gragh[k][j].weight
-            count_tmp = self.status_gragh[i][k].count + self.status_gragh[k][j].count + 1
-            if count_tmp > count_max or weight_tmp >= self.status_gragh[i][j].weight:
+            weight_tmp = self.__status_graph[i][k].weight + self.__status_graph[k][j].weight
+            count_tmp = self.__status_graph[i][k].count + self.__status_graph[k][j].count + 1
+            if count_tmp > count_max or weight_tmp >= self.__status_graph[i][j].weight:
                 continue
-            self.status_gragh[i][j] = StatusValue(weight_tmp, self.status_gragh[i][k].coro, count_tmp)
+            self.__status_graph[i][j] = StatusValue(weight_tmp, self.__status_graph[i][k].coro, count_tmp)
             pass
         pass
 
     def get(self, start, end) -> Union[StatusValue, None]:
-        return self.status_gragh[start].get(end, None)
+        return self.__status_graph[start].get(end, None)
     pass

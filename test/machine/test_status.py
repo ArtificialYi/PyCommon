@@ -41,8 +41,8 @@ class TestStatusGragh(object):
         # 一条基本边
         assert a.num_edge == 1
         a.build()
-        assert a.status_gragh[0][1].weight == 1
-        assert a.status_gragh[1][0].weight == float('inf')
+        assert a.status_graph[0][1].weight == 1
+        assert a.status_graph[1][0].weight == float('inf')
         pass
 
     def test_edge2(self):
@@ -56,16 +56,16 @@ class TestStatusGragh(object):
         assert a.num_edge == 2
         a.build()
         # 基本数值
-        assert a.status_gragh[0][1].weight == 1
-        assert a.status_gragh[1][2].weight == 2
-        assert a.status_gragh[0][2].weight == 1 + 2
+        assert a.status_graph[0][1].weight == 1
+        assert a.status_graph[1][2].weight == 2
+        assert a.status_graph[0][2].weight == 1 + 2
         # 无效边
-        assert a.status_gragh[1][0].weight == float('inf')
-        assert a.status_gragh[2][0].weight == float('inf')
-        assert a.status_gragh[2][1].weight == float('inf')
+        assert a.status_graph[1][0].weight == float('inf')
+        assert a.status_graph[2][0].weight == float('inf')
+        assert a.status_graph[2][1].weight == float('inf')
         # 只有单边
         a.build(0)
-        assert a.status_gragh[0][2].weight == float('inf')
+        assert a.status_graph[0][2].weight == float('inf')
         pass
 
     def test_edge4(self):
@@ -81,21 +81,21 @@ class TestStatusGragh(object):
         assert a.num_edge == 4
         a.build()
         # 双边
-        assert a.status_gragh[0][2].weight == 1 + 2
+        assert a.status_graph[0][2].weight == 1 + 2
         # 3边
-        assert a.status_gragh[0][3].weight == 1 + 2 + 1
+        assert a.status_graph[0][3].weight == 1 + 2 + 1
         # 双边覆盖单边
-        assert a.status_gragh[1][3].weight == 2 + 1
+        assert a.status_graph[1][3].weight == 2 + 1
 
         a.build(0)
         # 只有单边
-        assert a.status_gragh[0][2].weight == float('inf')
-        assert a.status_gragh[0][3].weight == float('inf')
-        assert a.status_gragh[1][3].weight == 4
+        assert a.status_graph[0][2].weight == float('inf')
+        assert a.status_graph[0][3].weight == float('inf')
+        assert a.status_graph[1][3].weight == 4
 
         a.build(1)
         # 允许双边,但3边依旧不行
-        assert a.status_gragh[0][3].weight == 1 + 4
+        assert a.status_graph[0][3].weight == 1 + 4
         pass
 
     def test_edge_self(self):
@@ -117,7 +117,7 @@ class TestStatusGragh(object):
         assert b.weight == 1 + 3
         assert b.count == 2
         for i in range(4):
-            assert a.status_gragh[i].get(i, None) is None
+            assert a.status_graph[i].get(i, None) is None
             pass
         pass
     pass
