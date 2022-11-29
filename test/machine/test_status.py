@@ -1,5 +1,5 @@
 
-from ...src.machine.status import StatusEdge, StatusGragh, StatusValue
+from ...src.machine.status import StatusEdge, StatusGraph, StatusValue
 
 
 class TestStatusEdge(object):
@@ -22,7 +22,7 @@ class TestStatusEdge(object):
 class TestStatusGragh(object):
     def test_error(self):
         try:
-            StatusGragh().add(StatusEdge(0, 0), StatusValue(None, None))
+            StatusGraph().add(StatusEdge(0, 0), StatusValue(None, None))
         except Exception:
             assert True
             pass
@@ -34,7 +34,7 @@ class TestStatusGragh(object):
         """
         2点1边无回路
         """
-        a = StatusGragh()
+        a = StatusGraph()
         a.add(StatusEdge(0, 1), StatusValue(1, 3))
         # 无效插入
         a.add(StatusEdge(0, 1), StatusValue(2, float('inf')))
@@ -49,7 +49,7 @@ class TestStatusGragh(object):
         """
         3点2边无回路
         """
-        a = StatusGragh()
+        a = StatusGraph()
         a.add(StatusEdge(0, 1), StatusValue(1, 3))
         a.add(StatusEdge(1, 2), StatusValue(2, 4))
         # 两条基本边
@@ -72,7 +72,7 @@ class TestStatusGragh(object):
         """
         4点4边无回路
         """
-        a = StatusGragh()
+        a = StatusGraph()
         a.add(StatusEdge(0, 1), StatusValue(1, 3))
         a.add(StatusEdge(1, 2), StatusValue(2, 4))
         a.add(StatusEdge(1, 3), StatusValue(4, 5))
@@ -104,7 +104,7 @@ class TestStatusGragh(object):
         自身无法链路到自身
         """
         # 自身无法链路到自身
-        a = StatusGragh()
+        a = StatusGraph()
         a.add(StatusEdge(1, 3), StatusValue(4, 5))
         a.add(StatusEdge(0, 1), StatusValue(1, 3))
         a.add(StatusEdge(1, 2), StatusValue(2, 4))

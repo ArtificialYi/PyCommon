@@ -49,7 +49,7 @@ class StatusValue(object):
     pass
 
 
-class StatusGragh(object):
+class StatusGraph(object):
     """
 状态图增删改查类
 目标：

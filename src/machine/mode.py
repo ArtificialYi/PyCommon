@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import Task
 from typing import Dict
-from .status import StatusValue, StatusGragh, StatusEdge
+from .status import StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
 from .queue import NormManageQueue
@@ -11,7 +11,7 @@ class GraphBase:
     def __init__(self) -> None:
         self.__doing_dict = {}
         self._status = None
-        self.__status_graph: StatusGragh = self._graph_build()
+        self.__status_graph: StatusGraph = self._graph_build()
         pass
 
     def status_doing(self):
@@ -119,7 +119,7 @@ class NormMachineGraph(GraphBase):
         pass
 
     def _graph_build(self):
-        graph_tmp = StatusGragh()
+        graph_tmp = StatusGraph()
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.STARTED),
             StatusValue(1, self.__start)
