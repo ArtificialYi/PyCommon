@@ -15,7 +15,7 @@ class DropNorm(nn.Module):
 class MultiLinear(nn.Module):
     """多项式特征扩充
     """
-    def __init__(self, num_input: int, num_output: int, err: float = 1e-6):
+    def __init__(self, num_input: int, num_output: int, err: float = 5e-5):
         super().__init__()
         self.__err = err
 
