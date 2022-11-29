@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Task
-from typing import Dict
+from typing import Dict, Callable
 from .status import StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
@@ -35,6 +35,36 @@ class GraphBase:
     def _doing_dict_init(self, doing_dict: Dict):
         self.__doing_dict = doing_dict
         pass
+    pass
+
+
+class GraphInner:
+    def __init__(self, queue: asyncio.Queue, func_inner: Callable) -> None:
+        self.__queue = queue
+        self.__func_inner = func_inner
+        self.__is_coro = asyncio.iscoroutinefunction(self.__func_inner)
+        pass
+
+    async def __call__(self):
+        # 状态机的内置函数
+        if self.__queue.qsize() == 0:
+            return None
+
+        future, args, kwds = await self.__queue.get()
+        res = await self.__inner(*args, **kwds)
+        future.set_result(res)
+        self.__queue.task_done()
+        return res
+
+    async def __inner(self, *args, **kwds):
+        res = self.__func_inner(*args, **kwds)
+        return await res if self.__is_coro else res
+
+    async def func(self, *args, **kwds):
+        # 状态机的对外函数
+        future = AsyncBase.get_future()
+        await self.__queue.put((future, args, kwds))
+        return await future
     pass
 
 
