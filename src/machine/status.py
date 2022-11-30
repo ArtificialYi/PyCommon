@@ -84,7 +84,7 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, func_queue: Union[FuncQueue, None], weight, count=0) -> None:
+    def __init__(self, func_queue: Union[FuncQueue, None], weight=float('inf'), count=0) -> None:
         self.__weight = weight
         self.__func_queue = func_queue
         self.__count = count
