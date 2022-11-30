@@ -124,15 +124,15 @@ class NormMachineGraph(GraphBase):
         graph_tmp = StatusGraph()
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.STARTED),
-            StatusValue(FuncQueue(self.__start), 1)
+            StatusValue(FuncQueue(self.__start))
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STARTED, NormMachineGraph.State.STOPPED),
-            StatusValue(FuncQueue(self.__stop), 1)
+            StatusValue(FuncQueue(self.__stop))
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.EXITED),
-            StatusValue(FuncQueue(self.__exit), 1)
+            StatusValue(FuncQueue(self.__exit))
         )
         graph_tmp.build(0)
         return graph_tmp

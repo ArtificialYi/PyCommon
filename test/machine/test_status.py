@@ -1,5 +1,43 @@
+import asyncio
 import pytest
+from ...src.tool.base import AsyncBase
 from ...src.machine.status import FuncQueue, StatusEdge, StatusGraph, StatusValue
+
+
+class TestFuncQueue(object):
+    @pytest.mark.timeout(4)
+    @pytest.mark.asyncio
+    async def test_queue_empty(self):
+        """空队列的函数测试
+        """
+        # 全默认
+        assert await FuncQueue()() is None
+        func0 = FuncQueue()
+        task0 = AsyncBase.coro2task_exec(func0.func())
+        await asyncio.sleep(1)
+        assert not task0.done()
+        res_call0 = await func0()
+        assert res_call0 is None
+        assert await task0 is None
+        # default何时被调用
+        assert await FuncQueue(lambda: 0)() == 0
+
+        # inner是在call的时候才会被调用
+        func1 = FuncQueue(lambda: 0, lambda: 1)
+        task1 = AsyncBase.coro2task_exec(func1.func())
+        await asyncio.sleep(1)
+        assert not task1.done()
+        res_call1 = await func1()
+        assert res_call1 == 1 == await task1
+
+        # 默认情况也不走default
+        func2 = FuncQueue(lambda: 0, lambda: 1, lambda: False,)
+        task2 = func2()
+        await asyncio.sleep(1)
+        assert not task2.done()
+        res_func0 = await func2.func()
+        assert res_func0 == await task2 == 1
+    pass
 
 
 class TestStatusEdge(object):
