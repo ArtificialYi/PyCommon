@@ -35,9 +35,9 @@ class TestStatusGragh(object):
         2点1边无回路
         """
         a = StatusGraph()
-        a.add(StatusEdge(0, 1), StatusValue(1, None))
+        a.add(StatusEdge(0, 1), StatusValue(None, 1))
         # 无效插入
-        a.add(StatusEdge(0, 1), StatusValue(2, None))
+        a.add(StatusEdge(0, 1), StatusValue(None, 2))
         # 一条基本边
         assert a.num_edge == 1
         a.build()
@@ -50,8 +50,8 @@ class TestStatusGragh(object):
         3点2边无回路
         """
         a = StatusGraph()
-        a.add(StatusEdge(0, 1), StatusValue(1, None))
-        a.add(StatusEdge(1, 2), StatusValue(2, None))
+        a.add(StatusEdge(0, 1), StatusValue(None, 1))
+        a.add(StatusEdge(1, 2), StatusValue(None, 2))
         # 两条基本边
         assert a.num_edge == 2
         a.build()
@@ -73,10 +73,10 @@ class TestStatusGragh(object):
         4点4边无回路
         """
         a = StatusGraph()
-        a.add(StatusEdge(0, 1), StatusValue(1, None))
-        a.add(StatusEdge(1, 2), StatusValue(2, None))
-        a.add(StatusEdge(1, 3), StatusValue(4, None))
-        a.add(StatusEdge(2, 3), StatusValue(1, None))
+        a.add(StatusEdge(0, 1), StatusValue(None, 1))
+        a.add(StatusEdge(1, 2), StatusValue(None, 2))
+        a.add(StatusEdge(1, 3), StatusValue(None, 4))
+        a.add(StatusEdge(2, 3), StatusValue(None, 1))
         # 四条边
         assert a.num_edge == 4
         a.build()
@@ -107,11 +107,11 @@ class TestStatusGragh(object):
         """
         # 自身无法链路到自身
         a = StatusGraph()
-        a.add(StatusEdge(1, 3), StatusValue(4, FuncQueue(lambda: 5)))
-        a.add(StatusEdge(0, 1), StatusValue(1, FuncQueue(lambda: 3)))
-        a.add(StatusEdge(1, 2), StatusValue(2, FuncQueue(lambda: 4)))
-        a.add(StatusEdge(2, 3), StatusValue(1, FuncQueue(lambda: 6)))
-        a.add(StatusEdge(3, 0), StatusValue(5, FuncQueue(lambda: 7)))
+        a.add(StatusEdge(1, 3), StatusValue(FuncQueue(lambda: 5), 4))
+        a.add(StatusEdge(0, 1), StatusValue(FuncQueue(lambda: 3), 1))
+        a.add(StatusEdge(1, 2), StatusValue(FuncQueue(lambda: 4), 2))
+        a.add(StatusEdge(2, 3), StatusValue(FuncQueue(lambda: 6), 1))
+        a.add(StatusEdge(3, 0), StatusValue(FuncQueue(lambda: 7), 5))
         a.build()
         b = a.get(0, 3)
         assert b is not None and b.func_queue is not None

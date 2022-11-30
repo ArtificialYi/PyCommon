@@ -84,7 +84,7 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, weight, func_queue: Union[FuncQueue, None], count=0) -> None:
+    def __init__(self, func_queue: Union[FuncQueue, None], weight, count=0) -> None:
         self.__weight = weight
         self.__func_queue = func_queue
         self.__count = count
@@ -147,7 +147,7 @@ class StatusGraph(object):
         pass
 
     def _gragh_value_init(self):
-        max_tmp = StatusValue(float('inf'), None)
+        max_tmp = StatusValue(None, float('inf'))
         for i, j in itertools.permutations(self.__node_set, 2):
             self.__status_graph[i][j] = max_tmp
             pass
@@ -185,7 +185,7 @@ class StatusGraph(object):
             count_tmp = self.__status_graph[i][k].count + self.__status_graph[k][j].count + 1
             if count_tmp > count_max or weight_tmp >= self.__status_graph[i][j].weight:
                 continue
-            self.__status_graph[i][j] = StatusValue(weight_tmp, self.__status_graph[i][k].func_queue, count_tmp)
+            self.__status_graph[i][j] = StatusValue(self.__status_graph[i][k].func_queue, weight_tmp, count_tmp)
             pass
         pass
 
