@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import Task
 from typing import Dict
-from .status import StatusValue, StatusGraph, StatusEdge
+from .status import FuncQueue, StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
 from .queue import NormManageQueue
@@ -21,7 +21,7 @@ class GraphBase:
         if status == self._status:
             return None
         value = self.__status_graph.get(self._status, status)
-        return None if value is None or value.coro is None else value.coro
+        return None if value is None or value.func_queue is None else value.func_queue
 
     def status2target(self, status):
         self._status = status
@@ -124,26 +124,26 @@ class NormMachineGraph(GraphBase):
         graph_tmp = StatusGraph()
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.STARTED),
-            StatusValue(1, self.__start)
+            StatusValue(1, FuncQueue(self.__start))
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STARTED, NormMachineGraph.State.STOPPED),
-            StatusValue(1, self.__stop)
+            StatusValue(1, FuncQueue(self.__stop))
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.EXITED),
-            StatusValue(1, self.__exit)
+            StatusValue(1, FuncQueue(self.__exit))
         )
         graph_tmp.build(0)
         return graph_tmp
 
-    async def __start(self, *args, **kwds):
+    async def __start(self):
         self.status2target(self.__class__.State.STARTED)
 
-    async def __stop(self, *args, **kwds):
+    async def __stop(self):
         self.status2target(self.__class__.State.STOPPED)
 
-    async def __exit(self, *args, **kwds):
+    async def __exit(self):
         self.status2target(self.__class__.State.EXITED)
 
     async def _starting(self):  # pragma : no cover

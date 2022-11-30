@@ -14,8 +14,8 @@ class FuncQueue:
     3. 如果指定了func_cond，那么当队列为空时，会判定func_cond为True时才会调用func_default
     """
     def __init__(
-        self, func_queue: Callable,
-        func_cond: Callable = lambda: True, func_default: Callable = lambda: None,
+        self, func_default: Callable = lambda: None,
+        func_queue: Callable = lambda: None, func_cond: Callable = lambda: True,
     ) -> None:
         self.__queue = asyncio.Queue()
         self.__func_cond = func_cond
@@ -26,25 +26,25 @@ class FuncQueue:
         self.__is_coro_default = asyncio.iscoroutinefunction(self.__func_default)
         pass
 
-    async def __call__(self):
-        """queue的内置函数
+    def __call__(self, *args, **kwds) -> asyncio.Task:
+        """执行queue的内部流程
         """
-        if self.__queue.qsize() == 0 and await self.__cond():
-            return await self.__default()
-
-        future, args, kwds = await self.__queue.get()
-        res = await self.__inner(*args, **kwds)
-        future.set_result(res)
-        self.__queue.task_done()
-        return res
+        return AsyncBase.coro2task_exec(self.__inner(*args, **kwds))
 
     async def __cond(self):
         res = self.__func_cond()
         return await res if self.__is_coro_cond else res
 
     async def __inner(self, *args, **kwds):
-        res = self.__func_queue(*args, **kwds)
-        return await res if self.__is_coro_inner else res
+        if self.__queue.qsize() == 0 and await self.__cond():
+            return await self.__default()
+
+        future, args, kwds = await self.__queue.get()
+        res0 = self.__func_queue(*args, **kwds)
+        res1 = await res0 if self.__is_coro_inner else res0
+        future.set_result(res1)
+        self.__queue.task_done()
+        return res1
 
     async def __default(self):
         res = self.__func_default()
@@ -84,7 +84,7 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, weight, func_queue, count=0) -> None:
+    def __init__(self, weight, func_queue: Union[FuncQueue, None], count=0) -> None:
         self.__weight = weight
         self.__func_queue = func_queue
         self.__count = count
@@ -95,7 +95,7 @@ class StatusValue(object):
         return self.__weight
 
     @property
-    def coro(self):
+    def func_queue(self) -> Union[FuncQueue, None]:
         return self.__func_queue
 
     @property
@@ -185,7 +185,7 @@ class StatusGraph(object):
             count_tmp = self.__status_graph[i][k].count + self.__status_graph[k][j].count + 1
             if count_tmp > count_max or weight_tmp >= self.__status_graph[i][j].weight:
                 continue
-            self.__status_graph[i][j] = StatusValue(weight_tmp, self.__status_graph[i][k].coro, count_tmp)
+            self.__status_graph[i][j] = StatusValue(weight_tmp, self.__status_graph[i][k].func_queue, count_tmp)
             pass
         pass
 
