@@ -147,15 +147,15 @@ class TestStatusGragh(object):
         """
         # 自身无法链路到自身
         a = StatusGraph()
-        a.add(StatusEdge(1, 3), StatusValue(FuncQueue(lambda: 5), 4))
-        a.add(StatusEdge(0, 1), StatusValue(FuncQueue(lambda: 3), 1))
-        a.add(StatusEdge(1, 2), StatusValue(FuncQueue(lambda: 4), 2))
-        a.add(StatusEdge(2, 3), StatusValue(FuncQueue(lambda: 6), 1))
-        a.add(StatusEdge(3, 0), StatusValue(FuncQueue(lambda: 7), 5))
+        a.add(StatusEdge(1, 3), StatusValue(lambda: 5, 4))
+        a.add(StatusEdge(0, 1), StatusValue(lambda: 3, 1))
+        a.add(StatusEdge(1, 2), StatusValue(lambda: 4, 2))
+        a.add(StatusEdge(2, 3), StatusValue(lambda: 6, 1))
+        a.add(StatusEdge(3, 0), StatusValue(lambda: 7, 5))
         a.build()
         b = a.get(0, 3)
-        assert b is not None and b.func_queue is not None
-        assert await b.func_queue.inner() == 3
+        assert b is not None and b.func is not None
+        assert b.func() == 3
         assert b.weight == 1 + 3
         assert b.count == 2
         for i in range(4):

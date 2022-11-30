@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Task
-from typing import Union
+from typing import Callable, Union
 from .status import CallableOrder, FuncQueue, StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
@@ -24,16 +24,16 @@ class GraphBase:
         """
         raise Exception('子类需要重写这个函数')
 
-    def exist_func(self):
+    def exist_func(self) -> bool:
         return self.__status_graph.get(self._status, self._status) is not None
 
-    def func_get(self) -> Union[FuncQueue, None]:
+    def func_get(self) -> Union[Callable, None]:
         value = self.__status_graph.get(self._status, self._status)
-        return value.func_queue if value is not None else None
+        return value.func if value is not None else None
 
-    def func_get_target(self, status):
+    def func_get_target(self, status) -> Union[Callable, None]:
         value = self.__status_graph. get(self._status, status)
-        return value.func_queue if value is not None else None
+        return value.func if value is not None else None
     pass
 
 
@@ -49,15 +49,17 @@ class SignResultFlow:
 
     async def __sign_deal(self, status_target, *args, **kwds):
         func = self.__graph.func_get_target(status_target)
-        res = func(*args, **kwds) if func is not None else None
+        if func is None:
+            return None
+        res = func(*args, **kwds)
         return await res if asyncio.iscoroutinefunction(func) else res
 
     async def __no_sign(self):
         func = self.__graph.func_get()
         if func is None:
-            await self.__callable_order.queue_wait()
+            return await self.__callable_order.queue_wait()
         res_pre = func()
-        await res_pre if asyncio.iscoroutinefunction(func) else res_pre
+        return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
     async def _sign(self):
         status = None

@@ -115,9 +115,9 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, func_queue: Union[FuncQueue, None], weight=float('inf'), count=0) -> None:
+    def __init__(self, func: Union[Callable, None], weight=float('inf'), count=0) -> None:
         self.__weight = weight
-        self.__func_queue = func_queue
+        self.__func = func
         self.__count = count
         pass
 
@@ -126,8 +126,8 @@ class StatusValue(object):
         return self.__weight
 
     @property
-    def func_queue(self) -> Union[FuncQueue, None]:
-        return self.__func_queue
+    def func(self) -> Union[Callable, None]:
+        return self.__func
 
     @property
     def count(self):
@@ -213,7 +213,7 @@ class StatusGraph(object):
             count_tmp = self.__status_graph[i][k].count + self.__status_graph[k][j].count + 1
             if count_tmp > count_max or weight_tmp >= self.__status_graph[i][j].weight:
                 continue
-            self.__status_graph[i][j] = StatusValue(self.__status_graph[i][k].func_queue, weight_tmp, count_tmp)
+            self.__status_graph[i][j] = StatusValue(self.__status_graph[i][k].func, weight_tmp, count_tmp)
             pass
         pass
 
