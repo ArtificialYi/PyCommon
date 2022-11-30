@@ -20,15 +20,17 @@ class TestStatusEdge(object):
 
 
 class TestStatusGragh(object):
-    def test_error(self):
-        try:
-            StatusGraph().add(StatusEdge(0, 0), StatusValue(None, None))
-        except Exception:
-            assert True
-            pass
-        else:
-            assert False
-        pass
+    # def test_error(self):
+    #     """已舍弃，可以连接自身了
+    #     """
+    #     try:
+    #         StatusGraph().add(StatusEdge(0, 0), StatusValue(None))
+    #     except Exception:
+    #         assert True
+    #         pass
+    #     else:
+    #         assert False
+    #     pass
 
     def test_init(self):
         """
@@ -121,5 +123,16 @@ class TestStatusGragh(object):
         for i in range(4):
             assert a.status_graph[i].get(i, None) is None
             pass
+        pass
+
+    def test_self(self):
+        """
+        自身可以连接自身（仅作为特殊边，不加入计算）
+        """
+        a = StatusGraph()
+        a.add(StatusEdge(0, 0), StatusValue(None))
+        a.build()
+        assert a.num_edge == 1
+        assert a.status_graph[0].get(0, None) is not None
         pass
     pass

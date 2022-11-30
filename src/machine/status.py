@@ -147,16 +147,13 @@ class StatusGraph(object):
         pass
 
     def _gragh_value_init(self):
-        max_tmp = StatusValue(None, float('inf'))
+        max_tmp = StatusValue(None)
         for i, j in itertools.permutations(self.__node_set, 2):
             self.__status_graph[i][j] = max_tmp
             pass
         pass
 
     def add(self, edge: StatusEdge, value: StatusValue):
-        if edge.start == edge.end:
-            raise Exception("自身不连接自身")
-
         self.__node_set.add(edge.start)
         self.__node_set.add(edge.end)
 
