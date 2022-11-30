@@ -12,6 +12,10 @@ class FuncQueue:
     1. 默认当队列为空时，返回None
     2. 如果指定了func_default，那么当队列为空时，会调用func_default
     3. 如果指定了func_cond，那么当队列为空时，会判定func_cond为True时才会调用func_default
+    真正的FuncQueue
+    1. 包装&隐藏queue
+    2. 调用方拥有一个推入参数的函数
+    3. 管理方拥有统一处理queue的逻辑
     """
     def __init__(
         self, func_default: Callable = lambda: None,
@@ -30,7 +34,7 @@ class FuncQueue:
         res = self.__func_cond()
         return await res if self.__is_coro_cond else res
 
-    async def inner(self, *args, **kwds):
+    async def inner(self):
         if self.__queue.qsize() == 0 and await self.__cond():
             return await self.__default()
 
@@ -47,6 +51,38 @@ class FuncQueue:
 
     async def func(self, *args, **kwds):
         # queue的对外函数
+        future = AsyncBase.get_future()
+        await self.__queue.put((future, args, kwds))
+        return await future
+    pass
+
+
+class CallableOrder:
+    """将可执行对象使用队列封装
+    """
+    def __init__(self, func: Callable) -> None:
+        self.__queue = asyncio.Queue()
+        self.__func = func
+        self.__is_coro = asyncio.iscoroutinefunction(func)
+        pass
+
+    async def queue_no_wait(self):
+        # 队列管理员使用
+        if self.__queue.qsize() == 0:
+            return False
+        return await self.queue_wait()
+
+    async def queue_wait(self):
+        # 队列管理员使用
+        future, args, kwds = await self.__queue.get()
+        res0 = self.__func(*args, **kwds)
+        res1 = await res0 if self.__is_coro else res0
+        future.set_result(res1)
+        self.__queue.task_done()
+        return True
+
+    async def call(self, *args, **kwds):
+        # 业务方使用
         future = AsyncBase.get_future()
         await self.__queue.put((future, args, kwds))
         return await future
