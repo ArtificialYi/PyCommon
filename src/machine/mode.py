@@ -17,15 +17,12 @@ class GraphBase:
         self._status = status
         pass
 
-    def _graph_build(self):  # pragma : no cover
+    def _graph_build(self) -> StatusGraph:
         """
         状态转移方程式
         需要子类重写
         """
         raise Exception('子类需要重写这个函数')
-
-    def exist_func(self) -> bool:
-        return self.__status_graph.get(self._status, self._status) is not None
 
     def func_get(self) -> Union[Callable, None]:
         value = self.__status_graph.get(self._status, self._status)
@@ -61,7 +58,7 @@ class SignResultFlow:
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
-    async def _sign(self):
+    async def __main(self):
         status = None
         while self._exit_status is None or status != self._exit_status:
             while not await self.__callable_order.queue_no_wait():
@@ -72,12 +69,12 @@ class SignResultFlow:
     def __call__(self) -> Task:
         """异步调用
         """
-        return AsyncBase.coro2task_exec(self._sign())
+        return AsyncBase.coro2task_exec(self.__main())
     pass
 
 
 class NormMachineGraph(GraphBase):
-    """最基本的状态机
+    """最基本的状态图
     """
     class State(Enum):
         STARTED = auto()
@@ -86,6 +83,10 @@ class NormMachineGraph(GraphBase):
         pass
 
     def __init__(self) -> None:
+        """状态机的初始应该是EXITED状态
+        1. 从EXITED状态到其他状态应该由loop管理者控制(因为EXITED状态会退出loop)
+        2. 其他状态之间的变化由状态机控制
+        """
         GraphBase.__init__(self)
         self.status2target(NormMachineGraph.State.EXITED)
         pass
@@ -94,15 +95,19 @@ class NormMachineGraph(GraphBase):
         graph_tmp = StatusGraph()
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.STARTED),
-            StatusValue(FuncQueue(self.__start))
+            StatusValue(self.__start)
+        )
+        graph_tmp.add(
+            StatusEdge(NormMachineGraph.State.STARTED, NormMachineGraph.State.STARTED),
+            StatusValue(self._starting)
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STARTED, NormMachineGraph.State.STOPPED),
-            StatusValue(FuncQueue(self.__stop))
+            StatusValue(self.__stop)
         )
         graph_tmp.add(
             StatusEdge(NormMachineGraph.State.STOPPED, NormMachineGraph.State.EXITED),
-            StatusValue(FuncQueue(self.__exit))
+            StatusValue(self.__exit)
         )
         graph_tmp.build(0)
         return graph_tmp
@@ -116,7 +121,7 @@ class NormMachineGraph(GraphBase):
     async def __exit(self):
         self.status2target(self.__class__.State.EXITED)
 
-    async def _starting(self):  # pragma : no cover
+    async def _starting(self):
         """
         启动中状态运行函数(子类需要重写这个函数)
         """
