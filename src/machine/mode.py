@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import Task
-from typing import Dict
+from typing import Union
 from .status import FuncQueue, StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
@@ -9,19 +9,9 @@ from .queue import NormManageQueue
 
 class GraphBase:
     def __init__(self) -> None:
-        self.__doing_dict = {}
         self._status = None
         self.__status_graph: StatusGraph = self._graph_build()
         pass
-
-    def status_doing(self):
-        return self.__doing_dict.get(self._status, None)
-
-    def status_change(self, status):
-        if status == self._status:
-            return None
-        value = self.__status_graph.get(self._status, status)
-        return None if value is None or value.func_queue is None else value.func_queue
 
     def status2target(self, status):
         self._status = status
@@ -34,22 +24,46 @@ class GraphBase:
         """
         raise Exception('子类需要重写这个函数')
 
-    def _doing_dict_init(self, doing_dict: Dict):
-        self.__doing_dict = doing_dict
-        pass
+    def exist_func(self):
+        return self.__status_graph.get(self._status, self._status) is not None
+
+    def func_get(self) -> Union[FuncQueue, None]:
+        value = self.__status_graph.get(self._status, self._status)
+        return value.func_queue if value is not None else None
+
+    def func_get_target(self, status):
+        value = self.__status_graph. get(self._status, status)
+        return value.func_queue if value is not None else None
     pass
 
 
 class SignResultFlow:
     """
     结果型信号(状态直达)
-    1. 处理每个信号
+    1. 一直调用func_queue，直至状态转移至_exit_status
+    2. 如果没信号 & 当前状态存在func，就一直调用default
+    3. 如果没信号 & 当前状态不存在func，就等待新信号后执行inner
+    4. 如果有信号 => 执行inner
     """
     def __init__(self, graph: GraphBase) -> None:
-        self.__q_sign = asyncio.Queue()
         self.__graph = graph
         self._exit_status = None
+        self.__func_queue = FuncQueue(
+            self.__func_default,
+            self.__func_inner,
+            self.__graph.exist_func,
+        )
         pass
+
+    async def __func_default(self):
+        func = self.__graph.func_get()
+        if func is None:
+            raise Exception(f'默认不应该会拿到空的func:{self.__graph._status}')
+        return await func.inner()
+
+    async def __func_inner(self, status_target, *args, **kwds):
+        func = self.__graph.func_get_target(status_target)
+        return await func.inner(*args, **kwds) if func is not None else None
 
     @property
     def _graph(self):
@@ -59,47 +73,14 @@ class SignResultFlow:
         return AsyncBase.coro2task_exec(self._sign())
 
     async def _sign(self):
-        """同一个对象同时执行一个信号接收器
-        信号处理程序：处理每个信号
-        1. 是否存在新命令，是2，否5
-        2. 获取一条命令（等待型）
-        3. 执行一条命令
-        4. 直至当前命令完成，返回完成
-        5. 是否存在状态时，存在则执行一次，然后1，不存在则2
-        """
         status = None
         while self._exit_status is None or status != self._exit_status:
-            while (self.__q_sign.qsize() == 0) and ((coro := self.__graph.status_doing()) is not None):
-                await coro()
-
-            # 执行一个命令
-            status, future, args, kwargs = await self.__q_sign.get()
-            res_action = await self.__action(status, *args, **kwargs)
-            # 回调：可实现sign的wait
-            future.set_result(res_action)
-            self.__q_sign.task_done()
+            await self.__func_queue.inner()
             pass
         pass
 
-    async def __action(self, status, *args, **kwargs):
-        coro = self.__graph.status_change(status)
-        time_res = 0
-        while coro is not None:
-            await coro(*args, **kwargs)
-            coro = self.__graph.status_change(status)
-            time_res += 1
-            pass
-        return time_res
-
-    async def _sign_put_no_pause(self, status, *args, **kwargs):
-        future = AsyncBase.get_future()
-        await self.__q_sign.put((status, future, args, kwargs))
-        return await future
-
-    async def _sign_put_pause(self, status, *args, **kwargs):
-        future = AsyncBase.get_future()
-        await self.__q_sign.put((status, future, args, kwargs))
-        return future
+    async def _sign_change(self, status):
+        return await self.__func_queue.func(status)
     pass
 
 
@@ -114,9 +95,6 @@ class NormMachineGraph(GraphBase):
 
     def __init__(self) -> None:
         GraphBase.__init__(self)
-        self._doing_dict_init({
-            NormMachineGraph.State.STARTED: self._starting,
-        })
         self.status2target(NormMachineGraph.State.EXITED)
         pass
 
@@ -246,9 +224,9 @@ class QueueOwnerFlow(NormFlow):
         return self.__q.q_action
 
     async def _stop_async(self):
-        future = await self._sign_put_pause(NormMachineGraph.State.STOPPED)
+        task = AsyncBase.coro2task_exec(self._sign_change(NormMachineGraph.State.STOPPED))
         await self.__q.q_step.step()
-        future_res = await future
+        future_res = await task
         return future_res > 0
 
     async def _starting(self):

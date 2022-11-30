@@ -15,32 +15,27 @@ class FuncQueue:
     """
     def __init__(
         self, func_default: Callable = lambda: None,
-        func_queue: Callable = lambda: None, func_cond: Callable = lambda: True,
+        func_inner: Callable = lambda: None, func_cond: Callable = lambda: True,
     ) -> None:
         self.__queue = asyncio.Queue()
         self.__func_cond = func_cond
         self.__is_coro_cond = asyncio.iscoroutinefunction(self.__func_cond)
-        self.__func_queue = func_queue
-        self.__is_coro_inner = asyncio.iscoroutinefunction(self.__func_queue)
+        self.__func_inner = func_inner
+        self.__is_coro_inner = asyncio.iscoroutinefunction(self.__func_inner)
         self.__func_default = func_default
         self.__is_coro_default = asyncio.iscoroutinefunction(self.__func_default)
         pass
-
-    def __call__(self, *args, **kwds) -> asyncio.Task:
-        """执行queue的内部流程
-        """
-        return AsyncBase.coro2task_exec(self.__inner(*args, **kwds))
 
     async def __cond(self):
         res = self.__func_cond()
         return await res if self.__is_coro_cond else res
 
-    async def __inner(self, *args, **kwds):
+    async def inner(self, *args, **kwds):
         if self.__queue.qsize() == 0 and await self.__cond():
             return await self.__default()
 
         future, args, kwds = await self.__queue.get()
-        res0 = self.__func_queue(*args, **kwds)
+        res0 = self.__func_inner(*args, **kwds)
         res1 = await res0 if self.__is_coro_inner else res0
         future.set_result(res1)
         self.__queue.task_done()

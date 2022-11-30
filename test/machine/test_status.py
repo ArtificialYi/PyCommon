@@ -11,28 +11,28 @@ class TestFuncQueue(object):
         """空队列的函数测试
         """
         # 全默认
-        assert await FuncQueue()() is None
+        assert await FuncQueue().inner() is None
         func0 = FuncQueue()
         task0 = AsyncBase.coro2task_exec(func0.func())
         await asyncio.sleep(1)
         assert not task0.done()
-        res_call0 = await func0()
+        res_call0 = await func0.inner()
         assert res_call0 is None
         assert await task0 is None
         # default何时被调用
-        assert await FuncQueue(lambda: 0)() == 0
+        assert await FuncQueue(lambda: 0).inner() == 0
 
         # inner是在call的时候才会被调用
         func1 = FuncQueue(lambda: 0, lambda: 1)
         task1 = AsyncBase.coro2task_exec(func1.func())
         await asyncio.sleep(1)
         assert not task1.done()
-        res_call1 = await func1()
+        res_call1 = await func1.inner()
         assert res_call1 == 1 == await task1
 
         # 默认情况也不走default
         func2 = FuncQueue(lambda: 0, lambda: 1, lambda: False,)
-        task2 = func2()
+        task2 = AsyncBase.coro2task_exec(func2.inner())
         await asyncio.sleep(1)
         assert not task2.done()
         res_func0 = await func2.func()
@@ -155,7 +155,7 @@ class TestStatusGragh(object):
         a.build()
         b = a.get(0, 3)
         assert b is not None and b.func_queue is not None
-        assert await b.func_queue() == 3
+        assert await b.func_queue.inner() == 3
         assert b.weight == 1 + 3
         assert b.count == 2
         for i in range(4):
