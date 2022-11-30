@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import Task
 from typing import Union
-from .status import FuncQueue, StatusValue, StatusGraph, StatusEdge
+from .status import CallableOrder, FuncQueue, StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
 from ..tool.base import AsyncBase, MatchCase
 from .queue import NormManageQueue
@@ -38,49 +38,39 @@ class GraphBase:
 
 
 class SignResultFlow:
-    """
-    结果型信号(状态直达)
-    1. 一直调用func_queue，直至状态转移至_exit_status
-    2. 如果没信号 & 当前状态存在func，就一直调用default
-    3. 如果没信号 & 当前状态不存在func，就等待新信号后执行inner
-    4. 如果有信号 => 执行inner
+    """信号处理loop
+    1. 有信号时处理机制，无信号时处理机制
     """
     def __init__(self, graph: GraphBase) -> None:
         self.__graph = graph
         self._exit_status = None
-        self.__func_queue = FuncQueue(
-            self.__func_default,
-            self.__func_inner,
-            self.__graph.exist_func,
-        )
+        self.__callable_order = CallableOrder(self.__sign_deal)
         pass
 
-    async def __func_default(self):
+    async def __sign_deal(self, status_target, *args, **kwds):
+        func = self.__graph.func_get_target(status_target)
+        res = func(*args, **kwds) if func is not None else None
+        return await res if asyncio.iscoroutinefunction(func) else res
+
+    async def __no_sign(self):
         func = self.__graph.func_get()
         if func is None:
-            raise Exception(f'默认不应该会拿到空的func:{self.__graph._status}')
-        return await func.inner()
-
-    async def __func_inner(self, status_target, *args, **kwds):
-        func = self.__graph.func_get_target(status_target)
-        return await func.inner(*args, **kwds) if func is not None else None
-
-    @property
-    def _graph(self):
-        return self.__graph
-
-    def __call__(self) -> Task:
-        return AsyncBase.coro2task_exec(self._sign())
+            await self.__callable_order.queue_wait()
+        res_pre = func()
+        await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
     async def _sign(self):
         status = None
         while self._exit_status is None or status != self._exit_status:
-            await self.__func_queue.inner()
+            while not await self.__callable_order.queue_no_wait():
+                await self.__no_sign()
             pass
         pass
 
-    async def _sign_change(self, status):
-        return await self.__func_queue.func(status)
+    def __call__(self) -> Task:
+        """异步调用
+        """
+        return AsyncBase.coro2task_exec(self._sign())
     pass
 
 
