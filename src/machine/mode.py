@@ -1,6 +1,6 @@
 import asyncio
 
-from ...src.machine.status import NormStatusGraph, StatusGraphBase
+from ...src.machine.status import NormStatusGraph
 from ..tool.func_tool import CallableOrder
 
 
@@ -9,7 +9,7 @@ class StatusSignFlowBase:
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时
     """
-    def __init__(self, graph: StatusGraphBase) -> None:
+    def __init__(self, graph: NormStatusGraph) -> None:
         self._graph = graph
         self.__callable_order = CallableOrder(self.__sign_deal)
         self.__lock = asyncio.Lock()

@@ -132,35 +132,7 @@ class StatusGraph(object):
     pass
 
 
-class StatusGraphBase:
-    def __init__(self) -> None:
-        self._status = None
-        self._exited_status = None
-        self.__status_graph: StatusGraph = self._graph_build()
-        pass
-
-    def status2target(self, status):
-        self._status = status
-        pass
-
-    def _graph_build(self) -> StatusGraph:
-        """
-        状态转移方程式
-        需要子类重写
-        """
-        raise Exception('子类需要重写这个函数')
-
-    def func_get(self) -> Union[Callable, None]:
-        value = self.__status_graph.get(self._status, self._status)
-        return value.func if value is not None else None
-
-    def func_get_target(self, status) -> Union[Callable, None]:
-        value = self.__status_graph. get(self._status, status)
-        return value.func if value is not None else None
-    pass
-
-
-class NormStatusGraph(StatusGraphBase):
+class NormStatusGraph:
     """普通的状态图
     """
     class State(Enum):
@@ -169,32 +141,43 @@ class NormStatusGraph(StatusGraphBase):
         EXITED = auto()
         pass
 
-    def __init__(self) -> None:
+    def __init__(self, func_starting: Callable) -> None:
         """状态机的初始应该是EXITED状态
         1. 从EXITED状态到其他状态应该由loop管理者控制(因为EXITED状态会退出loop)
         2. 其他状态之间的变化由状态机控制
         """
-        StatusGraphBase.__init__(self)
-        self._exited_status = NormStatusGraph.State.EXITED
-        self.status2target(NormStatusGraph.State.EXITED)
+        self.__graph = self.__graph_build(func_starting)
+        self._status = self._exited_status = self.__class__.State.EXITED
         pass
 
-    def _graph_build(self):
+    def status2target(self, status):
+        self._status = status
+        pass
+
+    def func_get(self) -> Union[Callable, None]:
+        value = self.__graph.get(self._status, self._status)
+        return value.func if value is not None else None
+
+    def func_get_target(self, status) -> Union[Callable, None]:
+        value = self.__graph.get(self._status, status)
+        return value.func if value is not None else None
+
+    def __graph_build(self, func_starting: Callable):
         graph_tmp = StatusGraph()
         graph_tmp.add(
-            StatusEdge(NormStatusGraph.State.STOPPED, NormStatusGraph.State.STARTED),
+            StatusEdge(self.__class__.State.STOPPED, self.__class__.State.STARTED),
             StatusValue(self.__start)
         )
         graph_tmp.add(
-            StatusEdge(NormStatusGraph.State.STARTED, NormStatusGraph.State.STARTED),
-            StatusValue(self._starting)
+            StatusEdge(self.__class__.State.STARTED, self.__class__.State.STARTED),
+            StatusValue(func_starting)
         )
         graph_tmp.add(
-            StatusEdge(NormStatusGraph.State.STARTED, NormStatusGraph.State.STOPPED),
+            StatusEdge(self.__class__.State.STARTED, self.__class__.State.STOPPED),
             StatusValue(self.__stop)
         )
         graph_tmp.add(
-            StatusEdge(NormStatusGraph.State.STOPPED, NormStatusGraph.State.EXITED),
+            StatusEdge(self.__class__.State.STOPPED, self.__class__.State.EXITED),
             StatusValue(self.__exit)
         )
         graph_tmp.build(0)
@@ -211,10 +194,4 @@ class NormStatusGraph(StatusGraphBase):
     async def __exit(self):
         self.status2target(self.__class__.State.EXITED)
         return True
-
-    async def _starting(self):
-        """
-        启动中状态运行函数(子类需要重写这个函数)
-        """
-        raise Exception('子类需要重写这个函数')
     pass

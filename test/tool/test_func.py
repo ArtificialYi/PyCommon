@@ -39,9 +39,9 @@ class TestFuncTool:
     @pytest.mark.timeout(1)
     @pytest.mark.asyncio
     async def test(self):
-        assert not await FuncTool.func_err(self.__func_norm)
-        assert not await FuncTool.func_err(self.__coro_norm)
-        assert await FuncTool.func_err(self.__func_err)
-        assert await FuncTool.func_err(self.__coro_err)
+        assert not await FuncTool.is_func_err(self.__func_norm)
+        assert not await FuncTool.is_func_err(self.__coro_norm)
+        assert await FuncTool.is_func_err(self.__func_err)
+        assert await FuncTool.is_func_err(self.__coro_err)
         pass
     pass

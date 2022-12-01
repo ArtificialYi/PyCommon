@@ -37,7 +37,7 @@ class CallableOrder:
 
 class FuncTool:
     @staticmethod
-    async def func_err(func: Callable):
+    async def is_func_err(func: Callable):
         """函数有错误
         """
         try:
@@ -47,4 +47,8 @@ class FuncTool:
             return True
         else:
             return False
+
+    @staticmethod
+    def err_no_args():
+        raise Exception('会抛出异常的普通函数')
     pass
