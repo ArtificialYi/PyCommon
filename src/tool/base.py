@@ -13,9 +13,9 @@ class BaseTool:
     @staticmethod
     def all_none_iter(obj: Iterable):
         for item in obj:
-            if item is not None:
-                return False
-            pass
+            if item is None:
+                continue
+            return False
         return True
 
     @staticmethod
@@ -80,7 +80,6 @@ class MatchCase:
 
     async def __err_default(self, key, *args, **kwds):
         raise Exception(f'{self}未知{key}异常:{args}|{kwds}')
-        pass
     pass
 
 
@@ -97,9 +96,9 @@ class AsyncBase:
     async def func2coro_exec(func, *args, **kwds):
         try:
             return await asyncio.to_thread(func, *args, **kwds)
-        except asyncio.CancelledError as ce:
-            print(f'协程被取消:{ce}|{func}|{args}|{kwds}')
-            return func(*args, **kwds)
+        except asyncio.CancelledError as ce:  # pragma: no cover
+            print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
+            return func(*args, **kwds)  # pragma: no cover
     pass
 
 

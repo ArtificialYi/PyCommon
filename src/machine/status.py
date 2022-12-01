@@ -69,10 +69,6 @@ class StatusGraph(object):
         return self.__status_graph
 
     @property
-    def value_dict(self):
-        return self.__value_dict
-
-    @property
     def num_edge(self):
         return len(self.__value_dict)
 
