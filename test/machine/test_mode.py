@@ -4,7 +4,7 @@ import pytest
 from ...src.tool.func_tool import FuncTool
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
-from ...src.machine.mode import NormSignFlow, SignFlowBase
+from ...src.machine.mode import NormStatusSignFlow, StatusSignFlowBase
 
 
 class GraphTmp(NormStatusGraph):
@@ -23,7 +23,7 @@ class TestSignFlowBase:
     @pytest.mark.asyncio
     async def test(self):
         graph = GraphTmp()
-        sign_flow = SignFlowBase(graph)
+        sign_flow = StatusSignFlowBase(graph)
         # 未启动
         assert not sign_flow._running
         # 启动，无信号，_starting被调用
@@ -68,7 +68,7 @@ class TestNormStatusGraph:
     @pytest.mark.asyncio
     async def test(self):
         graph = GraphTmp()
-        norm_sign_flow = NormSignFlow(graph)
+        norm_sign_flow = NormStatusSignFlow(graph)
         # 状态错误无法启动
         status_tmp, graph._status = graph._status, None
         assert await FuncTool.func_err(norm_sign_flow.launch)

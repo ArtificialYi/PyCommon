@@ -4,7 +4,7 @@ from ...src.machine.status import NormStatusGraph, StatusGraphBase
 from ..tool.func_tool import CallableOrder
 
 
-class SignFlowBase:
+class StatusSignFlowBase:
     """信号处理loop
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时
@@ -53,7 +53,7 @@ class SignFlowBase:
     pass
 
 
-class NormSignFlow(SignFlowBase):
+class NormStatusSignFlow(StatusSignFlowBase):
     """普通的信号流-开放端口给管理员
     1. 开放启动流端口给管理员
     2. 开放状态流转端口给管理员

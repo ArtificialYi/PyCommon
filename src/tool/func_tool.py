@@ -13,13 +13,13 @@ class CallableOrder:
         pass
 
     async def queue_no_wait(self):
-        # 队列管理员使用
+        # 队列拥有者使用，消费队列
         if self.__queue.qsize() == 0:
             return False
         return await self.queue_wait()
 
     async def queue_wait(self):
-        # 队列管理员使用
+        # 队列拥有者使用，消费队列
         future, args, kwds = await self.__queue.get()
         res0 = self.__func(*args, **kwds)
         res1 = await res0 if self.__is_coro else res0
@@ -28,7 +28,7 @@ class CallableOrder:
         return True
 
     async def call(self, *args, **kwds):
-        # 业务方使用
+        # 业务方使用，推送队列
         future = AsyncBase.get_future()
         await self.__queue.put((future, args, kwds))
         return await future
