@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from ...src.tool.func_tool import FuncTool
-from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusValue
+from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusGraphBase, StatusValue
 
 
 class TestStatusEdge(object):
@@ -136,6 +136,16 @@ class TestStatusGraph(object):
         a.build()
         assert a.num_edge == 1
         assert a.status_graph[0].get(0, None) is not None
+        pass
+    pass
+
+
+class TestStatusGraphBase:
+    @pytest.mark.timeout(1)
+    @pytest.mark.asyncio
+    async def test(self):
+        # 需要子类重写，所以会抛出异常
+        assert await FuncTool.func_err(StatusGraphBase)
         pass
     pass
 

@@ -17,7 +17,7 @@ class TestBaseTool:
         assert not BaseTool.all_none_iter([1, 2, 3, 4])
 
         # 存在None，不通过
-        assert not BaseTool.all_none_iter([1, 2, 3, None])
+        assert not BaseTool.all_none_iter([None, 2, 3, 4])
 
         # 全是0，不通过
         assert not BaseTool.all_none_iter([0, 0, 0, 0])
@@ -76,6 +76,7 @@ class TestDelayCountQueue:
         # 队列：[0, 2]
         queue_a.newest = 2
         assert abs(queue_a.average - 1) < 1e-4
+        assert queue_a.newest == 2
 
         # 队列：[2, 4],队列最大长度为2
         queue_a.newest = 4
