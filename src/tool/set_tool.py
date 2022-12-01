@@ -6,7 +6,6 @@ class SetTargetManage:
 
     @property
     def added_set(self):
-        self.__set_norm &= self.__set_target
         return self.__set_norm
 
     @property
@@ -20,8 +19,11 @@ class SetTargetManage:
 
     def add(self, contract):
         self.__set_norm.add(contract)
+        self.__set_norm &= self.__set_target
         pass
 
-    def set_target(self, contract_set):
+    def set_target(self, contract_set: set):
         self.__set_target = contract_set
+        self.__set_norm &= self.__set_target
+        pass
     pass

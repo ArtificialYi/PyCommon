@@ -1,0 +1,8 @@
+# 单测文件
+.pytest_cache
+coverage.xml
+.coverage
+.coverage.*
+
+# python编译文件
+__pycache__

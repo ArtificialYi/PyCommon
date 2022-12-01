@@ -1,6 +1,6 @@
-
+from enum import Enum, auto
 import itertools
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
 
 
 class StatusEdge(object):
@@ -29,9 +29,9 @@ class StatusEdge(object):
 
 
 class StatusValue(object):
-    def __init__(self, weight, coro, count=0) -> None:
+    def __init__(self, func: Union[Callable, None], weight=float('inf'), count=0) -> None:
         self.__weight = weight
-        self.__coro = coro
+        self.__func = func
         self.__count = count
         pass
 
@@ -40,8 +40,8 @@ class StatusValue(object):
         return self.__weight
 
     @property
-    def coro(self):
-        return self.__coro
+    def func(self) -> Union[Callable, None]:
+        return self.__func
 
     @property
     def count(self):
@@ -49,7 +49,7 @@ class StatusValue(object):
     pass
 
 
-class StatusGragh(object):
+class StatusGraph(object):
     """
 状态图增删改查类
 目标：
@@ -61,49 +61,50 @@ class StatusGragh(object):
     def __init__(self) -> None:
         self.__node_set = set()
         self.__value_dict: Dict[StatusEdge, StatusValue] = dict()
-        self.__gragh_dict: Dict[Any, Dict[Any, StatusValue]] = dict()
+        self.__status_graph: Dict[Any, Dict[Any, StatusValue]] = dict()
         pass
 
     @property
-    def status_gragh(self):
-        return self.__gragh_dict
+    def status_graph(self):
+        return self.__status_graph
 
     @property
     def value_dict(self):
         return self.__value_dict
 
+    @property
+    def num_edge(self):
+        return len(self.__value_dict)
+
     def _gragh_init(self):
         self._gragh_key_init()
         self._gragh_value_init()
 
-        for edge, value in self.value_dict.items():
-            self.status_gragh[edge.start][edge.end] = value
+        for edge, value in self.__value_dict.items():
+            self.__status_graph[edge.start][edge.end] = value
             pass
         pass
 
     def _gragh_key_init(self):
         for i in self.__node_set:
-            self.status_gragh[i] = dict()
+            self.__status_graph[i] = dict()
             pass
         pass
 
     def _gragh_value_init(self):
-        max_tmp = StatusValue(float('inf'), None)
+        max_tmp = StatusValue(None)
         for i, j in itertools.permutations(self.__node_set, 2):
-            self.status_gragh[i][j] = max_tmp
+            self.__status_graph[i][j] = max_tmp
             pass
         pass
 
     def add(self, edge: StatusEdge, value: StatusValue):
-        if edge.start == edge.end:
-            raise Exception("自身不连接自身")
-
         self.__node_set.add(edge.start)
         self.__node_set.add(edge.end)
 
-        value_tmp = self.value_dict.get(edge, None)
+        value_tmp = self.__value_dict.get(edge, None)
         if value_tmp is None or value.weight < value_tmp.weight:
-            self.value_dict[edge] = value
+            self.__value_dict[edge] = value
             pass
         pass
 
@@ -122,14 +123,102 @@ class StatusGragh(object):
 
     def __gragh_build(self, count_max):
         for k, i, j in itertools.permutations(self.__node_set, 3):
-            weight_tmp = self.status_gragh[i][k].weight + self.status_gragh[k][j].weight
-            count_tmp = self.status_gragh[i][k].count + self.status_gragh[k][j].count + 1
-            if count_tmp > count_max or weight_tmp >= self.status_gragh[i][j].weight:
+            weight_tmp = self.__status_graph[i][k].weight + self.__status_graph[k][j].weight
+            count_tmp = self.__status_graph[i][k].count + self.__status_graph[k][j].count + 1
+            if count_tmp > count_max or weight_tmp >= self.__status_graph[i][j].weight:
                 continue
-            self.status_gragh[i][j] = StatusValue(weight_tmp, self.status_gragh[i][k].coro, count_tmp)
+            self.__status_graph[i][j] = StatusValue(self.__status_graph[i][k].func, weight_tmp, count_tmp)
             pass
         pass
 
     def get(self, start, end) -> Union[StatusValue, None]:
-        return self.status_gragh[start].get(end, None)
+        return self.__status_graph[start].get(end, None)
+    pass
+
+
+class StatusGraphBase:
+    def __init__(self) -> None:
+        self._status = None
+        self._exited_status = None
+        self.__status_graph: StatusGraph = self._graph_build()
+        pass
+
+    def status2target(self, status):
+        self._status = status
+        pass
+
+    def _graph_build(self) -> StatusGraph:
+        """
+        状态转移方程式
+        需要子类重写
+        """
+        raise Exception('子类需要重写这个函数')
+
+    def func_get(self) -> Union[Callable, None]:
+        value = self.__status_graph.get(self._status, self._status)
+        return value.func if value is not None else None
+
+    def func_get_target(self, status) -> Union[Callable, None]:
+        value = self.__status_graph. get(self._status, status)
+        return value.func if value is not None else None
+    pass
+
+
+class NormStatusGraph(StatusGraphBase):
+    """普通的状态图
+    """
+    class State(Enum):
+        STARTED = auto()
+        STOPPED = auto()
+        EXITED = auto()
+        pass
+
+    def __init__(self) -> None:
+        """状态机的初始应该是EXITED状态
+        1. 从EXITED状态到其他状态应该由loop管理者控制(因为EXITED状态会退出loop)
+        2. 其他状态之间的变化由状态机控制
+        """
+        StatusGraphBase.__init__(self)
+        self._exited_status = NormStatusGraph.State.EXITED
+        self.status2target(NormStatusGraph.State.EXITED)
+        pass
+
+    def _graph_build(self):
+        graph_tmp = StatusGraph()
+        graph_tmp.add(
+            StatusEdge(NormStatusGraph.State.STOPPED, NormStatusGraph.State.STARTED),
+            StatusValue(self.__start)
+        )
+        graph_tmp.add(
+            StatusEdge(NormStatusGraph.State.STARTED, NormStatusGraph.State.STARTED),
+            StatusValue(self._starting)
+        )
+        graph_tmp.add(
+            StatusEdge(NormStatusGraph.State.STARTED, NormStatusGraph.State.STOPPED),
+            StatusValue(self.__stop)
+        )
+        graph_tmp.add(
+            StatusEdge(NormStatusGraph.State.STOPPED, NormStatusGraph.State.EXITED),
+            StatusValue(self.__exit)
+        )
+        graph_tmp.build(0)
+        return graph_tmp
+
+    async def __start(self):
+        self.status2target(self.__class__.State.STARTED)
+        return True
+
+    async def __stop(self):
+        self.status2target(self.__class__.State.STOPPED)
+        return True
+
+    async def __exit(self):
+        self.status2target(self.__class__.State.EXITED)
+        return True
+
+    async def _starting(self):
+        """
+        启动中状态运行函数(子类需要重写这个函数)
+        """
+        raise Exception('子类需要重写这个函数')
     pass

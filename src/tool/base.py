@@ -12,7 +12,11 @@ class BaseTool:
 
     @staticmethod
     def all_none_iter(obj: Iterable):
-        return not any(obj)
+        for item in obj:
+            if item is not None:
+                return False
+            pass
+        return True
 
     @staticmethod
     def isint(obj):
@@ -24,7 +28,7 @@ class BaseTool:
 
     @staticmethod
     def to_str(obj):
-        if type(obj) == str:  # pragma: no cover
+        if type(obj) == str:
             return obj
         return str(obj)
     pass
@@ -67,14 +71,14 @@ class MatchCase:
         pass
 
     async def match(self, key, *args, **kwds):
-        if key not in self.__case_set:  # pragma : no cover
+        if key not in self.__case_set:
             return await self.__default(key, *args, **kwds)
         coro = self.__case_dict[key]
         if coro is None:
             return
         return await coro(*args, **kwds)
 
-    async def __err_default(self, key, *args, **kwds):  # pragma : no cover
+    async def __err_default(self, key, *args, **kwds):
         raise Exception(f'{self}未知{key}异常:{args}|{kwds}')
         pass
     pass
@@ -86,14 +90,14 @@ class AsyncBase:
         return asyncio.get_event_loop().create_future()
 
     @staticmethod
-    def add_coro(coro):
+    def coro2task_exec(coro):
         return asyncio.get_event_loop().create_task(coro)
 
     @staticmethod
-    async def sync2async(func, *args, **kwds):
+    async def func2coro_exec(func, *args, **kwds):
         try:
             return await asyncio.to_thread(func, *args, **kwds)
-        except asyncio.CancelledError as ce:  # pragma : no cover
+        except asyncio.CancelledError as ce:
             print(f'协程被取消:{ce}|{func}|{args}|{kwds}')
             return func(*args, **kwds)
     pass

@@ -1,31 +1,28 @@
 from typing import List, Tuple
 from torch import nn
 import torch
+from .base import MultiLinear
 
 
 class SigmoidUnit(nn.Module):
     def __init__(self, input_num: int, output_num: int, hidden_num: int):
         nn.Module.__init__(self)
-        self.fc_in_x = nn.Linear(input_num, output_num)
-        nn.init.xavier_normal_(self.fc_in_x.weight)
+        self.fc_in_x = MultiLinear(input_num, output_num)
         self.ln_in_x = nn.LayerNorm(output_num)
 
-        self.fc_in_h = nn.Linear(output_num, output_num)
-        nn.init.xavier_normal_(self.fc_in_x.weight)
+        self.fc_in_h = MultiLinear(output_num, output_num)
         self.ln_in_h = nn.LayerNorm(output_num)
 
-        self.__hidden_layers: List[Tuple[nn.Linear, nn.LayerNorm]] = []
+        self.__hidden_layers: List[Tuple[MultiLinear, nn.LayerNorm]] = []
         for i in range(hidden_num):
-            fc = nn.Linear(output_num, output_num)
-            nn.init.xavier_normal_(fc.weight)
+            fc = MultiLinear(output_num, output_num)
             ln = nn.LayerNorm(output_num)
             self.__hidden_layers.append((fc, ln))
             self.add_module(f'fc_{i}', fc)
             self.add_module(f'ln_{i}', ln)
             pass
 
-        self.fc_out = nn.Linear(output_num, output_num)
-        nn.init.xavier_normal_(self.fc_out.weight)
+        self.fc_out = MultiLinear(output_num, output_num)
         self.ln_out = nn.LayerNorm(output_num)
         pass
 
