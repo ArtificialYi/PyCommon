@@ -13,9 +13,9 @@ class BaseTool:
     @staticmethod
     def all_none_iter(obj: Iterable):
         for item in obj:
-            if item is not None:
-                return False
-            pass
+            if item is None:
+                continue
+            return False
         return True
 
     @staticmethod
