@@ -1,5 +1,4 @@
 import asyncio
-from asyncio import Task
 from typing import Callable, Union
 from .status import StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
@@ -119,25 +118,21 @@ class SignFlowBase:
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
-    async def __main(self):
-        # 一个对象同时只能运行一个loop
-        while self._exit_status is None or self._graph._status != self._exit_status:
-            while not await self.__callable_order.queue_no_wait():
-                await self.__no_sign()
-            pass
-        pass
-
-    async def _launch(self):
-        if self._running:
-            raise Exception('已有loop在运行中')
-
-        # running用以判断是否有运行中的loop
+    async def _main(self):
+        self.__running_err()
         async with self.__lock:
             self._running = True
-            await self.__main()
+            while self._exit_status is None or self._graph._status != self._exit_status:
+                while not await self.__callable_order.queue_no_wait():
+                    await self.__no_sign()
+                pass
             self._running = False
             pass
         pass
+
+    def __running_err(self):
+        if self._running:
+            raise Exception('已有loop在运行中')
 
     async def _call(self, *args, **kwds):
         return await self.__callable_order.call(*args, **kwds)
@@ -159,24 +154,24 @@ class NormSignFlow(SignFlowBase):
         if self._running or self._graph._status != self._exit_status:
             raise Exception(f'状态机启动失败|status:{self._graph._status}|run:{self._running}')
         self._graph.status2target(NormStatusGraph.State.STARTED)
-        return await self._launch()
+        return await self._main()
 
     async def start(self):
         # 将状态转移至started
         if not self._running:
-            raise Exception(f'状态机尚未启动')
+            raise Exception('状态机尚未启动')
         return await self._call(NormStatusGraph.State.STARTED)
 
     async def stop(self):
         # 将状态转移至stopped
         if not self._running:
-            raise Exception(f'状态机尚未启动')
+            raise Exception('状态机尚未启动')
         return await self._call(NormStatusGraph.State.STOPPED)
 
     async def exit(self):
         # 将状态转移至exited
         if not self._running:
-            raise Exception(f'状态机尚未启动')
+            raise Exception('状态机尚未启动')
         return await self._call(NormStatusGraph.State.EXITED)
     pass
 
