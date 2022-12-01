@@ -97,8 +97,8 @@ class AsyncBase:
         try:
             return await asyncio.to_thread(func, *args, **kwds)
         except asyncio.CancelledError as ce:  # pragma: no cover
-            print(f'协程被取消:{ce}|{func}|{args}|{kwds}')
-            return func(*args, **kwds)
+            print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
+            return func(*args, **kwds)  # pragma: no cover
     pass
 
 
