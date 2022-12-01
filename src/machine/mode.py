@@ -2,9 +2,9 @@ import asyncio
 from typing import Callable, Union
 from .status import StatusValue, StatusGraph, StatusEdge
 from enum import Enum, auto
-from ..tool.base import AsyncBase, MatchCase
+# from ..tool.base import AsyncBase, MatchCase
 from ..tool.func_tool import CallableOrder
-from .queue import NormManageQueue
+# from .queue import NormManageQueue
 
 
 class StatusGraphBase:
@@ -176,34 +176,34 @@ class NormSignFlow(SignFlowBase):
     pass
 
 
-class NormFlow(NormSignFlow, NormStatusGraph):
-    def __init__(self) -> None:
-        NormSignFlow.__init__(self, self)
-        NormStatusGraph.__init__(self)
-        pass
-    pass
+# class NormFlow(NormSignFlow, NormStatusGraph):
+#     def __init__(self) -> None:
+#         NormSignFlow.__init__(self, self)
+#         NormStatusGraph.__init__(self)
+#         pass
+#     pass
 
 
-class QueueOwnerFlow(NormFlow):
-    def __init__(self, q: NormManageQueue, match_case: MatchCase) -> None:
-        self.__q = q
-        self.__match_case = match_case
-        super().__init__()
-        pass
+# class QueueOwnerFlow(NormFlow):
+#     def __init__(self, q: NormManageQueue, match_case: MatchCase) -> None:
+#         self.__q = q
+#         self.__match_case = match_case
+#         super().__init__()
+#         pass
 
-    @property
-    def queue(self):
-        return self.__q.q_action
+#     @property
+#     def queue(self):
+#         return self.__q.q_action
 
-    async def _stop_async(self):
-        task = AsyncBase.coro2task_exec(self._sign_change(NormStatusGraph.State.STOPPED))
-        await self.__q.q_step.step()
-        future_res = await task
-        return future_res > 0
+#     async def _stop_async(self):
+#         task = AsyncBase.coro2task_exec(self._sign_change(NormStatusGraph.State.STOPPED))
+#         await self.__q.q_step.step()
+#         future_res = await task
+#         return future_res > 0
 
-    async def _starting(self):
-        state, args, kwds = await self.__q.q_step.get()
-        await self.__match_case.match(state, *args, **kwds)
-        self.__q.q_step.task_done()
-        pass
-    pass
+#     async def _starting(self):
+#         state, args, kwds = await self.__q.q_step.get()
+#         await self.__match_case.match(state, *args, **kwds)
+#         self.__q.q_step.task_done()
+#         pass
+#     pass
