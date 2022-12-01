@@ -33,3 +33,18 @@ class CallableOrder:
         await self.__queue.put((future, args, kwds))
         return await future
     pass
+
+
+class FuncTool:
+    @staticmethod
+    async def func_err(func: Callable):
+        """函数有错误
+        """
+        try:
+            res = func()
+            await res if asyncio.iscoroutinefunction(func) else res
+        except Exception:
+            return True
+        else:
+            return False
+    pass

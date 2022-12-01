@@ -1,5 +1,6 @@
 import asyncio
 import pytest
+from ...src.tool.func_tool import FuncTool
 from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusValue
 
 
@@ -140,18 +141,6 @@ class TestStatusGraph(object):
 
 
 class TestNormStatusGraph:
-    async def __func_err(self, func_async):
-        flag = False
-        try:
-            await func_async()
-            assert False
-        except Exception:
-            flag = True
-            pass
-        finally:
-            assert flag
-        pass
-
     @pytest.mark.timeout(1)
     @pytest.mark.asyncio
     async def test(self):
@@ -162,7 +151,7 @@ class TestNormStatusGraph:
         # STARTED状态刚好有函数，但是是会抛出异常的
         func0 = graph.func_get()
         assert func0 is not None and asyncio.iscoroutinefunction(func0)
-        await self.__func_err(func0)
+        assert await FuncTool.func_err(func0)
 
         # STOPPED状态下没有运行时函数
         graph.status2target(NormStatusGraph.State.STOPPED)
@@ -180,7 +169,7 @@ class TestNormStatusGraph:
         func2 = graph.func_get_target(NormStatusGraph.State.STARTED)
         assert func2 is not None and asyncio.iscoroutinefunction(func2)
         assert graph._status == NormStatusGraph.State.STARTED
-        await self.__func_err(func2)
+        assert await FuncTool.func_err(func2)
         assert graph._status == NormStatusGraph.State.STARTED
 
         # 转换函数-started->exited失败

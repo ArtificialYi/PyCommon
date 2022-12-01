@@ -1,6 +1,6 @@
 import asyncio
 
-from src.machine.status import NormStatusGraph, StatusGraphBase
+from ...src.machine.status import NormStatusGraph, StatusGraphBase
 from ..tool.func_tool import CallableOrder
 
 
@@ -11,7 +11,6 @@ class SignFlowBase:
     """
     def __init__(self, graph: StatusGraphBase) -> None:
         self._graph = graph
-        self._exit_status = None
         self.__callable_order = CallableOrder(self.__sign_deal)
         self.__lock = asyncio.Lock()
         self._running = False
@@ -36,9 +35,10 @@ class SignFlowBase:
         self.__running_err()
         async with self.__lock:
             self._running = True
-            while self._exit_status is None or self._graph._status != self._exit_status:
-                while not await self.__callable_order.queue_no_wait():
-                    await self.__no_sign()
+            while self._graph._status != self._graph._exited_status:
+                if await self.__callable_order.queue_no_wait():
+                    continue
+                await self.__no_sign()
                 pass
             self._running = False
             pass

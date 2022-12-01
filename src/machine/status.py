@@ -139,6 +139,7 @@ class StatusGraph(object):
 class StatusGraphBase:
     def __init__(self) -> None:
         self._status = None
+        self._exited_status = None
         self.__status_graph: StatusGraph = self._graph_build()
         pass
 
@@ -178,6 +179,7 @@ class NormStatusGraph(StatusGraphBase):
         2. 其他状态之间的变化由状态机控制
         """
         StatusGraphBase.__init__(self)
+        self._exited_status = NormStatusGraph.State.EXITED
         self.status2target(NormStatusGraph.State.EXITED)
         pass
 
@@ -204,12 +206,15 @@ class NormStatusGraph(StatusGraphBase):
 
     async def __start(self):
         self.status2target(self.__class__.State.STARTED)
+        return True
 
     async def __stop(self):
         self.status2target(self.__class__.State.STOPPED)
+        return True
 
     async def __exit(self):
         self.status2target(self.__class__.State.EXITED)
+        return True
 
     async def _starting(self):
         """
