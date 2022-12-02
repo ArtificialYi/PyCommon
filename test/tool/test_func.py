@@ -5,7 +5,7 @@ import pytest
 
 
 class TestCallableOrder:
-    @pytest.mark.timeout(2)
+    @pytest.mark.timeout(3)
     @pytest.mark.asyncio
     async def test(self):
         # 无信号-不等待调用，啥也没发生
@@ -19,6 +19,12 @@ class TestCallableOrder:
         assert await call_order.call(5) == 5
         assert task.done()
         assert await task
+
+        # 产生新信号，但是不消费，产生堆积
+        assert call_order.qsize == 0
+        AsyncBase.coro2task_exec(call_order.call(5))
+        await asyncio.sleep(1)
+        assert call_order.qsize == 1
         pass
     pass
 

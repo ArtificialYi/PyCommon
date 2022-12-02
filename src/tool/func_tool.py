@@ -12,6 +12,10 @@ class CallableOrder:
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
 
+    @property
+    def qsize(self):
+        return self.__queue.qsize()
+
     async def queue_no_wait(self):
         # 队列拥有者使用，消费队列
         if self.__queue.qsize() == 0:
