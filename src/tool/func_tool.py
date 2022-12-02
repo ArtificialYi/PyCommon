@@ -31,11 +31,11 @@ class AsyncExecOrder:
         self.__queue.task_done()
         return True
 
-    def call(self, *args, **kwds):
+    async def call(self, *args, **kwds) -> asyncio.Future:
         # 业务方使用，成为直接执行的异步函数
         future = AsyncBase.get_future()
-        self.__queue.put_nowait((future, args, kwds))
-        return future
+        await self.__queue.put((future, args, kwds))
+        return await future
     pass
 
 

@@ -22,7 +22,7 @@ class TestAsyncExecOrder:
 
         # 产生新信号，但是不消费，产生堆积
         assert call_order.qsize == 0
-        call_order.call(5)
+        AsyncBase.coro2task_exec(call_order.call(5))
         await asyncio.sleep(1)
         assert call_order.qsize == 1
         pass
