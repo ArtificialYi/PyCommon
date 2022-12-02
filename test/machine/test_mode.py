@@ -26,13 +26,13 @@ class TestSignFlowBase:
         graph = NormStatusGraph(func_tmp.func)
         sign_flow = StatusSignFlowBase(graph)
         # 未启动
-        assert not sign_flow._running
+        assert not sign_flow._future_run.done()
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
         sign_flow._graph.status2target(NormStatusGraph.State.STARTED)
         task_main = AsyncBase.coro2task_exec(sign_flow._main())
         await asyncio.sleep(1)
-        assert sign_flow._running
+        assert sign_flow._future_run.done()
         assert func_tmp.num > 0
         assert not task_main.done()
 
@@ -59,7 +59,7 @@ class TestSignFlowBase:
         assert await sign_flow._sign_deal(NormStatusGraph.State.EXITED)
         await task_main
         assert sign_flow._graph._status == NormStatusGraph.State.EXITED
-        assert not sign_flow._running
+        assert not sign_flow._future_run.done()
         pass
     pass
 
@@ -87,7 +87,7 @@ class TestNormStatusGraph:
         task_main = AsyncBase.coro2task_exec(norm_sign_flow.launch())
         await asyncio.sleep(1)
         assert graph._status == NormStatusGraph.State.STARTED
-        assert norm_sign_flow._running
+        assert norm_sign_flow._future_run.done()
         assert func_tmp.num > 0
         assert not task_main.done()
 
@@ -107,6 +107,6 @@ class TestNormStatusGraph:
         assert await norm_sign_flow.exit()
         await task_main
         assert graph._status == NormStatusGraph.State.EXITED
-        assert not norm_sign_flow._running
+        assert not norm_sign_flow._future_run.done()
         pass
     pass
