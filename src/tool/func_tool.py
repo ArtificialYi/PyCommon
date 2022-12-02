@@ -31,18 +31,28 @@ class AsyncExecOrder:
         self.__queue.task_done()
         return True
 
-    async def call(self, *args, **kwds) -> asyncio.Future:
-        # 业务方使用，成为直接执行的异步函数
+    async def call_sync(self, *args, **kwds):
+        # 同步调用，返回函数常规返回值
+        future = await self.call_async(*args, **kwds)
+        return await future
+
+    async def call_async(self, *args, **kwds):
+        # 异步调用，返回一个future
         future = AsyncBase.get_future()
         await self.__queue.put((future, args, kwds))
-        return await future
+        return future
     pass
 
 
 class AsyncExecOrderHandle:
-    def _func_order(self, func: Callable) -> AsyncExecOrder:
+    def func_sync(self, func: Callable) -> AsyncExecOrder:
         handle = AsyncExecOrder(func)
-        self.__setattr__(func.__name__, handle.call)
+        self.__setattr__(func.__name__, handle.call_sync)
+        return handle
+
+    def func_async(self, func: Callable) -> AsyncExecOrder:
+        handle = AsyncExecOrder(func)
+        self.__setattr__(func.__name__, handle.call_async)
         return handle
     pass
 
