@@ -41,12 +41,12 @@ class TestSignFlowBase:
 
         # 信号处理，状态变更-失败
         assert sign_flow._graph._status == NormStatusGraph.State.STARTED
-        assert await sign_flow._call(NormStatusGraph.State.EXITED) is None
+        assert await sign_flow._sign_deal(NormStatusGraph.State.EXITED) is None
         assert sign_flow._graph._status == NormStatusGraph.State.STARTED
 
         # 信号处理，状态变更-成功
         assert sign_flow._graph._status == NormStatusGraph.State.STARTED
-        assert await sign_flow._call(NormStatusGraph.State.STOPPED)
+        assert await sign_flow._sign_deal(NormStatusGraph.State.STOPPED)
         assert sign_flow._graph._status == NormStatusGraph.State.STOPPED
 
         # 无信号，无运行时，死锁
@@ -56,7 +56,7 @@ class TestSignFlowBase:
 
         # 信号处理，关闭主流程
         assert sign_flow._graph._status == NormStatusGraph.State.STOPPED
-        assert await sign_flow._call(NormStatusGraph.State.EXITED)
+        assert await sign_flow._sign_deal(NormStatusGraph.State.EXITED)
         await task_main
         assert sign_flow._graph._status == NormStatusGraph.State.EXITED
         assert not sign_flow._running

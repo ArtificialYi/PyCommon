@@ -11,12 +11,13 @@ class StatusSignFlowBase:
     """
     def __init__(self, graph: NormStatusGraph) -> None:
         self._graph = graph
-        self.__callable_order = CallableOrder(self.__sign_deal)
+        self.__call_order = CallableOrder(self._sign_deal)
+        self._sign_deal = self.__call_order.call
         self.__lock = asyncio.Lock()
         self._running = False
         pass
 
-    async def __sign_deal(self, status_target, *args, **kwds):
+    async def _sign_deal(self, status_target, *args, **kwds):
         # 信号处理函数，所有状态转换理论上都应该在这里
         func = self._graph.func_get_target(status_target)
         if func is None:
@@ -27,7 +28,7 @@ class StatusSignFlowBase:
     async def __no_sign(self):
         func = self._graph.func_get()
         if func is None:
-            return await self.__callable_order.queue_wait()
+            return await self.__call_order.queue_wait()
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
@@ -36,7 +37,7 @@ class StatusSignFlowBase:
         async with self.__lock:
             self._running = True
             while self._graph._status != self._graph._exited_status:
-                if await self.__callable_order.queue_no_wait():
+                if await self.__call_order.queue_no_wait():
                     continue
                 await self.__no_sign()
                 pass
@@ -47,9 +48,6 @@ class StatusSignFlowBase:
     def __running_err(self):
         if self._running:
             raise Exception('已有loop在运行中')
-
-    async def _call(self, *args, **kwds):
-        return await self.__callable_order.call(*args, **kwds)
     pass
 
 
@@ -60,12 +58,11 @@ class NormStatusSignFlow(StatusSignFlowBase):
     """
     def __init__(self, graph: NormStatusGraph) -> None:
         super().__init__(graph)
-        self._exit_status = NormStatusGraph.State.EXITED
         pass
 
     async def launch(self):
         # 启动状态流，并将状态转移至started
-        if self._running or self._graph._status != self._exit_status:
+        if self._running or self._graph._status != self._graph._exited_status:
             raise Exception(f'状态机启动失败|status:{self._graph._status}|run:{self._running}')
         self._graph.status2target(NormStatusGraph.State.STARTED)
         return await self._main()
@@ -74,19 +71,19 @@ class NormStatusSignFlow(StatusSignFlowBase):
         # 将状态转移至started
         if not self._running:
             raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.STARTED)
+        return await self._sign_deal(NormStatusGraph.State.STARTED)
 
     async def stop(self):
         # 将状态转移至stopped
         if not self._running:
             raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.STOPPED)
+        return await self._sign_deal(NormStatusGraph.State.STOPPED)
 
     async def exit(self):
         # 将状态转移至exited
         if not self._running:
             raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.EXITED)
+        return await self._sign_deal(NormStatusGraph.State.EXITED)
     pass
 
 
