@@ -2,10 +2,10 @@ import asyncio
 
 from ..tool.base import AsyncBase
 from .status import NormStatusGraph
-from ..tool.func_tool import CallableOrderHandle
+from ..tool.func_tool import AsyncExecOrderHandle
 
 
-class StatusSignFlowBase(CallableOrderHandle):
+class StatusSignFlowBase(AsyncExecOrderHandle):
     """信号处理loop
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时

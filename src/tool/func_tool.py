@@ -3,7 +3,7 @@ from typing import Callable
 from .base import AsyncBase
 
 
-class CallableOrder:
+class AsyncExecOrder:
     """将可执行对象有序化
     """
     def __init__(self, func: Callable) -> None:
@@ -31,17 +31,17 @@ class CallableOrder:
         self.__queue.task_done()
         return True
 
-    async def call(self, *args, **kwds):
-        # 业务方使用，推送队列
+    def call(self, *args, **kwds):
+        # 业务方使用，成为直接执行的异步函数
         future = AsyncBase.get_future()
-        await self.__queue.put((future, args, kwds))
-        return await future
+        self.__queue.put_nowait((future, args, kwds))
+        return future
     pass
 
 
-class CallableOrderHandle:
-    def _func_order(self, func: Callable) -> CallableOrder:
-        handle = CallableOrder(func)
+class AsyncExecOrderHandle:
+    def _func_order(self, func: Callable) -> AsyncExecOrder:
+        handle = AsyncExecOrder(func)
         self.__setattr__(func.__name__, handle.call)
         return handle
     pass

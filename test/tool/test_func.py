@@ -1,15 +1,15 @@
 import asyncio
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import CallableOrder, CallableOrderHandle, FuncTool
+from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool
 import pytest
 
 
-class TestCallableOrder:
+class TestAsyncExecOrder:
     @pytest.mark.timeout(3)
     @pytest.mark.asyncio
     async def test(self):
         # 无信号-不等待调用，啥也没发生
-        call_order = CallableOrder(BaseTool.return_self)
+        call_order = AsyncExecOrder(BaseTool.return_self)
         assert not await call_order.queue_no_wait()
         # 无信号-等待调用，锁死
         task = AsyncBase.coro2task_exec(call_order.queue_wait())
@@ -22,7 +22,7 @@ class TestCallableOrder:
 
         # 产生新信号，但是不消费，产生堆积
         assert call_order.qsize == 0
-        AsyncBase.coro2task_exec(call_order.call(5))
+        call_order.call(5)
         await asyncio.sleep(1)
         assert call_order.qsize == 1
         pass
@@ -33,10 +33,10 @@ def func_custom():
     pass
 
 
-class TestCallableOrderHandle:
+class TestAsyncExecOrderHandle:
     def test(self):
         # 类函数有序化
-        handle = CallableOrderHandle()
+        handle = AsyncExecOrderHandle()
         assert not hasattr(handle, 'return_self')
         handle._func_order(BaseTool.return_self)
         assert hasattr(handle, 'return_self')
