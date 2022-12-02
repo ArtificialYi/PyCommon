@@ -1,24 +1,24 @@
 import asyncio
 
 from ...src.machine.status import NormStatusGraph
-from ..tool.func_tool import CallableOrder
+from ..tool.func_tool import CallableOrderHandle
 
 
-class StatusSignFlowBase:
+class StatusSignFlowBase(CallableOrderHandle):
     """信号处理loop
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时
     """
     def __init__(self, graph: NormStatusGraph) -> None:
         self._graph = graph
-        self.__call_order = CallableOrder(self._sign_deal)
-        self._sign_deal = self.__call_order.call
         self.__lock = asyncio.Lock()
         self._running = False
+        # 封装和替换
+        self.__handle_sign = self._func_order(self._sign_deal)
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):
-        # 信号处理函数，所有状态转换理论上都应该在这里
+        # 函数内部统一使用self.__handle_sign来调用
         func = self._graph.func_get_target(status_target)
         if func is None:
             return None
@@ -28,7 +28,7 @@ class StatusSignFlowBase:
     async def __no_sign(self):
         func = self._graph.func_get()
         if func is None:
-            return await self.__call_order.queue_wait()
+            return await self.__handle_sign.queue_wait()
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
@@ -37,7 +37,7 @@ class StatusSignFlowBase:
         async with self.__lock:
             self._running = True
             while self._graph._status != self._graph._exited_status:
-                if await self.__call_order.queue_no_wait():
+                if await self.__handle_sign.queue_no_wait():
                     continue
                 await self.__no_sign()
                 pass

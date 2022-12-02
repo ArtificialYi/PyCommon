@@ -1,6 +1,6 @@
 import asyncio
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import CallableOrder, FuncTool
+from ...src.tool.func_tool import CallableOrder, CallableOrderHandle, FuncTool
 import pytest
 
 
@@ -19,6 +19,33 @@ class TestCallableOrder:
         assert await call_order.call(5) == 5
         assert task.done()
         assert await task
+        pass
+    pass
+
+
+def func_custom():
+    pass
+
+
+class TestCallableOrderHandle:
+    def test(self):
+        # 类函数有序化
+        handle = CallableOrderHandle()
+        assert not hasattr(handle, 'return_self')
+        handle._func_order(BaseTool.return_self)
+        assert hasattr(handle, 'return_self')
+        delattr(handle, 'return_self')
+        assert not hasattr(handle, 'return_self')
+
+        # 对象函数有序化
+        assert not hasattr(handle, 'test')
+        handle._func_order(self.test)
+        assert hasattr(handle, 'test')
+
+        # 模块函数有序化
+        assert not hasattr(handle, 'func_custom')
+        handle._func_order(func_custom)
+        assert hasattr(handle, 'func_custom')
         pass
     pass
 

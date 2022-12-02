@@ -35,6 +35,14 @@ class CallableOrder:
     pass
 
 
+class CallableOrderHandle:
+    def _func_order(self, func: Callable) -> CallableOrder:
+        handle = CallableOrder(func)
+        self.__setattr__(func.__name__, handle.call)
+        return handle
+    pass
+
+
 class FuncTool:
     @staticmethod
     async def is_func_err(func: Callable):
