@@ -67,24 +67,12 @@ class TestAsyncExecOrderHandle:
 
 
 class TestFuncTool:
-    def __func_norm(self):
-        pass
-
-    async def __coro_norm(self):
-        pass
-
-    def __func_err(self):
-        raise Exception('异常函数')
-
-    async def __coro_err(self):
-        raise Exception('异常coro')
-
     @pytest.mark.timeout(1)
     @pytest.mark.asyncio
     async def test(self):
-        assert not await FuncTool.is_func_err(self.__func_norm)
-        assert not await FuncTool.is_func_err(self.__coro_norm)
-        assert await FuncTool.is_func_err(self.__func_err)
-        assert await FuncTool.is_func_err(self.__coro_err)
+        assert not await FuncTool.is_func_err(FuncTool.norm_sync)
+        assert not await FuncTool.is_func_err(FuncTool.norm_async)
+        assert await FuncTool.is_func_err(FuncTool.norm_sync_err)
+        assert await FuncTool.is_func_err(FuncTool.norm_async_err)
         pass
     pass

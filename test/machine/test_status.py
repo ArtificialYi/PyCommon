@@ -144,7 +144,7 @@ class TestNormStatusGraph:
     @pytest.mark.timeout(1)
     @pytest.mark.asyncio
     async def test(self):
-        graph = NormStatusGraph(FuncTool.err_no_args)
+        graph = NormStatusGraph(FuncTool.norm_sync_err)
         assert graph._status == NormStatusGraph.State.EXITED
         graph.status2target(NormStatusGraph.State.STARTED)
         assert graph._status == NormStatusGraph.State.STARTED

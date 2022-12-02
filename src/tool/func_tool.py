@@ -71,6 +71,18 @@ class FuncTool:
             return False
 
     @staticmethod
-    def err_no_args():
+    async def norm_async_err():
+        raise Exception('会抛出异常的coro函数')
+
+    @staticmethod
+    def norm_sync_err():
         raise Exception('会抛出异常的普通函数')
+
+    @staticmethod
+    async def norm_async():
+        pass
+
+    @staticmethod
+    def norm_sync():
+        pass
     pass
