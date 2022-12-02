@@ -31,6 +31,10 @@ class BaseTool:
         if type(obj) == str:
             return obj
         return str(obj)
+
+    @staticmethod
+    def isnone(obj):
+        return obj is None
     pass
 
 
