@@ -20,11 +20,23 @@ class TestAsyncExecOrder:
         assert task.done()
         assert await task
 
+        # 产生空信号，但是不消费，产生堆积
+        await call_order.call_step()
+        await asyncio.sleep(1)
+        assert call_order.qsize == 1
+
         # 产生新信号，但是不消费，产生堆积
         assert call_order.qsize == 0
         await call_order.call_async(5)
         await asyncio.sleep(1)
+        assert call_order.qsize == 2
+
+
+        # 将信号消费
+        assert await call_order.queue_wait()
         assert call_order.qsize == 1
+        assert await call_order.queue_wait()
+        assert call_order.qsize == 0
         pass
     pass
 

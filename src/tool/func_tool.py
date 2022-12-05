@@ -25,11 +25,16 @@ class AsyncExecOrder:
     async def queue_wait(self):
         # 队列拥有者使用，消费队列
         future, args, kwds = await self.__queue.get()
+        self.__queue.task_done()
+        if future is None:
+            return True
         res0 = self.__func(*args, **kwds)
         res1 = await res0 if self.__is_coro else res0
         future.set_result(res1)
-        self.__queue.task_done()
         return True
+
+    async def call_step(self, *args, **kwds):
+        return await self.__queue.put((None, args, kwds))
 
     async def call_sync(self, *args, **kwds):
         # 同步调用，返回函数常规返回值
