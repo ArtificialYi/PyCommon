@@ -5,7 +5,7 @@ import pytest
 
 
 class TestAsyncExecOrder:
-    @pytest.mark.timeout(3)
+    @pytest.mark.timeout(4)
     @pytest.mark.asyncio
     async def test(self):
         # 无信号-不等待调用，啥也没发生
@@ -26,11 +26,9 @@ class TestAsyncExecOrder:
         assert call_order.qsize == 1
 
         # 产生新信号，但是不消费，产生堆积
-        assert call_order.qsize == 0
         await call_order.call_async(5)
         await asyncio.sleep(1)
         assert call_order.qsize == 2
-
 
         # 将信号消费
         assert await call_order.queue_wait()
