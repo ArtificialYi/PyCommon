@@ -1,4 +1,6 @@
 import asyncio
+from functools import wraps
+import threading
 from typing import Callable
 from .base import AsyncBase
 
@@ -92,4 +94,16 @@ class FuncTool:
     @staticmethod
     def norm_sync():
         pass
+    pass
+
+
+class LockThread:
+    def __new__(cls, func: Callable) -> Callable:
+        lock = threading.Lock()
+
+        @wraps(func)
+        def func_lock(*args, **kwds):
+            with lock:
+                return func(*args, **kwds)
+        return func_lock
     pass

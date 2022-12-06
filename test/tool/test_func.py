@@ -1,6 +1,8 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import math
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool
+from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool, LockThread
 import pytest
 
 
@@ -84,5 +86,47 @@ class TestFuncTool:
         assert not await FuncTool.is_func_err(FuncTool.norm_async)
         assert await FuncTool.is_func_err(FuncTool.norm_sync_err)
         assert await FuncTool.is_func_err(FuncTool.norm_async_err)
+        pass
+    pass
+
+
+class TestLockThread:
+    NUM: int = 0
+
+    @classmethod
+    def func_unlock(cls, num):
+        for _ in range(num):
+            cls.NUM += 1
+            pass
+        return cls
+
+    @classmethod
+    @LockThread
+    def func_lock(cls, num):
+        return cls.func_unlock(num)
+
+    def test(self):
+        # 常规调用
+        assert self.__class__.NUM == 0
+        assert self.__class__.func_unlock(1).NUM == 1
+
+        # 多线程无序-如果失败，调大这个值
+        num = 20000
+        pool_size = int(math.log(num))
+        pool = ThreadPoolExecutor(pool_size)
+        for _ in range(pool_size):
+            pool.submit(self.__class__.func_unlock, num)
+            pass
+        pool.shutdown()
+        assert self.__class__.NUM < num * pool_size + 1
+
+        # 多线程有序
+        num_tmp = self.__class__.NUM
+        pool = ThreadPoolExecutor(pool_size)
+        for _ in range(pool_size):
+            pool.submit(self.__class__.func_lock, num)
+            pass
+        pool.shutdown()
+        assert self.__class__.NUM == num * pool_size + num_tmp
         pass
     pass
