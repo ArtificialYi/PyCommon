@@ -3,6 +3,7 @@ from functools import wraps
 import threading
 from typing import Callable
 from .base import AsyncBase
+import pytest
 
 
 class AsyncExecOrder:
@@ -106,4 +107,21 @@ class LockThread:
             with lock:
                 return func(*args, **kwds)
         return func_lock
+    pass
+
+
+class PytestAsync:
+    def __init__(self, t: int) -> None:
+        self.__time = t
+        pass
+
+    def __call__(self, func: Callable):
+        @pytest.mark.timeout(self.__time + 1)
+        @pytest.mark.asyncio
+        @wraps(func)
+        async def func_pytest(*args, **kwds):
+            res = await func(*args, **kwds)
+            await asyncio.sleep(1)
+            return res
+        return func_pytest
     pass

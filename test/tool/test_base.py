@@ -1,7 +1,8 @@
 from asyncio import Future
 import asyncio
+
+from ...src.tool.func_tool import PytestAsync
 from ...src.tool.base import AsyncBase, BaseTool, ConfigBase, DelayCountQueue, MatchCase
-import pytest
 
 
 class TestBaseTool:
@@ -95,8 +96,7 @@ class TestMatchCase:
     async def custom_coro():
         return 123
 
-    @pytest.mark.timeout(1)
-    @pytest.mark.asyncio
+    @PytestAsync(1)
     async def test_match(self):
         # 不存在的key，默认会抛出异常
         match_case_a = MatchCase({})
@@ -130,8 +130,7 @@ class TestMatchCase:
 
 
 class TestAsyncBase:
-    @pytest.mark.timeout(1)
-    @pytest.mark.asyncio
+    @PytestAsync(1)
     async def test_future_one(self):
         """future在单流程效果
         """
@@ -148,8 +147,7 @@ class TestAsyncBase:
         future.set_result(res)
         return res
 
-    @pytest.mark.timeout(2)
-    @pytest.mark.asyncio
+    @PytestAsync(2)
     async def test_future_multi(self):
         """future在多协程效果
         action:
@@ -159,13 +157,13 @@ class TestAsyncBase:
         """
         res_a = 123
         future = AsyncBase.get_future()
+        # 耗时1秒
         res_b, res_c = await asyncio.gather(future, self.afuture_set(future, res_a))
         assert res_a == res_b == res_c
         assert id(res_a) == id(res_b) == id(res_c)
         pass
 
-    @pytest.mark.timeout(2)
-    @pytest.mark.asyncio
+    @PytestAsync(2)
     async def test_add_cor_no_res(self):
         """
         1. 测试添加一个不需要返回值的coro
@@ -174,6 +172,7 @@ class TestAsyncBase:
         # 测试添加一个不需要返回值的coro
         res_a = 123
         future = AsyncBase.get_future()
+        # 耗时1秒
         task = AsyncBase.coro2task_exec(self.afuture_set(future, res_a))
         res_b = await future
         res_c = await task
@@ -185,8 +184,7 @@ class TestAsyncBase:
         future.set_result(res)
         return res
 
-    @pytest.mark.timeout(1)
-    @pytest.mark.asyncio
+    @PytestAsync(1)
     async def test_sync2async(self):
         # 同步转异步
         res_a = 123

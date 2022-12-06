@@ -2,13 +2,11 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool, LockThread
-import pytest
+from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool, LockThread, PytestAsync
 
 
 class TestAsyncExecOrder:
-    @pytest.mark.timeout(4)
-    @pytest.mark.asyncio
+    @PytestAsync(4)
     async def test(self):
         # 无信号-不等待调用，啥也没发生
         call_order = AsyncExecOrder(BaseTool.return_self)
@@ -79,8 +77,7 @@ class TestAsyncExecOrderHandle:
 
 
 class TestFuncTool:
-    @pytest.mark.timeout(1)
-    @pytest.mark.asyncio
+    @PytestAsync(1)
     async def test(self):
         assert not await FuncTool.is_func_err(FuncTool.norm_sync)
         assert not await FuncTool.is_func_err(FuncTool.norm_async)

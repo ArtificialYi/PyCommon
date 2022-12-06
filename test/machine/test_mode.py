@@ -1,7 +1,6 @@
 import asyncio
-import pytest
 
-from ...src.tool.func_tool import FuncTool
+from ...src.tool.func_tool import FuncTool, PytestAsync
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
 from ...src.machine.mode import NormStatusSignFlow, StatusSignFlowBase
@@ -19,8 +18,7 @@ class FuncTmp:
 
 
 class TestSignFlowBase:
-    @pytest.mark.timeout(3)
-    @pytest.mark.asyncio
+    @PytestAsync(3)
     async def test(self):
         func_tmp = FuncTmp()
         graph = NormStatusGraph(func_tmp.func)
@@ -65,8 +63,7 @@ class TestSignFlowBase:
 
 
 class TestNormStatusGraph:
-    @pytest.mark.timeout(2)
-    @pytest.mark.asyncio
+    @PytestAsync(2)
     async def test(self):
         func_tmp = FuncTmp()
         graph = NormStatusGraph(func_tmp.func)
