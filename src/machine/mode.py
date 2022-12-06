@@ -6,16 +6,16 @@ from ..tool.func_tool import AsyncExecOrderHandle
 
 
 class StatusSignFlowBase(AsyncExecOrderHandle):
-    """信号处理loop
+    """信号处理loop-生命周期与loop一致
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时
     """
     def __init__(self, graph: NormStatusGraph) -> None:
         self._graph = graph
-        self.__lock = asyncio.Lock()
         self._future_run = AsyncBase.get_future()
+        self.__lock = asyncio.Lock()
         # 封装和替换
-        self.__handle_sign = self.func_sync(self._sign_deal)
+        self.__handle_sign = self._func_sync(self._sign_deal)
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):

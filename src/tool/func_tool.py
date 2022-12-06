@@ -4,7 +4,9 @@ from .base import AsyncBase
 
 
 class AsyncExecOrder:
-    """将可执行对象有序化
+    """将可执行对象有序化-可执行对象的生命周期将会与loop绑定
+    1. 函数与Queue绑定，Queue与loop绑定-无法更改
+    3. 如果loop被close，则当前对象常规使用会抛出异常
     """
     def __init__(self, func: Callable) -> None:
         self.__queue = asyncio.Queue()
@@ -50,12 +52,12 @@ class AsyncExecOrder:
 
 
 class AsyncExecOrderHandle:
-    def func_sync(self, func: Callable) -> AsyncExecOrder:
+    def _func_sync(self, func: Callable) -> AsyncExecOrder:
         handle = AsyncExecOrder(func)
         self.__setattr__(func.__name__, handle.call_sync)
         return handle
 
-    def func_async(self, func: Callable) -> AsyncExecOrder:
+    def _func_async(self, func: Callable) -> AsyncExecOrder:
         handle = AsyncExecOrder(func)
         self.__setattr__(func.__name__, handle.call_async)
         return handle

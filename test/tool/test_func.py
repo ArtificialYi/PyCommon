@@ -48,29 +48,29 @@ class TestAsyncExecOrderHandle:
         # 类函数有序化
         handle = AsyncExecOrderHandle()
         assert not hasattr(handle, 'return_self')
-        handle.func_sync(BaseTool.return_self)
+        handle._func_sync(BaseTool.return_self)
         assert hasattr(handle, 'return_self')
         delattr(handle, 'return_self')
         assert not hasattr(handle, 'return_self')
-        handle.func_async(BaseTool.return_self)
+        handle._func_async(BaseTool.return_self)
         assert hasattr(handle, 'return_self')
 
         # 对象函数有序化
         assert not hasattr(handle, 'test')
-        handle.func_sync(self.test)
+        handle._func_sync(self.test)
         assert hasattr(handle, 'test')
         delattr(handle, 'test')
         assert not hasattr(handle, 'test')
-        handle.func_async(self.test)
+        handle._func_async(self.test)
         assert hasattr(handle, 'test')
 
         # 模块函数有序化
         assert not hasattr(handle, 'func_custom')
-        handle.func_sync(func_custom)
+        handle._func_sync(func_custom)
         assert hasattr(handle, 'func_custom')
         delattr(handle, 'func_custom')
         assert not hasattr(handle, 'func_custom')
-        handle.func_async(func_custom)
+        handle._func_async(func_custom)
         assert hasattr(handle, 'func_custom')
         pass
     pass

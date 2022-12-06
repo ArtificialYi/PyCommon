@@ -90,11 +90,11 @@ class MatchCase:
 class AsyncBase:
     @staticmethod
     def get_future():
-        return asyncio.get_event_loop().create_future()
+        return asyncio.get_running_loop().create_future()
 
     @staticmethod
     def coro2task_exec(coro):
-        return asyncio.get_event_loop().create_task(coro)
+        return asyncio.get_running_loop().create_task(coro)
 
     @staticmethod
     async def func2coro_exec(func, *args, **kwds):
