@@ -21,6 +21,18 @@ class AsyncExecOrder:
     def qsize(self):
         return self.__queue.qsize()
 
+    async def __queue_get(self):
+        future, args, kwds = None, list(), dict()
+        try:
+            future, args, kwds = await self.__queue.get()
+        except RuntimeError as re:
+            # 如果不是等待期间loop自动消失
+            if re.args[0] != 'Event loop is closed':
+                raise re
+            # self.__queue = asyncio.Queue()
+        finally:
+            return future, args, kwds
+
     async def queue_no_wait(self):
         # 队列拥有者使用，消费队列
         if self.__queue.qsize() == 0:
@@ -28,8 +40,8 @@ class AsyncExecOrder:
         return await self.queue_wait()
 
     async def queue_wait(self):
-        # 队列拥有者使用，消费队列
-        future, args, kwds = await self.__queue.get()
+        # loop可能消失问题
+        future, args, kwds = await self.__queue_get()
         self.__queue.task_done()
         if future is None:
             return True
