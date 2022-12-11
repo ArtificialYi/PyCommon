@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, FuncTool, LockThread, PytestAsync
+from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, CallableDecoratorAsync, FuncTool, LockThread, PytestAsync
 
 
 class TestAsyncExecOrder:
@@ -125,5 +125,44 @@ class TestLockThread:
             pass
         pool.shutdown()
         assert self.__class__.NUM == num * pool_size + num_tmp
+        pass
+    pass
+
+
+class TestCallableDecoratorAsync:
+    async def func_decorator(self, func_async, obj, *args, **kwds):
+        return False
+
+    async def func_tmp(self):
+        return True
+
+    @PytestAsync(1)
+    async def test(self):
+        # 无法使用同步函数构造
+        flag = False
+        try:
+            CallableDecoratorAsync(FuncTool.norm_sync)
+            assert False
+        except Exception:
+            flag = True
+        finally:
+            assert flag
+            pass
+
+        decorator = CallableDecoratorAsync(self.func_decorator)
+        # 无法对同步函数封装
+        flag = False
+        try:
+            decorator(FuncTool.norm_sync)
+            assert False
+        except Exception:
+            flag = True
+        finally:
+            assert flag
+            pass
+
+        # 常规
+        assert await self.func_tmp()
+        assert not await decorator(self.func_tmp)(self)
         pass
     pass

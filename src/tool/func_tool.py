@@ -138,3 +138,22 @@ class PytestAsync:
             return res
         return func_pytest
     pass
+
+
+class CallableDecoratorAsync:
+    def __init__(self, func: Callable) -> None:
+        if not asyncio.iscoroutinefunction(func):
+            raise Exception(f'函数类型错误:{func}')
+
+        self.__func_async = func
+        pass
+
+    def __call__(self, func: Callable):
+        if not asyncio.iscoroutinefunction(func):
+            raise Exception(f'函数类型错误:{func}')
+
+        @wraps(func)
+        async def func_async(obj, *args, **kwds):
+            return await self.__func_async(func, obj, *args, **kwds)
+        return func_async
+    pass
