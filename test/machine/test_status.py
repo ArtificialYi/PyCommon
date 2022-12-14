@@ -129,50 +129,46 @@ class TestStatusGraph(object):
 class TestNormStatusGraph:
     @PytestAsync(1)
     async def test(self):
-        graph = NormStatusGraph(FuncTool.norm_sync_err)
-        assert graph._status == NormStatusGraph.State.EXITED
-        graph.status2target(NormStatusGraph.State.STARTED)
-        assert graph._status == NormStatusGraph.State.STARTED
+        graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.EXITED)
+        assert graph.status == NormStatusGraph.State.EXITED
+        assert graph.func_get_target(NormStatusGraph.State.STARTED) is None
+        assert graph.func_get() is None
+
         # STARTED状态刚好有函数，但是是会抛出异常的
+        graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.STARTED)
+        assert graph.status == NormStatusGraph.State.STARTED
         func0 = graph.func_get()
         assert func0 is not None and not asyncio.iscoroutinefunction(func0)
         assert await FuncTool.is_func_err(func0)
 
-        # STOPPED状态下没有运行时函数
-        graph.status2target(NormStatusGraph.State.STOPPED)
-        assert graph._status == NormStatusGraph.State.STOPPED
+        # 转换函数-started->stopped运行成功,STOPPED状态下没有运行时函数
+        func_trans0 = graph.func_get_target(NormStatusGraph.State.STOPPED)
+        assert func_trans0 is not None and func_trans0()
+        assert graph.status == NormStatusGraph.State.STOPPED
         assert graph.func_get() is None
 
         # 转换函数-stopped->started运行成功
-        func1 = graph.func_get_target(NormStatusGraph.State.STARTED)
-        assert func1 is not None and asyncio.iscoroutinefunction(func1)
-        assert graph._status == NormStatusGraph.State.STOPPED
-        await func1()
-        assert graph._status == NormStatusGraph.State.STARTED
+        func_trans1 = graph.func_get_target(NormStatusGraph.State.STARTED)
+        assert func_trans1 is not None and func_trans1()
+        assert graph.status == NormStatusGraph.State.STARTED
 
         # 转换函数-started->started运行成功
-        func2 = graph.func_get_target(NormStatusGraph.State.STARTED)
-        assert func2 is not None and not asyncio.iscoroutinefunction(func2)
-        assert graph._status == NormStatusGraph.State.STARTED
-        assert await FuncTool.is_func_err(func2)
-        assert graph._status == NormStatusGraph.State.STARTED
+        func_trans2 = graph.func_get_target(NormStatusGraph.State.STARTED)
+        func1 = graph.func_get()
+        assert func1 is not None and func_trans2 is not None and func_trans2 == func1
+        assert await FuncTool.is_func_err(func1)
 
-        # 转换函数-started->exited失败
-        func3 = graph.func_get_target(NormStatusGraph.State.EXITED)
-        assert func3 is None
-
-        # 转换函数-started->stopped成功
-        func4 = graph.func_get_target(NormStatusGraph.State.STOPPED)
-        assert func4 is not None and asyncio.iscoroutinefunction(func4)
-        assert graph._status == NormStatusGraph.State.STARTED
-        await func4()
-        assert graph._status == NormStatusGraph.State.STOPPED
+        # 转换函数-started->exit允许转换
+        func2 = graph.func_get_target(NormStatusGraph.State.EXITED)
+        assert func2 is not None
+        # 转换函数-stopped->exited允许转换
+        func3 = graph.func_get_target(NormStatusGraph.State.STOPPED)
+        assert func3 is not None and func3() and graph.status == NormStatusGraph.State.STOPPED
+        assert graph.func_get_target(NormStatusGraph.State.EXITED) is not None
 
         # 转换函数-stopped->exited成功
-        func5 = graph.func_get_target(NormStatusGraph.State.EXITED)
-        assert func5 is not None and asyncio.iscoroutinefunction(func5)
-        assert graph._status == NormStatusGraph.State.STOPPED
-        await func5()
-        assert graph._status == NormStatusGraph.State.EXITED
+        func4 = graph.func_get_target(NormStatusGraph.State.EXITED)
+        assert func4 is not None and func4()
+        assert graph.status == NormStatusGraph.State.EXITED
         pass
     pass

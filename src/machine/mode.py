@@ -20,7 +20,7 @@ class StatusSignFlowBase(Func2CallableOrderSync):
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):
-        # 函数内部统一使用self.__handle_sign来调用
+        # 所有状态转移均在此处处理
         func = self._graph.func_get_target(status_target)
         if func is None:
             return None
@@ -38,7 +38,7 @@ class StatusSignFlowBase(Func2CallableOrderSync):
         self.__running_err()
         async with self.__lock:
             self._future_run.set_result(True)
-            while self._graph._status != self._graph._exited_status:
+            while self._graph.status != self._graph.status_exited:
                 if await self.__handle_sign.queue_no_wait():
                     continue
                 await self.__no_sign()
@@ -63,10 +63,9 @@ class NormStatusSignFlow(StatusSignFlowBase):
         pass
 
     async def launch(self):
-        # 启动状态流，并将状态转移至started
-        if self._future_run.done() or self._graph._status != self._graph._exited_status:
-            raise Exception(f'状态机启动失败|status:{self._graph._status}|run:{self._future_run.done()}')
-        self._graph.status2target(NormStatusGraph.State.STARTED)
+        # 开启状态流的loop-同时只能启动一个loop & 状态不处于exited
+        if self._future_run.done() or self._graph.status == self._graph.status_exited:
+            raise Exception(f'状态机启动失败|status:{self._graph.status}|run:{self._future_run.done()}')
         return await self._main()
 
     async def start(self):
@@ -86,6 +85,20 @@ class NormStatusSignFlow(StatusSignFlowBase):
         if not self._future_run.done():
             raise Exception('状态机尚未启动')
         return await self._sign_deal(NormStatusGraph.State.EXITED)
+    pass
+
+
+class NormFlowManage:
+    """所有流都应该在初始化时启动，在删除时停止
+    """
+    def __init__(self, graph: NormStatusGraph) -> None:
+        self.__flow = NormStatusSignFlow(graph)
+        AsyncBase.coro2task_exec(self.__flow.launch())
+        pass
+
+    def __del__(self):
+        AsyncBase.coro2task_exec(self.__flow.exit())
+        pass
     pass
 
 

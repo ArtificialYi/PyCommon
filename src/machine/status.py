@@ -141,26 +141,37 @@ class NormStatusGraph:
         EXITED = auto()
         pass
 
-    def __init__(self, func_starting: Callable) -> None:
-        """状态机的初始应该是EXITED状态
-        1. 从EXITED状态到其他状态应该由loop管理者控制(因为EXITED状态会退出loop)
-        2. 其他状态之间的变化由状态机控制
+    def __init__(self, func_starting: Callable, status: State=State.STARTED) -> None:
+        """状态机的初始可以是任意状态
+        1. 所有状态转化应该由自身控制
+        2. 状态转化权最好仅由管理员拥有
         """
         self.__graph = self.__graph_build(func_starting)
-        self._status = self._exited_status = self.__class__.State.EXITED
+        self.__status = status
+        self.__status_exited = self.__class__.State.EXITED
         pass
 
-    def status2target(self, status):
-        self._status = status
-        pass
+    @property
+    def status(self):
+        return self.__status
+
+    @property
+    def status_exited(self):
+        return self.__status_exited
 
     def func_get(self) -> Union[Callable, None]:
-        value = self.__graph.get(self._status, self._status)
+        value = self.__graph.get(self.__status, self.__status)
         return value.func if value is not None else None
 
-    def func_get_target(self, status) -> Union[Callable, None]:
-        value = self.__graph.get(self._status, status)
+    def func_get_target(self, status: State) -> Union[Callable, None]:
+        value = self.__graph.get(self.__status, status)
         return value.func if value is not None else None
+
+    def __status2target(self, status: State) -> bool:
+        if self.__graph.get(self.__status, status) is None:
+            return False
+        self.__status = status
+        return True
 
     def __graph_build(self, func_starting: Callable):
         graph_tmp = StatusGraph()
@@ -180,18 +191,19 @@ class NormStatusGraph:
             StatusEdge(self.__class__.State.STOPPED, self.__class__.State.EXITED),
             StatusValue(self.__exit)
         )
+        graph_tmp.add(
+            StatusEdge(self.__class__.State.STARTED, self.__class__.State.EXITED),
+            StatusValue(self.__exit)
+        )
         graph_tmp.build(0)
         return graph_tmp
 
-    async def __start(self):
-        self.status2target(self.__class__.State.STARTED)
-        return True
+    def __start(self):
+        return self.__status2target(self.__class__.State.STARTED)
 
-    async def __stop(self):
-        self.status2target(self.__class__.State.STOPPED)
-        return True
+    def __stop(self):
+        return self.__status2target(self.__class__.State.STOPPED)
 
-    async def __exit(self):
-        self.status2target(self.__class__.State.EXITED)
-        return True
+    def __exit(self):
+        return self.__status2target(self.__class__.State.EXITED)
     pass
