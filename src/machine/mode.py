@@ -2,10 +2,10 @@ import asyncio
 
 from ..tool.base import AsyncBase
 from .status import NormStatusGraph
-from ..tool.func_tool import AsyncExecOrderHandle
+from ..tool.func_tool import Func2CallableOrderSync
 
 
-class StatusSignFlowBase(AsyncExecOrderHandle):
+class StatusSignFlowBase(Func2CallableOrderSync):
     """信号处理loop-生命周期与loop一致
     1. 有信号时处理状态转换
     2. 无信号时处理状态运行时
@@ -15,7 +15,8 @@ class StatusSignFlowBase(AsyncExecOrderHandle):
         self._future_run = AsyncBase.get_future()
         self.__lock = asyncio.Lock()
         # 封装和替换
-        self.__handle_sign = self._func_sync(self._sign_deal)
+        Func2CallableOrderSync.__init__(self, self._sign_deal)
+        self.__handle_sign = Func2CallableOrderSync.__call__(self)
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):

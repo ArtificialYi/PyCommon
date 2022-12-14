@@ -79,6 +79,28 @@ class AsyncExecOrderHandle:
     pass
 
 
+class Func2CallableOrderSync:
+    def __init__(self, func: Callable):
+        self.__handle = AsyncExecOrder(func)
+        self.__setattr__(func.__name__, self.__handle.call_sync)
+        pass
+
+    def __call__(self):
+        return self.__handle
+    pass
+
+
+class Func2CallableOrderAsync:
+    def __init__(self, func: Callable):
+        self.__handle = AsyncExecOrder(func)
+        self.__setattr__(func.__name__, self.__handle.call_async)
+        pass
+
+    def __call__(self):
+        return self.__handle
+    pass
+
+
 class FuncTool:
     @staticmethod
     async def is_func_err(func: Callable):
