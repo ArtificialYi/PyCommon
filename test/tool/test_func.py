@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import AsyncExecOrder, AsyncExecOrderHandle, CallableDecoratorAsync, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool, LockThread, PytestAsync
+from ...src.tool.func_tool import AsyncExecOrder, CallableDecoratorAsync, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool, LockThread, PytestAsync
 
 
 class TestAsyncExecOrder:

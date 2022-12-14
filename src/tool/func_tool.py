@@ -66,19 +66,6 @@ class AsyncExecOrder:
     pass
 
 
-class AsyncExecOrderHandle:
-    def _func_sync(self, func: Callable) -> AsyncExecOrder:
-        handle = AsyncExecOrder(func)
-        self.__setattr__(func.__name__, handle.call_sync)
-        return handle
-
-    def _func_async(self, func: Callable) -> AsyncExecOrder:
-        handle = AsyncExecOrder(func)
-        self.__setattr__(func.__name__, handle.call_async)
-        return handle
-    pass
-
-
 class Func2CallableOrderSync:
     def __init__(self, func: Callable):
         self.__handle = AsyncExecOrder(func)
