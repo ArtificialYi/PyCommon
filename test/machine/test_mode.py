@@ -1,6 +1,6 @@
 import asyncio
 
-from ...src.tool.func_tool import FuncTool, PytestAsync
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
 from ...src.machine.mode import NormStatusSignFlow, StatusSignFlowBase
@@ -18,7 +18,7 @@ class FuncTmp:
 
 
 class TestSignFlowBase:
-    @PytestAsync(3)
+    @PytestAsyncTimeout(3)
     async def test(self):
         func_tmp = FuncTmp()
         graph = NormStatusGraph(func_tmp.func)
@@ -57,44 +57,50 @@ class TestSignFlowBase:
 
 
 class TestNormStatusGraph:
-    @PytestAsync(2)
+    @PytestAsyncTimeout(2)
     async def test(self):
         func_tmp = FuncTmp()
-        # 状态错误无法启动
-        norm_sign_flow0 = NormStatusSignFlow(NormStatusGraph(func_tmp.func, NormStatusGraph.State.EXITED))
-        assert await FuncTool.is_func_err(norm_sign_flow0.launch)
-
-        # 未启动，无法发送状态转移信号
-        assert await FuncTool.is_func_err(norm_sign_flow0.start)
-        assert await FuncTool.is_func_err(norm_sign_flow0.stop)
-        assert await FuncTool.is_func_err(norm_sign_flow0.exit)
+        norm_sign_flow = NormStatusSignFlow(func_tmp.func)
 
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
-        graph = NormStatusGraph(func_tmp.func, NormStatusGraph.State.STARTED)
-        norm_sign_flow1 = NormStatusSignFlow(graph)
+        graph = norm_sign_flow._graph
         assert graph.status == NormStatusGraph.State.STARTED
-        task_main = AsyncBase.coro2task_exec(norm_sign_flow1.launch())
-        await norm_sign_flow1._future_run
+        task_main = AsyncBase.coro2task_exec(norm_sign_flow.launch())
+        await norm_sign_flow._future_run
         await asyncio.sleep(1)
-        assert norm_sign_flow1._future_run.done()
+        assert norm_sign_flow._future_run.done()
         assert func_tmp.num > 0
         assert not task_main.done()
 
         # 启动中无法再次启动
-        assert await FuncTool.is_func_err(norm_sign_flow1.launch)
+        assert await FuncTool.is_func_err(norm_sign_flow.launch)
 
         # 状态转移-started->stopped
-        assert await norm_sign_flow1.stop()
+        assert await norm_sign_flow.stop()
         assert graph.status == NormStatusGraph.State.STOPPED
 
         # 状态转移-stopped->started
-        assert await norm_sign_flow1.start()
+        assert await norm_sign_flow.start()
         assert graph.status == NormStatusGraph.State.STARTED
 
         # 状态转移-started->exited
-        assert await norm_sign_flow1.exit()
+        assert await norm_sign_flow.exit()
         await task_main
         assert graph.status == NormStatusGraph.State.EXITED
+
+        # 状态错误无法启动
+        assert await FuncTool.is_func_err(norm_sign_flow.launch)
+
+        # 未启动，无法发送状态转移信号
+        assert await FuncTool.is_func_err(norm_sign_flow.start)
+        assert await FuncTool.is_func_err(norm_sign_flow.stop)
+        assert await FuncTool.is_func_err(norm_sign_flow.exit)
+        pass
+    pass
+
+
+class TestNormFlowManage:
+    def test(self):
         pass
     pass

@@ -1,8 +1,9 @@
 import asyncio
+from typing import Callable
 
 from ..tool.base import AsyncBase
 from .status import NormStatusGraph
-from ..tool.func_tool import Func2CallableOrderSync
+from ..tool.func_tool import Func2CallableOrderAsync, Func2CallableOrderSync
 
 
 class StatusSignFlowBase(Func2CallableOrderSync):
@@ -58,8 +59,9 @@ class NormStatusSignFlow(StatusSignFlowBase):
     1. 开放启动流端口给管理员
     2. 开放状态流转端口给管理员
     """
-    def __init__(self, graph: NormStatusGraph) -> None:
-        super().__init__(graph)
+    def __init__(self, func: Callable) -> None:
+        self._graph = NormStatusGraph(func, NormStatusGraph.State.STARTED)
+        super().__init__(self._graph)
         pass
 
     async def launch(self):
@@ -88,17 +90,23 @@ class NormStatusSignFlow(StatusSignFlowBase):
     pass
 
 
-class NormFlowManage:
-    """所有流都应该在初始化时启动，在删除时停止
-    """
-    def __init__(self, graph: NormStatusGraph) -> None:
-        self.__flow = NormStatusSignFlow(graph)
-        AsyncBase.coro2task_exec(self.__flow.launch())
+class NormFLowDeadWait(NormStatusSignFlow, Func2CallableOrderAsync):
+    def __init__(self, func: Callable) -> None:
+        Func2CallableOrderAsync.__init__(self, func)
+        self.__call_order = Func2CallableOrderAsync.__call__(self)
+        NormStatusSignFlow.__init__(self, self.__dead_wait)
         pass
 
-    def __del__(self):
-        AsyncBase.coro2task_exec(self.__flow.exit())
-        pass
+    async def __dead_wait(self):
+        return await self.__call_order.queue_wait()
+
+    async def stop(self):
+        await self.__call_order.call_step()
+        return await super().stop()
+
+    async def exit(self):
+        await self.__call_order.call_step()
+        return await super().stop()
     pass
 
 

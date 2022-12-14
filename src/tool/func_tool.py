@@ -6,6 +6,15 @@ from .base import AsyncBase
 import pytest
 
 
+class RaiseLoopErr:
+    @staticmethod
+    def raise_err(re: RuntimeError):
+        if re.args[0] != 'Event loop is closed':
+            raise re
+        pass
+    pass
+
+
 class AsyncExecOrder:
     """将可执行对象有序化-可执行对象的生命周期将会与loop绑定
     1. 函数与Queue绑定，Queue与loop绑定-无法更改
@@ -26,10 +35,8 @@ class AsyncExecOrder:
         try:
             future, args, kwds = await self.__queue.get()
         except RuntimeError as re:
-            # 如果不是等待期间loop自动消失
-            if re.args[0] != 'Event loop is closed':
-                raise re
-            # self.__queue = asyncio.Queue()
+            # 等待期间loop消失异常
+            RaiseLoopErr.raise_err(re)
         finally:
             return future, args, kwds
 
@@ -131,7 +138,7 @@ class LockThread:
     pass
 
 
-class PytestAsync:
+class PytestAsyncTimeout:
     def __init__(self, t: int) -> None:
         self.__time = t
         self.__delay = 2
@@ -142,9 +149,7 @@ class PytestAsync:
         @pytest.mark.asyncio
         @wraps(func)
         async def func_pytest(*args, **kwds):
-            res = await func(*args, **kwds)
-            await asyncio.sleep(self.__delay)
-            return res
+            return await func(*args, **kwds)
         return func_pytest
     pass
 

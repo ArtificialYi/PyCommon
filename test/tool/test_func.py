@@ -2,11 +2,14 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
-from ...src.tool.func_tool import AsyncExecOrder, CallableDecoratorAsync, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool, LockThread, PytestAsync
+from ...src.tool.func_tool import (
+    AsyncExecOrder, CallableDecoratorAsync, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool,
+    LockThread, PytestAsyncTimeout
+)
 
 
 class TestAsyncExecOrder:
-    @PytestAsync(4)
+    @PytestAsyncTimeout(4)
     async def test(self):
         # 无信号-不等待调用，啥也没发生
         call_order = AsyncExecOrder(BaseTool.return_self)
@@ -67,7 +70,7 @@ class TestAsyncExecOrderHandle:
 
 
 class TestFuncTool:
-    @PytestAsync(1)
+    @PytestAsyncTimeout(1)
     async def test(self):
         assert not await FuncTool.is_func_err(FuncTool.norm_sync)
         assert not await FuncTool.is_func_err(FuncTool.norm_async)
@@ -126,18 +129,19 @@ class TestCallableDecoratorAsync:
     async def func_tmp(self):
         return True
 
-    @PytestAsync(1)
-    async def test(self):
-        # 无法使用同步函数构造
+    def __init_err(self):
         flag = False
         try:
             CallableDecoratorAsync(FuncTool.norm_sync)
             assert False
         except Exception:
             flag = True
-        finally:
-            assert flag
-            pass
+        assert flag
+
+    @PytestAsyncTimeout(1)
+    async def test(self):
+        # 无法使用同步函数构造
+        self.__init_err()
 
         decorator = CallableDecoratorAsync(self.func_decorator)
         # 无法对同步函数封装
@@ -147,9 +151,7 @@ class TestCallableDecoratorAsync:
             assert False
         except Exception:
             flag = True
-        finally:
-            assert flag
-            pass
+        assert flag
 
         # 常规
         assert await self.func_tmp()

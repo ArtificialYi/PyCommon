@@ -1,5 +1,5 @@
 import asyncio
-from ...src.tool.func_tool import FuncTool, PytestAsync
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusValue
 
 
@@ -89,7 +89,7 @@ class TestStatusGraph(object):
         assert a.status_graph[0][3].weight == 1 + 4
         pass
 
-    @PytestAsync(1)
+    @PytestAsyncTimeout(1)
     async def test_edge_self(self):
         """
         4点5边有回路
@@ -127,7 +127,7 @@ class TestStatusGraph(object):
 
 
 class TestNormStatusGraph:
-    @PytestAsync(1)
+    @PytestAsyncTimeout(1)
     async def test(self):
         graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.EXITED)
         assert graph.status == NormStatusGraph.State.EXITED
