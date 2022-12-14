@@ -97,6 +97,10 @@ class NormFLowDeadWait(NormStatusSignFlow, Func2CallableOrderAsync):
         NormStatusSignFlow.__init__(self, self.__dead_wait)
         pass
 
+    @property
+    def qsize(self):
+        return self.__call_order.qsize
+
     async def __dead_wait(self):
         return await self.__call_order.queue_wait()
 
