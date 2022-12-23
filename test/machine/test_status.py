@@ -89,8 +89,7 @@ class TestStatusGraph(object):
         assert a.status_graph[0][3].weight == 1 + 4
         pass
 
-    @PytestAsyncTimeout(1)
-    async def test_edge_self(self):
+    def test_edge_self(self):
         """
         4点5边有回路
         自身无法链路到自身

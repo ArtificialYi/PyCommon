@@ -17,7 +17,7 @@ class FuncTmp:
     pass
 
 
-class TestSignFlowBase:
+class TestStatusSignFlowBase:
     @PytestAsyncTimeout(3)
     async def test(self):
         func_tmp = FuncTmp()
@@ -56,8 +56,8 @@ class TestSignFlowBase:
     pass
 
 
-class TestNormStatusGraph:
-    @PytestAsyncTimeout(2)
+class TestNormStatusSignFlow:
+    @PytestAsyncTimeout(3)
     async def test(self):
         func_tmp = FuncTmp()
         norm_sign_flow = NormStatusSignFlow(func_tmp.func)
@@ -66,36 +66,43 @@ class TestNormStatusGraph:
         assert func_tmp.num == 0
         graph = norm_sign_flow._graph
         assert graph.status == NormStatusGraph.State.STARTED
-        task_main = AsyncBase.coro2task_exec(norm_sign_flow.launch())
         await norm_sign_flow._future_run
         await asyncio.sleep(1)
+
         assert norm_sign_flow._future_run.done()
         assert func_tmp.num > 0
-        assert not task_main.done()
 
-        # 启动中无法再次启动
-        assert await FuncTool.is_func_err(norm_sign_flow.launch)
+        # 启动中无法再次启动（子类的多继承init可能导致的多启动问题）
+        assert await FuncTool.is_func_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
 
         # 状态转移-started->stopped
-        assert await norm_sign_flow.stop()
+        assert await norm_sign_flow._stop()
         assert graph.status == NormStatusGraph.State.STOPPED
 
         # 状态转移-stopped->started
-        assert await norm_sign_flow.start()
+        assert await norm_sign_flow._start()
         assert graph.status == NormStatusGraph.State.STARTED
 
         # 状态转移-started->exited
-        assert await norm_sign_flow.exit()
-        await task_main
+        assert await norm_sign_flow._exit()
         assert graph.status == NormStatusGraph.State.EXITED
 
         # 状态错误无法启动
-        assert await FuncTool.is_func_err(norm_sign_flow.launch)
+        assert await FuncTool.is_func_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
 
         # 未启动，无法发送状态转移信号
-        assert await FuncTool.is_func_err(norm_sign_flow.start)
-        assert await FuncTool.is_func_err(norm_sign_flow.stop)
-        assert await FuncTool.is_func_err(norm_sign_flow.exit)
+        assert await FuncTool.is_func_err(norm_sign_flow._start)
+        assert await FuncTool.is_func_err(norm_sign_flow._stop)
+        assert await FuncTool.is_func_err(norm_sign_flow._exit)
+
+        # 垃圾回收后，状态自然转移为exited
+        norm_sign_flow1 = NormStatusSignFlow(func_tmp.func)
+        await norm_sign_flow1._future_run
+        assert norm_sign_flow1._graph.status == NormStatusGraph.State.STARTED
+        norm_sign_flow1.__del__()
+        await asyncio.sleep(1)
+        assert norm_sign_flow1._graph.status == NormStatusGraph.State.EXITED
+        norm_sign_flow1.__init__(func_tmp.func)
         pass
     pass
 
