@@ -97,12 +97,20 @@ class Func2CallableOrderAsync:
 
 class FuncTool:
     @staticmethod
-    async def is_func_err(func: Callable):
+    async def is_async_err(func: Callable):
+        try:
+            await func()
+        except Exception:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def is_func_err(func: Callable):
         """函数有错误
         """
         try:
-            res = func()
-            await res if asyncio.iscoroutinefunction(func) else res
+            func()
         except Exception:
             return True
         else:
@@ -141,14 +149,17 @@ class LockThread:
 class PytestAsyncTimeout:
     def __init__(self, t: int) -> None:
         self.__time = t
+        self.__delay = 1
         pass
 
     def __call__(self, func: Callable):
-        @pytest.mark.timeout(self.__time)
+        @pytest.mark.timeout(self.__time + self.__delay)
         @pytest.mark.asyncio
         @wraps(func)
         async def func_pytest(*args, **kwds):
-            return await func(*args, **kwds)
+            res = await func(*args, **kwds)
+            await asyncio.sleep(self.__delay)
+            return res
         return func_pytest
     pass
 

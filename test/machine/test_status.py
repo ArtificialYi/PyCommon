@@ -1,5 +1,5 @@
 import asyncio
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.tool.func_tool import FuncTool
 from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusValue
 
 
@@ -126,8 +126,7 @@ class TestStatusGraph(object):
 
 
 class TestNormStatusGraph:
-    @PytestAsyncTimeout(1)
-    async def test(self):
+    def test(self):
         graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.EXITED)
         assert graph.status == NormStatusGraph.State.EXITED
         assert graph.func_get_target(NormStatusGraph.State.STARTED) is None
@@ -138,7 +137,7 @@ class TestNormStatusGraph:
         assert graph.status == NormStatusGraph.State.STARTED
         func0 = graph.func_get()
         assert func0 is not None and not asyncio.iscoroutinefunction(func0)
-        assert await FuncTool.is_func_err(func0)
+        assert FuncTool.is_func_err(func0)
 
         # 转换函数-started->stopped运行成功,STOPPED状态下没有运行时函数
         func_trans0 = graph.func_get_target(NormStatusGraph.State.STOPPED)
@@ -155,7 +154,7 @@ class TestNormStatusGraph:
         func_trans2 = graph.func_get_target(NormStatusGraph.State.STARTED)
         func1 = graph.func_get()
         assert func1 is not None and func_trans2 is not None and func_trans2 == func1
-        assert await FuncTool.is_func_err(func1)
+        assert FuncTool.is_func_err(func1)
 
         # 转换函数-started->exit允许转换
         func2 = graph.func_get_target(NormStatusGraph.State.EXITED)

@@ -72,10 +72,10 @@ class TestAsyncExecOrderHandle:
 class TestFuncTool:
     @PytestAsyncTimeout(1)
     async def test(self):
-        assert not await FuncTool.is_func_err(FuncTool.norm_sync)
-        assert not await FuncTool.is_func_err(FuncTool.norm_async)
-        assert await FuncTool.is_func_err(FuncTool.norm_sync_err)
-        assert await FuncTool.is_func_err(FuncTool.norm_async_err)
+        assert not FuncTool.is_func_err(FuncTool.norm_sync)
+        assert not await FuncTool.is_async_err(FuncTool.norm_async)
+        assert FuncTool.is_func_err(FuncTool.norm_sync_err)
+        assert await FuncTool.is_async_err(FuncTool.norm_async_err)
         pass
     pass
 

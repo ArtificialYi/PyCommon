@@ -56,16 +56,13 @@ class StatusSignFlowBase(Func2CallableOrderSync):
 
 class NormStatusSignFlow(StatusSignFlowBase):
     """普通的信号流-开放端口给管理员
-    1. 初始化时启动流
-    2. 开放状态流转端口给子类
-    3. 回收时退出流
+    1. 开放流的控制端口给予管理者
     """
     def __init__(self, func: Callable) -> None:
         super().__init__(NormStatusGraph(func, NormStatusGraph.State.STARTED))
-        AsyncBase.coro2task_exec(self.__launch())
         pass
 
-    async def __launch(self):
+    async def launch(self):
         # 开启状态流的loop-同时只能启动一个loop & 状态不处于exited
         if self._future_run.done() or self._graph.status == self._graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self._graph.status}|run:{self._future_run.done()}')
@@ -88,11 +85,6 @@ class NormStatusSignFlow(StatusSignFlowBase):
         if not self._future_run.done():
             raise Exception('状态机尚未启动')
         return await self._sign_deal(NormStatusGraph.State.EXITED)
-
-    def __del__(self):
-        # 需要在初始化时就启动流
-        AsyncBase.coro2task_exec(self._exit())
-        pass
     pass
 
 
@@ -112,7 +104,7 @@ class NormFLowDeadWait(NormStatusSignFlow, Func2CallableOrderAsync):
 
     async def _stop(self):
         await self.__call_order.call_step()
-        return await super()._stop()
+        return await NormStatusSignFlow._stop(self)
 
     async def _exit(self):
         await self.__call_order.call_step()

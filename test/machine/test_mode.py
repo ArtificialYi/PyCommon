@@ -34,7 +34,7 @@ class TestStatusSignFlowBase:
         assert not task_main.done()
 
         # 启动中，再次启动会抛出启动中异常
-        assert await FuncTool.is_func_err(sign_flow._main)
+        assert await FuncTool.is_async_err(sign_flow._main)
 
         # 信号处理，状态变更-成功
         assert sign_flow._graph.status == NormStatusGraph.State.STARTED
@@ -73,7 +73,7 @@ class TestNormStatusSignFlow:
         assert func_tmp.num > 0
 
         # 启动中无法再次启动（子类的多继承init可能导致的多启动问题）
-        assert await FuncTool.is_func_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
+        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
 
         # 状态转移-started->stopped
         assert await norm_sign_flow._stop()
@@ -83,26 +83,21 @@ class TestNormStatusSignFlow:
         assert await norm_sign_flow._start()
         assert graph.status == NormStatusGraph.State.STARTED
 
-        # 状态转移-started->exited
+        # 状态转移-started->exited(不应该调用，调用后垃圾回收将出现问题)
         assert await norm_sign_flow._exit()
         assert graph.status == NormStatusGraph.State.EXITED
 
         # 状态错误无法启动
-        assert await FuncTool.is_func_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
+        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
 
         # 未启动，无法发送状态转移信号
-        assert await FuncTool.is_func_err(norm_sign_flow._start)
-        assert await FuncTool.is_func_err(norm_sign_flow._stop)
-        assert await FuncTool.is_func_err(norm_sign_flow._exit)
+        assert await FuncTool.is_async_err(norm_sign_flow._start)
+        assert await FuncTool.is_async_err(norm_sign_flow._stop)
+        assert await FuncTool.is_async_err(norm_sign_flow._exit)
 
-        # 垃圾回收后，状态自然转移为exited
-        norm_sign_flow1 = NormStatusSignFlow(func_tmp.func)
-        await norm_sign_flow1._future_run
-        assert norm_sign_flow1._graph.status == NormStatusGraph.State.STARTED
-        norm_sign_flow1.__del__()
-        await asyncio.sleep(1)
-        assert norm_sign_flow1._graph.status == NormStatusGraph.State.EXITED
-        norm_sign_flow1.__init__(func_tmp.func)
+        # 重启动
+        norm_sign_flow.__init__(func_tmp.func)
+        del norm_sign_flow
         pass
     pass
 
