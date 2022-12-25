@@ -149,17 +149,14 @@ class LockThread:
 class PytestAsyncTimeout:
     def __init__(self, t: int) -> None:
         self.__time = t
-        self.__delay = 1
         pass
 
     def __call__(self, func: Callable):
-        @pytest.mark.timeout(self.__time + self.__delay)
+        @pytest.mark.timeout(self.__time)
         @pytest.mark.asyncio
         @wraps(func)
         async def func_pytest(*args, **kwds):
-            res = await func(*args, **kwds)
-            await asyncio.sleep(self.__delay)
-            return res
+            return await func(*args, **kwds)
         return func_pytest
     pass
 

@@ -57,7 +57,7 @@ class TestStatusSignFlowBase:
 
 
 class TestNormStatusSignFlow:
-    @PytestAsyncTimeout(3)
+    @PytestAsyncTimeout(2)
     async def test(self):
         func_tmp = FuncTmp()
         norm_sign_flow = NormStatusSignFlow(func_tmp.func)
@@ -66,14 +66,13 @@ class TestNormStatusSignFlow:
         assert func_tmp.num == 0
         graph = norm_sign_flow._graph
         assert graph.status == NormStatusGraph.State.STARTED
+        task_main = AsyncBase.coro2task_exec(norm_sign_flow.launch())
         await norm_sign_flow._future_run
         await asyncio.sleep(1)
-
-        assert norm_sign_flow._future_run.done()
         assert func_tmp.num > 0
 
-        # 启动中无法再次启动（子类的多继承init可能导致的多启动问题）
-        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
+        # 启动中无法再次启动
+        assert await FuncTool.is_async_err(norm_sign_flow.launch)
 
         # 状态转移-started->stopped
         assert await norm_sign_flow._stop()
@@ -83,21 +82,18 @@ class TestNormStatusSignFlow:
         assert await norm_sign_flow._start()
         assert graph.status == NormStatusGraph.State.STARTED
 
-        # 状态转移-started->exited(不应该调用，调用后垃圾回收将出现问题)
+        # 状态转移-started->exited
         assert await norm_sign_flow._exit()
         assert graph.status == NormStatusGraph.State.EXITED
+        await task_main
 
         # 状态错误无法启动
-        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
+        assert await FuncTool.is_async_err(norm_sign_flow.launch)
 
         # 未启动，无法发送状态转移信号
         assert await FuncTool.is_async_err(norm_sign_flow._start)
         assert await FuncTool.is_async_err(norm_sign_flow._stop)
         assert await FuncTool.is_async_err(norm_sign_flow._exit)
-
-        # 重启动
-        norm_sign_flow.__init__(func_tmp.func)
-        del norm_sign_flow
         pass
     pass
 
