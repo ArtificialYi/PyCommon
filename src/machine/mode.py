@@ -16,8 +16,8 @@ class StatusSignFlowBase(Func2CallableOrderSync):
         self._future_run = AsyncBase.get_future()
         self.__lock = asyncio.Lock()
         # 封装和替换
-        Func2CallableOrderSync.__init__(self, self._sign_deal)
-        self.__handle_sign = Func2CallableOrderSync.__call__(self)
+        super().__init__(self._sign_deal)
+        self.__handle_sign = super().__call__()
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):
@@ -88,11 +88,11 @@ class NormStatusSignFlow(StatusSignFlowBase):
     pass
 
 
-class NormFLowDeadWait(NormStatusSignFlow, Func2CallableOrderAsync):
+class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
     def __init__(self, func: Callable) -> None:
+        NormStatusSignFlow.__init__(self, self.__dead_wait)
         Func2CallableOrderAsync.__init__(self, func)
         self.__call_order = Func2CallableOrderAsync.__call__(self)
-        NormStatusSignFlow.__init__(self, self.__dead_wait)
         pass
 
     @property

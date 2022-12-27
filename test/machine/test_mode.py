@@ -3,7 +3,7 @@ import asyncio
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
-from ...src.machine.mode import NormStatusSignFlow, StatusSignFlowBase
+from ...src.machine.mode import NormFLowDeadWaitAsync, NormStatusSignFlow, StatusSignFlowBase
 
 
 class FuncTmp:
@@ -98,7 +98,37 @@ class TestNormStatusSignFlow:
     pass
 
 
-class TestNormFlowManage:
-    def test(self):
+class TestNormFlowDeadWaitAsync:
+    @PytestAsyncTimeout(3)
+    async def test(self):
+        """校验死等
+        1. 构造死等流
+        2. 启动流 => graph为started状态 & qsize为0 & 程序等待调用信号
+        3. 多次异步调用函数后 => qsize > 0
+        4. 等待部分时间后 => qsize为0
+        5. stop & exit
+        """
+        func_tmp = FuncTmp()
+        flow = NormFLowDeadWaitAsync(func_tmp.func)
+        assert flow.qsize == 0
+        task = AsyncBase.coro2task_exec(flow.launch())
+        await flow._future_run
+        await asyncio.sleep(1)
+        assert flow._graph.status == NormStatusGraph.State.STARTED
+        assert flow.qsize == 0
+
+        assert hasattr(flow, 'func')
+        for _ in range(5):
+            await getattr(flow, 'func')()
+            pass
+        assert flow.qsize > 0
+        await asyncio.sleep(1)
+        assert flow.qsize == 0
+
+        await flow._stop()
+        assert flow._graph.status == NormStatusGraph.State.STOPPED
+        await flow._exit()
+        assert flow._graph.status == NormStatusGraph.State.EXITED
+        await task
         pass
     pass
