@@ -16,8 +16,8 @@ class StatusSignFlowBase(Func2CallableOrderSync):
         self._future_run = AsyncBase.get_future()
         self.__lock = asyncio.Lock()
         # 封装和替换
-        super().__init__(self._sign_deal)
-        self.__handle_sign = super().__call__()
+        Func2CallableOrderSync.__init__(self, self._sign_deal)
+        self.__handle_sign = Func2CallableOrderSync.__call__(self)
         pass
 
     async def _sign_deal(self, status_target, *args, **kwds):
@@ -59,7 +59,7 @@ class NormStatusSignFlow(StatusSignFlowBase):
     1. 开放流的控制端口给予管理者
     """
     def __init__(self, func: Callable) -> None:
-        super().__init__(NormStatusGraph(func, NormStatusGraph.State.STARTED))
+        StatusSignFlowBase.__init__(self, NormStatusGraph(func, NormStatusGraph.State.STARTED))
         pass
 
     async def launch(self):
