@@ -153,7 +153,7 @@ class LockThread:
 class PytestAsyncTimeout:
     def __init__(self, t: int) -> None:
         self.__time = t
-        self.__delay = 1
+        self.__delay = 2
         pass
 
     def __call__(self, func: Callable):

@@ -177,7 +177,7 @@ class NormStatusGraph:
         graph_tmp = StatusGraph()
         graph_tmp.add(
             StatusEdge(self.__class__.State.STOPPED, self.__class__.State.STARTED),
-            StatusValue(self.__start)
+            StatusValue(self.start)
         )
         graph_tmp.add(
             StatusEdge(self.__class__.State.STARTED, self.__class__.State.STARTED),
@@ -185,7 +185,7 @@ class NormStatusGraph:
         )
         graph_tmp.add(
             StatusEdge(self.__class__.State.STARTED, self.__class__.State.STOPPED),
-            StatusValue(self.__stop)
+            StatusValue(self.stop)
         )
         graph_tmp.add(
             StatusEdge(self.__class__.State.STOPPED, self.__class__.State.EXITED),
@@ -198,10 +198,10 @@ class NormStatusGraph:
         graph_tmp.build(0)
         return graph_tmp
 
-    def __start(self):
+    def start(self):
         return self.__status2target(self.__class__.State.STARTED)
 
-    def __stop(self):
+    def stop(self):
         return self.__status2target(self.__class__.State.STOPPED)
 
     def __exit(self):
