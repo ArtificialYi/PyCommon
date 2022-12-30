@@ -66,26 +66,21 @@ class TestNormStatusSignFlow:
         assert func_tmp.num == 0
         graph = norm_sign_flow._graph
         assert graph.status == NormStatusGraph.State.STARTED
-        task_main = AsyncBase.coro2task_exec(norm_sign_flow.launch())
-        await norm_sign_flow._future_run
-        await asyncio.sleep(1)
-        assert func_tmp.num > 0
+        async with norm_sign_flow:
+            assert norm_sign_flow._future_run.done()
+            await asyncio.sleep(1)
+            assert func_tmp.num > 0
 
-        # 启动中无法再次启动
-        assert await FuncTool.is_async_err(norm_sign_flow.launch)
+            assert await FuncTool.is_async_err(norm_sign_flow.launch)
 
-        # 状态转移-started->stopped
-        assert await norm_sign_flow._stop()
-        assert graph.status == NormStatusGraph.State.STOPPED
+            # 状态转移-started->stopped
+            assert await norm_sign_flow._stop()
+            assert graph.status == NormStatusGraph.State.STOPPED
 
-        # 状态转移-stopped->started
-        assert await norm_sign_flow._start()
-        assert graph.status == NormStatusGraph.State.STARTED
-
-        # 状态转移-started->exited
-        assert await norm_sign_flow._exit()
-        assert graph.status == NormStatusGraph.State.EXITED
-        await task_main
+            # 状态转移-stopped->started
+            assert await norm_sign_flow._start()
+            assert graph.status == NormStatusGraph.State.STARTED
+            pass
 
         # 状态错误无法启动
         assert await FuncTool.is_async_err(norm_sign_flow.launch)
@@ -111,24 +106,19 @@ class TestNormFlowDeadWaitAsync:
         func_tmp = FuncTmp()
         flow = NormFLowDeadWaitAsync(func_tmp.func)
         assert flow.qsize == 0
-        task = AsyncBase.coro2task_exec(flow.launch())
-        await flow._future_run
-        await asyncio.sleep(1)
-        assert flow._graph.status == NormStatusGraph.State.STARTED
-        assert flow.qsize == 0
+        async with flow:
+            assert flow._future_run.done()
+            await asyncio.sleep(1)
+            assert flow._graph.status == NormStatusGraph.State.STARTED
+            assert flow.qsize == 0
 
-        assert hasattr(flow, 'func')
-        for _ in range(5):
-            await getattr(flow, 'func')()
+            assert hasattr(flow, 'func')
+            for _ in range(5):
+                await getattr(flow, 'func')()
+                pass
+            assert flow.qsize > 0
+            await asyncio.sleep(1)
+            assert flow.qsize == 0
             pass
-        assert flow.qsize > 0
-        await asyncio.sleep(1)
-        assert flow.qsize == 0
-
-        await flow._stop()
-        assert flow._graph.status == NormStatusGraph.State.STOPPED
-        await flow._exit()
-        assert flow._graph.status == NormStatusGraph.State.EXITED
-        await task
         pass
     pass

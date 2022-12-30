@@ -85,10 +85,20 @@ class NormStatusSignFlow(StatusSignFlowBase):
         if not self._future_run.done():
             raise Exception('状态机尚未启动')
         return await self._sign_deal(NormStatusGraph.State.EXITED)
+
+    async def __aenter__(self):
+        AsyncBase.coro2task_exec(self.launch())
+        await self._future_run
+        return self
+
+    async def __aexit__(self, *args):
+        return await self._exit()
     pass
 
 
 class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
+    """以死等的方式调用func
+    """
     def __init__(self, func: Callable) -> None:
         NormStatusSignFlow.__init__(self, self.__dead_wait)
         Func2CallableOrderAsync.__init__(self, func)
