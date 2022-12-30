@@ -99,6 +99,7 @@ class NormStatusSignFlow(StatusSignFlowBase):
 
 class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
     """以死等的方式调用func
+    1. 清空死等队列后再exit
     """
     def __init__(self, func: Callable) -> None:
         NormStatusSignFlow.__init__(self, self.__dead_wait)
@@ -118,6 +119,7 @@ class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
         return await NormStatusSignFlow._stop(self)
 
     async def _exit(self):
+        await self.__call_order.queue_join()
         await self.__call_order.call_step()
         return await NormStatusSignFlow._exit(self)
     pass

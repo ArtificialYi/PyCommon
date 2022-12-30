@@ -38,6 +38,9 @@ class TestAsyncExecOrder:
         assert call_order.qsize == 1
         assert await call_order.queue_wait()
         assert call_order.qsize == 0
+
+        # 所有信号消费结束join将不会阻塞
+        await call_order.queue_join()
         pass
     pass
 

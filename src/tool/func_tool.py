@@ -57,6 +57,9 @@ class AsyncExecOrder:
         future.set_result(res1)
         return True
 
+    async def queue_join(self):
+        return await self.__queue.join()
+
     async def call_step(self, *args, **kwds):
         return await self.__queue.put((None, args, kwds))
 
