@@ -141,7 +141,7 @@ class NormStatusGraph:
         EXITED = auto()
         pass
 
-    def __init__(self, func_starting: Callable, status: State = State.STARTED) -> None:
+    def __init__(self, func_starting: Callable, status: State = State.EXITED) -> None:
         """状态机的初始可以是任意状态
         1. 所有状态转化应该由自身控制
         2. 状态转化权最好仅由管理员拥有
@@ -175,6 +175,10 @@ class NormStatusGraph:
 
     def __graph_build(self, func_starting: Callable):
         graph_tmp = StatusGraph()
+        graph_tmp.add(
+            StatusEdge(self.__class__.State.EXITED, self.__class__.State.STARTED),
+            StatusValue(self.start)
+        )
         graph_tmp.add(
             StatusEdge(self.__class__.State.STOPPED, self.__class__.State.STARTED),
             StatusValue(self.start)

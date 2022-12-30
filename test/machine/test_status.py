@@ -127,9 +127,9 @@ class TestStatusGraph(object):
 
 class TestNormStatusGraph:
     def test(self):
-        graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.EXITED)
+        graph = NormStatusGraph(FuncTool.norm_sync_err)
         assert graph.status == NormStatusGraph.State.EXITED
-        assert graph.func_get_target(NormStatusGraph.State.STARTED) is None
+        assert graph.func_get_target(NormStatusGraph.State.STARTED) is not None
         assert graph.func_get() is None
 
         # STARTED状态刚好有函数，但是是会抛出异常的

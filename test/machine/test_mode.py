@@ -25,8 +25,14 @@ class TestStatusSignFlowBase:
         sign_flow = StatusSignFlowBase(graph)
         # 未启动
         assert not sign_flow._future_run.done()
+        assert func_tmp.num == 0
+        assert graph.status == NormStatusGraph.State.EXITED
+        await sign_flow._main()
+
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
+        graph.start()
+        assert graph.status == NormStatusGraph.State.STARTED
         task_main = AsyncBase.coro2task_exec(sign_flow._main())
         await sign_flow._future_run
         await asyncio.sleep(1)
@@ -65,8 +71,9 @@ class TestNormStatusSignFlow:
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
         graph = norm_sign_flow._graph
-        assert graph.status == NormStatusGraph.State.STARTED
+        assert graph.status == NormStatusGraph.State.EXITED
         async with norm_sign_flow:
+            assert graph.status == NormStatusGraph.State.STARTED
             assert norm_sign_flow._future_run.done()
             await asyncio.sleep(1)
             assert func_tmp.num > 0
@@ -83,6 +90,7 @@ class TestNormStatusSignFlow:
             pass
 
         # 状态错误无法启动
+        graph.start()
         assert await FuncTool.is_async_err(norm_sign_flow.launch)
 
         # 未启动，无法发送状态转移信号

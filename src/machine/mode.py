@@ -59,13 +59,14 @@ class NormStatusSignFlow(StatusSignFlowBase):
     1. 开放流的控制端口给予管理者
     """
     def __init__(self, func: Callable) -> None:
-        StatusSignFlowBase.__init__(self, NormStatusGraph(func, NormStatusGraph.State.STARTED))
+        StatusSignFlowBase.__init__(self, NormStatusGraph(func, NormStatusGraph.State.EXITED))
         pass
 
     async def launch(self):
         # 开启状态流的loop-同时只能启动一个loop & 状态不处于exited
-        if self._future_run.done() or self._graph.status == self._graph.status_exited:
+        if self._future_run.done() or self._graph.status != self._graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self._graph.status}|run:{self._future_run.done()}')
+        self._graph.start()
         return await self._main()
 
     async def _start(self):
