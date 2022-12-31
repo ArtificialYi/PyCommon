@@ -83,7 +83,7 @@ class TestNormStatusSignFlow:
 
 
 class TestNormFlowDeadWaitAsync:
-    @PytestAsyncTimeout(3)
+    @PytestAsyncTimeout(2)
     async def test(self):
         """校验死等
         1. 构造死等流
@@ -106,8 +106,7 @@ class TestNormFlowDeadWaitAsync:
                 await getattr(flow, 'func')()
                 pass
             assert flow.qsize > 0
-            await asyncio.sleep(1)
-            assert flow.qsize == 0
+            await flow.qjoin()
             pass
         pass
     pass
