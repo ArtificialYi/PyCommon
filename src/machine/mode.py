@@ -103,7 +103,6 @@ class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
         return await self.__call_order.queue_wait()
 
     async def __aexit__(self, *args):
-        await self.__call_order.queue_join()
         await self.__call_order.call_step()
         return await NormStatusSignFlow.__aexit__(self, *args)
     pass
