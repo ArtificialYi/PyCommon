@@ -68,16 +68,16 @@ class TestNormStatusSignFlow:
             assert func_tmp.num > 0
 
             # 启动中无法再次启动
-            assert await FuncTool.is_async_err(norm_sign_flow.launch)
+            assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
             pass
 
         # 状态错误无法启动
         graph.start()
-        assert await FuncTool.is_async_err(norm_sign_flow.launch)
+        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__launch)  # type: ignore
 
         # 未启动，无法发送状态转移信号
         assert graph.status == NormStatusGraph.State.STARTED
-        assert await FuncTool.is_async_err(norm_sign_flow._exit)
+        assert await FuncTool.is_async_err(norm_sign_flow._NormStatusSignFlow__exit)  # type: ignore
         pass
     pass
 
@@ -90,7 +90,7 @@ class TestNormFlowDeadWaitAsync:
         2. 启动流 => graph为started状态 & qsize为0 & 程序等待调用信号
         3. 多次异步调用函数后 => qsize > 0
         4. 等待部分时间后 => qsize为0
-        5. stop & exit
+        5. exit
         """
         func_tmp = FuncTmp()
         flow = NormFLowDeadWaitAsync(func_tmp.func)

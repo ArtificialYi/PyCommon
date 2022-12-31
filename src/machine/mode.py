@@ -62,26 +62,26 @@ class NormStatusSignFlow(StatusSignFlowBase):
         StatusSignFlowBase.__init__(self, NormStatusGraph(func, NormStatusGraph.State.EXITED))
         pass
 
-    async def launch(self):
+    async def __launch(self):
         # 开启状态流的loop-同时只能启动一个loop & 状态不处于exited
         if self._future_run.done() or self._graph.status != self._graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self._graph.status}|run:{self._future_run.done()}')
         self._graph.start()
         return await self._main()
 
-    async def _exit(self):
+    async def __exit(self):
         # 将状态转移至exited
         if not self._future_run.done():
             raise Exception('状态机尚未启动')
         return await self._sign_deal(NormStatusGraph.State.EXITED)
 
     async def __aenter__(self):
-        AsyncBase.coro2task_exec(self.launch())
+        AsyncBase.coro2task_exec(self.__launch())
         await self._future_run
         return self
 
     async def __aexit__(self, *args):
-        return await self._exit()
+        return await self.__exit()
     pass
 
 
@@ -102,8 +102,8 @@ class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
     async def __dead_wait(self):
         return await self.__call_order.queue_wait()
 
-    async def _exit(self):
+    async def __aexit__(self, *args):
         await self.__call_order.queue_join()
         await self.__call_order.call_step()
-        return await NormStatusSignFlow._exit(self)
+        return await NormStatusSignFlow.__aexit__(self, *args)
     pass

@@ -104,7 +104,7 @@ class TestLockThread:
         assert self.__class__.func_unlock(1).NUM == 1
 
         # 多线程无序-如果失败，调大这个值
-        num = 20000
+        num = 50000
         pool_size = int(math.log(num))
         pool = ThreadPoolExecutor(pool_size)
         for _ in range(pool_size):
