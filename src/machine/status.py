@@ -137,7 +137,6 @@ class NormStatusGraph:
     """
     class State(Enum):
         STARTED = auto()
-        STOPPED = auto()
         EXITED = auto()
         pass
 
@@ -180,20 +179,8 @@ class NormStatusGraph:
             StatusValue(self.start)
         )
         graph_tmp.add(
-            StatusEdge(self.__class__.State.STOPPED, self.__class__.State.STARTED),
-            StatusValue(self.start)
-        )
-        graph_tmp.add(
             StatusEdge(self.__class__.State.STARTED, self.__class__.State.STARTED),
             StatusValue(func_starting)
-        )
-        graph_tmp.add(
-            StatusEdge(self.__class__.State.STARTED, self.__class__.State.STOPPED),
-            StatusValue(self.stop)
-        )
-        graph_tmp.add(
-            StatusEdge(self.__class__.State.STOPPED, self.__class__.State.EXITED),
-            StatusValue(self.__exit)
         )
         graph_tmp.add(
             StatusEdge(self.__class__.State.STARTED, self.__class__.State.EXITED),
@@ -204,9 +191,6 @@ class NormStatusGraph:
 
     def start(self):
         return self.__status2target(self.__class__.State.STARTED)
-
-    def stop(self):
-        return self.__status2target(self.__class__.State.STOPPED)
 
     def __exit(self):
         return self.__status2target(self.__class__.State.EXITED)

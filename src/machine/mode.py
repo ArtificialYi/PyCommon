@@ -69,18 +69,6 @@ class NormStatusSignFlow(StatusSignFlowBase):
         self._graph.start()
         return await self._main()
 
-    async def _start(self):
-        # 将状态转移至started
-        if not self._future_run.done():
-            raise Exception('状态机尚未启动')
-        return await self._sign_deal(NormStatusGraph.State.STARTED)
-
-    async def _stop(self):
-        # 将状态转移至stopped
-        if not self._future_run.done():
-            raise Exception('状态机尚未启动')
-        return await self._sign_deal(NormStatusGraph.State.STOPPED)
-
     async def _exit(self):
         # 将状态转移至exited
         if not self._future_run.done():
@@ -113,10 +101,6 @@ class NormFLowDeadWaitAsync(NormStatusSignFlow, Func2CallableOrderAsync):
 
     async def __dead_wait(self):
         return await self.__call_order.queue_wait()
-
-    async def _stop(self):
-        await self.__call_order.call_step()
-        return await NormStatusSignFlow._stop(self)
 
     async def _exit(self):
         await self.__call_order.queue_join()
