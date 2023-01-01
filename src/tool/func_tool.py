@@ -1,18 +1,18 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import Callable
+from typing import Callable, Union
 from .base import AsyncBase
 import pytest
 
 
-class RaiseLoopErr:
-    @staticmethod
-    def raise_err(re: RuntimeError):
-        if re.args[0] != 'Event loop is closed':
-            raise re
-        pass
-    pass
+# class RaiseLoopErr:
+#     @staticmethod
+#     def raise_err(re: RuntimeError):
+#         if re.args[0] != 'Event loop is closed':
+#             raise re
+#         pass
+#     pass
 
 
 class AsyncExecOrder:
@@ -30,15 +30,13 @@ class AsyncExecOrder:
     def qsize(self):
         return self.__queue.qsize()
 
-    async def __queue_get(self):
-        future, args, kwds = None, list(), dict()
-        try:
-            future, args, kwds = await self.__queue.get()
-        except RuntimeError as re:
-            # 等待期间loop消失异常
-            RaiseLoopErr.raise_err(re)
-        finally:
-            return future, args, kwds
+    async def __queue_func(self, future: Union[asyncio.Future, None], *args, **kwds):
+        if future is None:
+            return False
+        res0 = self.__func(*args, **kwds)
+        res1 = await res0 if self.__is_coro else res0
+        future.set_result(res1)
+        return True
 
     async def queue_no_wait(self):
         # 队列拥有者使用，消费队列
@@ -47,15 +45,10 @@ class AsyncExecOrder:
         return await self.queue_wait()
 
     async def queue_wait(self):
-        # loop可能消失问题
-        future, args, kwds = await self.__queue_get()
-        if future is not None:
-            res0 = self.__func(*args, **kwds)
-            res1 = await res0 if self.__is_coro else res0
-            future.set_result(res1)
-            pass
+        future, args, kwds = await self.__queue.get()
+        res = await self.__queue_func(future, *args, **kwds)
         self.__queue.task_done()
-        return True
+        return res
 
     async def queue_join(self):
         return await self.__queue.join()

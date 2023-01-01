@@ -34,7 +34,7 @@ class TestAsyncExecOrder:
         assert call_order.qsize == 2
 
         # 将信号消费
-        assert await call_order.queue_wait()
+        assert not await call_order.queue_wait()
         assert call_order.qsize == 1
         assert await call_order.queue_wait()
         assert call_order.qsize == 0
