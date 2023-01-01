@@ -49,12 +49,12 @@ class AsyncExecOrder:
     async def queue_wait(self):
         # loop可能消失问题
         future, args, kwds = await self.__queue_get()
+        if future is not None:
+            res0 = self.__func(*args, **kwds)
+            res1 = await res0 if self.__is_coro else res0
+            future.set_result(res1)
+            pass
         self.__queue.task_done()
-        if future is None:
-            return True
-        res0 = self.__func(*args, **kwds)
-        res1 = await res0 if self.__is_coro else res0
-        future.set_result(res1)
         return True
 
     async def queue_join(self):

@@ -107,6 +107,8 @@ class TestNormFlowDeadWaitAsync:
                 pass
             assert flow.qsize > 0
             await flow.qjoin()
+            assert flow.qsize == 0
             pass
+        assert flow.qsize == 0
         pass
     pass
