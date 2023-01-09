@@ -21,6 +21,6 @@ jobs:
       - name: pytest
         uses: ArtificialYi/actions/python_test@master
         with:
-          core_num: 7
+          core_num: 6
           python-version: 3.9
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
