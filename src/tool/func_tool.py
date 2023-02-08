@@ -106,11 +106,11 @@ class FuncTool:
             return False
 
     @staticmethod
-    def is_func_err(func: Callable):
+    def is_func_err(func: Callable, *args, **kwds):
         """函数有错误
         """
         try:
-            func()
+            func(*args, **kwds)
         except Exception:
             return True
         else:
@@ -178,4 +178,22 @@ class CallableDecoratorAsync:
         async def func_async(obj, *args, **kwds):
             return await self.__func_async(func, obj, *args, **kwds)
         return func_async
+    pass
+
+
+class FieldSwap(object):
+    def __init__(self, obj, field, value) -> None:
+        self.__obj = obj
+        self.__field = field
+        self.__tmp = getattr(obj, field)
+        self.__value = value
+        pass
+
+    def __enter__(self):
+        setattr(self.__obj, self.__field, self.__value)
+        return self
+
+    def __exit__(self, *args):
+        setattr(self.__obj, self.__field, self.__tmp)
+        pass
     pass

@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
-    AsyncExecOrder, CallableDecoratorAsync, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool,
+    AsyncExecOrder, CallableDecoratorAsync, FieldSwap, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool,
     LockThread, PytestAsyncTimeout
 )
 
@@ -159,5 +159,25 @@ class TestCallableDecoratorAsync:
         # 常规
         assert await self.func_tmp()
         assert not await decorator(self.func_tmp)(self)
+        pass
+    pass
+
+
+class Tmp:
+    TEST = None
+    pass
+
+
+class TestFieldSwap:
+    def test(self):
+        """测试变换的with是否生效
+        """
+        field = 'TEST'
+        assert getattr(Tmp, field) is None
+        with FieldSwap(Tmp, field, 0):
+            assert getattr(Tmp, field) == 0
+            pass
+        assert getattr(Tmp, field) != 0
+        assert getattr(Tmp, field) is None
         pass
     pass
