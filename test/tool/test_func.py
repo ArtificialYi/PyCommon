@@ -169,12 +169,25 @@ class Tmp:
 
 
 class TestFieldSwap:
-    def test(self):
+    def test_sync(self):
         """测试变换的with是否生效
         """
         field = 'TEST'
         assert getattr(Tmp, field) is None
         with FieldSwap(Tmp, field, 0):
+            assert getattr(Tmp, field) == 0
+            pass
+        assert getattr(Tmp, field) != 0
+        assert getattr(Tmp, field) is None
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_async(self):
+        """测试变换的awith是否生效
+        """
+        field = 'TEST'
+        assert getattr(Tmp, field) is None
+        async with FieldSwap(Tmp, field, 0):
             assert getattr(Tmp, field) == 0
             pass
         assert getattr(Tmp, field) != 0

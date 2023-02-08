@@ -193,7 +193,15 @@ class FieldSwap(object):
         setattr(self.__obj, self.__field, self.__value)
         return self
 
+    async def __aenter__(self):
+        self.__enter__()
+        return self
+
     def __exit__(self, *args):
         setattr(self.__obj, self.__field, self.__tmp)
+        pass
+
+    async def __aexit__(self, *args):
+        self.__exit__(*args)
         pass
     pass
