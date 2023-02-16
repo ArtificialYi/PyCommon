@@ -1,5 +1,7 @@
+import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
+from dbutils.pooled_db import PooledDB
 
 
 class DBConfig:
@@ -18,7 +20,7 @@ class DBConfigManage:
     __CONFIG = None
 
     @classmethod
-    def config(cls):
+    def config(cls) -> DBConfig:
         if cls.__CONFIG is not None:
             return cls.__CONFIG
 
@@ -33,4 +35,28 @@ class DBConfigManage:
             ConfigBase.get_value('rds', 'ping', config_default, config_env),
         )
         return cls.__CONFIG
+    pass
+
+
+class DBPool:
+    """构造DB对应的连接池
+    1. 开放 从连接池中获取conn
+    """
+    def __init__(self, db_name: str) -> None:
+        config_db = DBConfigManage.config()
+        self.__pool = PooledDB(creator=pymysql, **{
+            'host': config_db.host,
+            'port': config_db.port,
+            'user': config_db.user,
+            'password': config_db.password,
+            'db': db_name,
+            'mincached': config_db.mincached,
+            'blocking': True,
+            'ping': config_db.ping,
+        })
+        pass
+
+    def get_conn(self):
+        self.__pool.connection()
+        pass
     pass
