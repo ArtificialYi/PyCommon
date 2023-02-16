@@ -1,8 +1,6 @@
 import asyncio
 from collections import deque
-from configparser import ConfigParser
 from typing import Any, Callable, Dict, Iterable, Union
-import os
 
 
 class BaseTool:
@@ -103,25 +101,4 @@ class AsyncBase:
         except asyncio.CancelledError as ce:  # pragma: no cover
             print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
             return func(*args, **kwds)  # pragma: no cover
-    pass
-
-
-class ConfigBase:
-    @staticmethod
-    def get_config(path: str):
-        config = ConfigParser()
-        if os.path.exists(path):
-            config.read(path)
-            pass
-        return config
-
-    @staticmethod
-    def get_value(
-        section: str, option: str, *config_lst: ConfigParser, default=''
-    ):
-        res = default
-        for config in config_lst:
-            res = config.get(section, option, fallback=res)
-            pass
-        return res
     pass
