@@ -14,7 +14,7 @@ class DBConfig:
     pass
 
 
-class ConfigManage:
+class DBConfigManage:
     __CONFIG = None
 
     @classmethod
