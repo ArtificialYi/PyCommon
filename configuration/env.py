@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from enum import Enum
 import os
-from ..tool.base import ConfigBase
+from .base import ConfigBase
 
 COMMON_REPOSITORY_DIR = os.path.dirname(__file__)
 COMMON_SRC_DIR = os.path.dirname(COMMON_REPOSITORY_DIR)
