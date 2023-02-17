@@ -1,8 +1,11 @@
+import threading
+from typing import Dict
 import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
-from dbutils.pooled_db import PooledDB
+from dbutils.pooled_db import PooledDB, PooledDedicatedDBConnection
 from pymysql.cursors import SSDictCursor
+from pymysql.connections import Connection
 
 
 class DBConfig:
@@ -55,42 +58,39 @@ class DBPool:
             'blocking': True,
             'ping': config_db.ping,
         })
+        self.__lock = threading.Lock()
         pass
 
-    def get_conn(self):
-        return self.__pool.connection()
+    def get_conn(self) -> Connection:
+        """线程之间不共享连接
+        """
+        return self.__pool.connection(shareable=False)  # type: ignore
     pass
 
 
-class ConnectionManage:
-    """一次性的conn管理类
-    """
-    def __init__(self, pool: DBPool) -> None:
-        self.__pool = pool
-        pass
+class DBBase:
+    DB_NAME = ''
+    __POOL_MAP: Dict[str, DBPool] = dict()
 
-    def __enter__(self):
-        self.__conn = self.__pool.get_conn()
-        return self.__conn
+    @classmethod
+    def get_pool(cls, db_name: str):
+        if DBBase.__POOL_MAP.get(cls.DB_NAME, None) is not None:
+            return DBBase.__POOL_MAP[cls.DB_NAME]
 
-    def __exit__(self, *args):
-        self.__conn.close()
-        pass
-    pass
+        DBBase.__POOL_MAP[cls.DB_NAME] = DBPool(db_name)
+        return DBBase.__POOL_MAP[cls.DB_NAME]
 
-
-class CursorManage:
-    """一次性的cursor管理类
-    """
-    def __init__(self, conn) -> None:
-        self.__conn = conn
-        pass
-
-    def __enter__(self):
-        self.__cursor: SSDictCursor = self.__conn.cursor(SSDictCursor)
-        return self.__cursor
-
-    def __exit__(self, *args):
-        self.__cursor.close()
-        pass
+    @classmethod
+    def _affected_more(cls, sql: str, args) -> int:
+        with (
+            DBBase.get_pool(cls.DB_NAME).get_conn() as conn,
+            conn.cursor(SSDictCursor) as cursor,
+        ):
+            conn.begin()
+            effected_rows = cursor.execute(sql, args)
+            if not isinstance(effected_rows, int):
+                conn.rollback()
+                raise Exception(f'异常SQL调用:{sql}')
+            conn.commit()
+            return effected_rows
     pass
