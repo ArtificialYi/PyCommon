@@ -2,6 +2,7 @@ import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
 from dbutils.pooled_db import PooledDB
+from pymysql.cursors import SSDictCursor
 
 
 class DBConfig:
@@ -57,6 +58,39 @@ class DBPool:
         pass
 
     def get_conn(self):
-        self.__pool.connection()
+        return self.__pool.connection()
+    pass
+
+
+class ConnectionManage:
+    """一次性的conn管理类
+    """
+    def __init__(self, pool: DBPool) -> None:
+        self.__pool = pool
+        pass
+
+    def __enter__(self):
+        self.__conn = self.__pool.get_conn()
+        return self.__conn
+
+    def __exit__(self, *args):
+        self.__conn.close()
+        pass
+    pass
+
+
+class CursorManage:
+    """一次性的cursor管理类
+    """
+    def __init__(self, conn) -> None:
+        self.__conn = conn
+        pass
+
+    def __enter__(self):
+        self.__cursor: SSDictCursor = self.__conn.cursor(SSDictCursor)
+        return self.__cursor
+
+    def __exit__(self, *args):
+        self.__cursor.close()
         pass
     pass
