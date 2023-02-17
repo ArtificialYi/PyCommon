@@ -3,7 +3,7 @@ from typing import Dict
 import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
-from dbutils.pooled_db import PooledDB, PooledDedicatedDBConnection
+from dbutils.pooled_db import PooledDB
 from pymysql.cursors import SSDictCursor
 from pymysql.connections import Connection
 
@@ -93,4 +93,20 @@ class DBBase:
                 raise Exception(f'异常SQL调用:{sql}')
             conn.commit()
             return effected_rows
+
+    @classmethod
+    def _force_commit(cls, sql: str, args):
+        with (
+            DBBase.get_pool(cls.DB_NAME).get_conn() as conn,
+            conn.cursor(SSDictCursor) as cursor,
+        ):
+            conn.begin()
+            effected_rows = cursor.execute(sql, args)
+            conn.commit()
+            return effected_rows
+
+    @classmethod
+    def _no_transaction(cls, sql: str, args):
+        with DBBase.get_pool(cls.DB_NAME).get_conn().cursor(SSDictCursor) as cursor:
+            return cursor.execute(sql, args)
     pass
