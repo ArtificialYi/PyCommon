@@ -1,8 +1,10 @@
+from abc import abstractmethod
 import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
 from dbutils.pooled_db import PooledDB
 from pymysql.connections import Connection
+from pymysql.cursors import Cursor
 
 
 class DBConfig:
@@ -61,4 +63,11 @@ class DBPool:
         """线程之间不共享连接
         """
         return self.__pool.connection(shareable=False)  # type: ignore
+    pass
+
+
+class ActionDB:
+    @abstractmethod
+    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
+        pass
     pass

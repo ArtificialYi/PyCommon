@@ -1,18 +1,8 @@
-from abc import abstractmethod
-from typing import Dict, Tuple
 from pymysql.cursors import SSDictCursor, Cursor
 from pymysql.connections import Connection
-from ..tool.map import Map, MapKeyOne
 from ..tool.base import AsyncBase
 
-from ...configuration.base.rds import DBPool
-
-
-class ActionDB:
-    @abstractmethod
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
-        pass
-    pass
+from ...configuration.base.rds import ActionDB, DBPool
 
 
 class ActionAffectedMore(ActionDB):
