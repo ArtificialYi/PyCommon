@@ -1,10 +1,8 @@
 import threading
-from typing import Dict
 import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
 from dbutils.pooled_db import PooledDB
-from pymysql.cursors import SSDictCursor
 from pymysql.connections import Connection
 
 
@@ -65,48 +63,4 @@ class DBPool:
         """线程之间不共享连接
         """
         return self.__pool.connection(shareable=False)  # type: ignore
-    pass
-
-
-class DBBase:
-    DB_NAME = ''
-    __POOL_MAP: Dict[str, DBPool] = dict()
-
-    @classmethod
-    def get_pool(cls, db_name: str):
-        if DBBase.__POOL_MAP.get(cls.DB_NAME, None) is not None:
-            return DBBase.__POOL_MAP[cls.DB_NAME]
-
-        DBBase.__POOL_MAP[cls.DB_NAME] = DBPool(db_name)
-        return DBBase.__POOL_MAP[cls.DB_NAME]
-
-    @classmethod
-    def _affected_more(cls, sql: str, args) -> int:
-        with (
-            DBBase.get_pool(cls.DB_NAME).get_conn() as conn,
-            conn.cursor(SSDictCursor) as cursor,
-        ):
-            conn.begin()
-            effected_rows = cursor.execute(sql, args)
-            if not isinstance(effected_rows, int):
-                conn.rollback()
-                raise Exception(f'异常SQL调用:{sql}')
-            conn.commit()
-            return effected_rows
-
-    @classmethod
-    def _force_commit(cls, sql: str, args):
-        with (
-            DBBase.get_pool(cls.DB_NAME).get_conn() as conn,
-            conn.cursor(SSDictCursor) as cursor,
-        ):
-            conn.begin()
-            effected_rows = cursor.execute(sql, args)
-            conn.commit()
-            return effected_rows
-
-    @classmethod
-    def _no_transaction(cls, sql: str, args):
-        with DBBase.get_pool(cls.DB_NAME).get_conn().cursor(SSDictCursor) as cursor:
-            return cursor.execute(sql, args)
     pass
