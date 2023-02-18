@@ -1,4 +1,3 @@
-import threading
 import pymysql
 from .base import ConfigBase
 from .env import ConfigEnv
@@ -56,7 +55,6 @@ class DBPool:
             'blocking': True,
             'ping': config_db.ping,
         })
-        self.__lock = threading.Lock()
         pass
 
     def get_conn(self) -> Connection:
