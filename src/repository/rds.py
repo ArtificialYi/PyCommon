@@ -2,7 +2,7 @@ from pymysql.cursors import SSDictCursor, Cursor
 from pymysql.connections import Connection
 from ..tool.base import AsyncBase
 
-from ...configuration.base.rds import ActionDB, DBPool
+from ...configuration.rds import ActionDB, DBPool
 
 
 class ActionAffectedMore(ActionDB):

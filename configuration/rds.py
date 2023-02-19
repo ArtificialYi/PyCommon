@@ -1,6 +1,6 @@
 from abc import abstractmethod
+from .tool import ConfigTool
 import pymysql
-from .base import ConfigBase
 from .env import ConfigEnv
 from dbutils.pooled_db import PooledDB
 from pymysql.connections import Connection
@@ -30,12 +30,12 @@ class DBConfigManage:
         config_env = ConfigEnv.config_env()
         config_default = ConfigEnv.config_default()
         cls.__CONFIG = DBConfig(
-            ConfigBase.get_value('rds', 'host', config_default, config_env),
-            ConfigBase.get_value('rds', 'port', config_default, config_env),
-            ConfigBase.get_value('rds', 'user', config_default, config_env),
-            ConfigBase.get_value('rds', 'password', config_default, config_env),
-            ConfigBase.get_value('rds', 'mincached', config_default, config_env),
-            ConfigBase.get_value('rds', 'ping', config_default, config_env),
+            ConfigTool.get_value('rds', 'host', config_default, config_env),
+            ConfigTool.get_value('rds', 'port', config_default, config_env),
+            ConfigTool.get_value('rds', 'user', config_default, config_env),
+            ConfigTool.get_value('rds', 'password', config_default, config_env),
+            ConfigTool.get_value('rds', 'mincached', config_default, config_env),
+            ConfigTool.get_value('rds', 'ping', config_default, config_env),
         )
         return cls.__CONFIG
     pass

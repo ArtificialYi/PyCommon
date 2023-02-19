@@ -1,11 +1,12 @@
 from configparser import ConfigParser
 from enum import Enum
 import os
-from .base import ConfigBase
 
-COMMON_REPOSITORY_DIR = os.path.dirname(__file__)
-COMMON_SRC_DIR = os.path.dirname(COMMON_REPOSITORY_DIR)
-COMMON_ROOT = os.path.dirname(COMMON_SRC_DIR)
+from .tool import ConfigTool
+
+
+COMMON_CONFIGURATION_DIR = os.path.dirname(__file__)
+COMMON_ROOT = os.path.dirname(COMMON_CONFIGURATION_DIR)
 PROJECT_ROOT = os.path.dirname(COMMON_ROOT)
 
 
@@ -41,7 +42,7 @@ class ConfigEnv:
         if not os.path.exists(path_project_root):
             raise Exception(f'项目缺少必备文件:{path_project_root}')
 
-        cls.__PROJECT = ConfigBase.get_config(path_project_root)
+        cls.__PROJECT = ConfigTool.get_config(path_project_root)
         return cls.__PROJECT
 
     @classmethod
@@ -70,7 +71,7 @@ class ConfigEnv:
             return cls.__DEFAULT
 
         path_default = os.path.join(cls.__path_resource_root(), 'default.ini')
-        cls.__DEFAULT = ConfigBase.get_config(path_default)
+        cls.__DEFAULT = ConfigTool.get_config(path_default)
         return cls.__DEFAULT
 
     @classmethod
@@ -81,6 +82,6 @@ class ConfigEnv:
             return cls.__ENV
 
         path_env = os.path.join(cls.__path_resource_root(), f'{cls.__env_enum_project().lower()}.ini')
-        cls.__ENV = ConfigBase.get_config(path_env)
+        cls.__ENV = ConfigTool.get_config(path_env)
         return cls.__ENV
     pass
