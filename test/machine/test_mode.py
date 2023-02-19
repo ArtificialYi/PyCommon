@@ -3,7 +3,7 @@ import asyncio
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
-from ...src.machine.mode import NormFLowDeadWaitAsync, NormStatusSignFlow, StatusSignFlowBase
+from ...src.machine.mode import NormFLowDeadWaitAsync, NormStatusSignFlow, GraphSignDealMachine
 
 
 class FuncTmp:
@@ -22,31 +22,31 @@ class TestStatusSignFlowBase:
     async def test(self):
         func_tmp = FuncTmp()
         graph = NormStatusGraph(func_tmp.func)
-        sign_flow = StatusSignFlowBase(graph)
+        sign_flow = GraphSignDealMachine(graph)
         # 未启动
-        assert not sign_flow._future_run.done()
+        assert not sign_flow.__future_run.done()
         assert func_tmp.num == 0
         assert graph.status == NormStatusGraph.State.EXITED
-        await sign_flow._main()
+        await sign_flow.main()
 
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
         graph.start()
         assert graph.status == NormStatusGraph.State.STARTED
-        task_main = AsyncBase.coro2task_exec(sign_flow._main())
-        await sign_flow._future_run
+        task_main = AsyncBase.coro2task_exec(sign_flow.main())
+        await sign_flow.__future_run
         await asyncio.sleep(1)
         assert func_tmp.num > 0
         assert not task_main.done()
 
         # 启动中，再次启动会抛出启动中异常
-        assert await FuncTool.is_async_err(sign_flow._main)
+        assert await FuncTool.is_async_err(sign_flow.main)
 
         # 信号处理，关闭主流程
-        assert await sign_flow._sign_deal(NormStatusGraph.State.EXITED)
-        assert sign_flow._graph.status == NormStatusGraph.State.EXITED
+        assert await sign_flow.sign_deal(NormStatusGraph.State.EXITED)
+        assert sign_flow.__graph.status == NormStatusGraph.State.EXITED
         await task_main
-        assert not sign_flow._future_run.done()
+        assert not sign_flow.__future_run.done()
         pass
     pass
 
@@ -59,11 +59,11 @@ class TestNormStatusSignFlow:
 
         # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
-        graph = norm_sign_flow._graph
+        graph = norm_sign_flow.__graph
         assert graph.status == NormStatusGraph.State.EXITED
         async with norm_sign_flow:
             assert graph.status == NormStatusGraph.State.STARTED
-            assert norm_sign_flow._future_run.done()
+            assert norm_sign_flow.__future_run.done()
             await asyncio.sleep(1)
             assert func_tmp.num > 0
 
@@ -96,9 +96,9 @@ class TestNormFlowDeadWaitAsync:
         flow = NormFLowDeadWaitAsync(func_tmp.func)
         assert flow.qsize == 0
         async with flow:
-            assert flow._future_run.done()
+            assert flow.__future_run.done()
             await asyncio.sleep(1)
-            assert flow._graph.status == NormStatusGraph.State.STARTED
+            assert flow.__graph.status == NormStatusGraph.State.STARTED
             assert flow.qsize == 0
 
             assert hasattr(flow, 'func')

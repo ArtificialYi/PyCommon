@@ -72,26 +72,20 @@ class AsyncExecOrder:
 class Func2CallableOrderSync:
     """该类会阻断所有mro的后置初始化
     """
-    def __init__(self, func: Callable):
-        self.__handle = AsyncExecOrder(func)
-        self.__setattr__(func.__name__, self.__handle.call_sync)
-        pass
-
-    def __call__(self):
-        return self.__handle
+    def __new__(cls, obj: object, func: Callable) -> AsyncExecOrder:
+        handle = AsyncExecOrder(func)
+        obj.__setattr__(func.__name__, handle.call_sync)
+        return handle
     pass
 
 
 class Func2CallableOrderAsync:
-    """该类会阻断所有mro的后置初始化
+    """该类不需要继承
     """
-    def __init__(self, func: Callable):
-        self.__handle = AsyncExecOrder(func)
-        self.__setattr__(func.__name__, self.__handle.call_async)
-        pass
-
-    def __call__(self):
-        return self.__handle
+    def __new__(cls, obj: object, func: Callable) -> AsyncExecOrder:
+        handle = AsyncExecOrder(func)
+        obj.__setattr__(func.__name__, handle.call_async)
+        return handle
     pass
 
 
