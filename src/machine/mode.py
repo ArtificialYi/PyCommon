@@ -86,7 +86,7 @@ class NormFlow:
     pass
 
 
-class NormFLowDeadWaitAsync(NormFlow):
+class DeadWaitFlow(NormFlow):
     """以死等的方式调用func
     依赖与逻辑链路
     1. 流 拥有 func => 队列函数A => 逻辑B 逻辑C 函数属性
@@ -97,9 +97,9 @@ class NormFLowDeadWaitAsync(NormFlow):
 
     1. 清空死等队列后再exit
     """
-    def __init__(self, func: Callable, graph_type: type[NormStatusGraph]) -> None:
+    def __init__(self, func: Callable) -> None:
         self.__call_order = Func2CallableOrderAsync(self, func)
-        super().__init__(graph_type(self.__call_order.queue_wait))
+        NormFlow.__init__(self, NormStatusGraph(self.__call_order.queue_wait))
         pass
 
     @property

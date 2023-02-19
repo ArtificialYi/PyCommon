@@ -3,7 +3,7 @@ import asyncio
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
 from ...src.machine.status import NormStatusGraph
-from ...src.machine.mode import NormFLowDeadWaitAsync, NormStatusSignFlow, GraphSignDealMachine
+from ...src.machine.mode import DeadWaitFlow, NormStatusSignFlow, GraphSignDealMachine
 
 
 class FuncTmp:
@@ -93,7 +93,7 @@ class TestNormFlowDeadWaitAsync:
         5. exit
         """
         func_tmp = FuncTmp()
-        flow = NormFLowDeadWaitAsync(func_tmp.func)
+        flow = DeadWaitFlow(func_tmp.func)
         assert flow.qsize == 0
         async with flow:
             assert flow.__future_run.done()
