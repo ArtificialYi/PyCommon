@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import math
 from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
-    AsyncExecOrder, CallableDecoratorAsync, FieldSwap, Func2CallableOrderAsync, Func2CallableOrderSync, FuncTool,
+    AsyncExecOrder, CallableDecoratorAsync, FieldSwap, FuncTool,
     LockThread, PytestAsyncTimeout
 )
 
@@ -46,29 +46,6 @@ class TestAsyncExecOrder:
 
 
 def func_custom():
-    pass
-
-
-class TestAsyncExecOrderHandle:
-    def test(self):
-        # 类函数有序化
-        handle_sync = Func2CallableOrderSync(BaseTool.return_self)
-        assert hasattr(handle_sync, 'return_self')
-        handle_async = Func2CallableOrderAsync(BaseTool.return_self)
-        assert hasattr(handle_async, 'return_self')
-
-        # 对象函数有序化
-        handle_sync = Func2CallableOrderSync(self.test)
-        assert hasattr(handle_sync, 'test')
-        handle_async = Func2CallableOrderAsync(self.test)
-        assert hasattr(handle_async, 'test')
-
-        # 模块函数有序化
-        handle_sync = Func2CallableOrderSync(func_custom)
-        assert hasattr(handle_sync, 'func_custom')
-        handle_async = Func2CallableOrderAsync(func_custom)
-        assert hasattr(handle_async, 'func_custom')
-        pass
     pass
 
 

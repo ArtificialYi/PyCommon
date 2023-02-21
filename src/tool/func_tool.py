@@ -69,26 +69,6 @@ class AsyncExecOrder:
     pass
 
 
-class Func2CallableOrderSync:
-    """该类会阻断所有mro的后置初始化
-    """
-    def __new__(cls, obj: object, func: Callable) -> AsyncExecOrder:
-        handle = AsyncExecOrder(func)
-        obj.__setattr__(func.__name__, handle.call_sync)
-        return handle
-    pass
-
-
-class Func2CallableOrderAsync:
-    """该类不需要继承
-    """
-    def __new__(cls, obj: object, func: Callable) -> AsyncExecOrder:
-        handle = AsyncExecOrder(func)
-        obj.__setattr__(func.__name__, handle.call_async)
-        return handle
-    pass
-
-
 class FuncTool:
     @staticmethod
     async def is_async_err(func: Callable):
@@ -176,6 +156,8 @@ class CallableDecoratorAsync:
 
 
 class FieldSwap(object):
+    """暂时替换对象中的某个属性
+    """
     def __init__(self, obj, field, value) -> None:
         self.__obj = obj
         self.__field = field
@@ -188,7 +170,7 @@ class FieldSwap(object):
         return self
 
     async def __aenter__(self):
-        self.__enter__()
+        setattr(self.__obj, self.__field, self.__value)
         return self
 
     def __exit__(self, *args):
@@ -196,6 +178,65 @@ class FieldSwap(object):
         pass
 
     async def __aexit__(self, *args):
-        self.__exit__(*args)
+        setattr(self.__obj, self.__field, self.__tmp)
         pass
+    pass
+
+
+class FieldSwapSafe(FieldSwap):
+    """为属性替换加上协程锁 & 线程锁
+    1. 协程内仅能替换一次
+    2. 多线程也仅能替换一次
+    """
+    def __init__(self, obj, field, value) -> None:
+        super().__init__(obj, field, value)
+        self.__lock_async = asyncio.Lock()
+        self.__lock_sync = threading.Lock()
+        pass
+
+    def __enter__(self):
+        self.__lock_sync.__enter__()
+        return FieldSwap.__enter__(self)
+
+    def __exit__(self, *args):
+        FieldSwap.__exit__(self, *args)
+        self.__lock_sync.__exit__(*args)
+
+    async def __aenter__(self):
+        await self.__lock_async.__aenter__()
+        return await FieldSwap.__aenter__(self)
+
+    async def __aexit__(self, *args):
+        await FieldSwap.__aexit__(self, *args)
+        await self.__lock_async.__aexit__(*args)
+    pass
+
+
+class FQSSync(FieldSwapSafe):
+    """函数队列的基类
+    Func Queue Safe
+    """
+    def __init__(self, func: Callable) -> None:
+        self.__fq_order = AsyncExecOrder(func)
+        super().__init__(self, func.__name__, self.__fq_order.call_sync)
+        pass
+
+    @property
+    def fq_order(self):
+        return self.__fq_order
+    pass
+
+
+class FQSAsync(FieldSwapSafe):
+    """函数队列的基类
+    Func Queue Safe
+    """
+    def __init__(self, func: Callable) -> None:
+        self.__fq_order = AsyncExecOrder(func)
+        super().__init__(self, func.__name__, self.__fq_order.call_async)
+        pass
+
+    @property
+    def fq_order(self):
+        return self.__fq_order
     pass
