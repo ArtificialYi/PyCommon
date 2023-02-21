@@ -161,7 +161,7 @@ class FieldSwap(object):
     def __init__(self, obj, field, value) -> None:
         self.__obj = obj
         self.__field = field
-        self.__tmp = getattr(obj, field)
+        self.__tmp = getattr(obj, field, None)
         self.__value = value
         pass
 
@@ -212,7 +212,7 @@ class FieldSwapSafe(FieldSwap):
     pass
 
 
-class FQSSync(FieldSwapSafe):
+class FqsSync(FieldSwapSafe):
     """函数队列的基类
     Func Queue Safe
     """
@@ -227,7 +227,7 @@ class FQSSync(FieldSwapSafe):
     pass
 
 
-class FQSAsync(FieldSwapSafe):
+class FqsAsync(FieldSwapSafe):
     """函数队列的基类
     Func Queue Safe
     """

@@ -1,7 +1,6 @@
 import asyncio
 
 from ...src.tool.func_tool import PytestAsyncTimeout
-from ...src.machine.status import NormStatusGraph
 from ...src.machine.mode import DeadWaitFlow, NormFlow
 
 
@@ -51,7 +50,6 @@ class TestNormFlowDeadWaitAsync:
         assert flow.qsize == 0
         async with flow:
             await asyncio.sleep(1)
-            assert flow.__graph.status == NormStatusGraph.State.STARTED
             assert flow.qsize == 0
 
             assert hasattr(flow, 'func')

@@ -3,10 +3,10 @@ from typing import Callable
 
 from ..tool.base import AsyncBase
 from .status import NormStatusGraph
-from ..tool.func_tool import AsyncExecOrder, FQSAsync, FQSSync
+from ..tool.func_tool import AsyncExecOrder, FqsAsync, FqsSync
 
 
-class FQSStatusChange(FQSSync):
+class FqsStatusChange(FqsSync):
     """状态图外置函数队列
     """
     def __init__(self, graph: NormStatusGraph) -> None:
@@ -80,7 +80,7 @@ class NormFlow:
     """
     def __init__(self, func: Callable) -> None:
         self.__graph = NormStatusGraph(func)
-        self.__fq_status_change = FQSStatusChange(self.__graph)
+        self.__fq_status_change = FqsStatusChange(self.__graph)
         self.__sign_deal = ActionGraphSign(self.__graph, self.__fq_status_change.fq_order)
         pass
 
@@ -102,7 +102,7 @@ class NormFlow:
     pass
 
 
-class DeadWaitFlow(NormFlow):
+class DeadWaitFlow(FqsAsync):
     """基于基本状态机的异步API流
     依赖与逻辑链路
     1. 将普通函数 转化为 队列函数
@@ -111,24 +111,24 @@ class DeadWaitFlow(NormFlow):
     1. 清空死等队列后再exit
     """
     def __init__(self, func: Callable) -> None:
-        self.__fq = FQSAsync(func)
-        NormFlow.__init__(self, self.__fq.fq_order.queue_wait)
+        super().__init__(func)
+        self.__flow = NormFlow(self.fq_order.queue_wait)
         pass
 
     @property
     def qsize(self):
-        return self.__fq.fq_order.qsize
+        return self.fq_order.qsize
 
     async def qjoin(self):
-        return await self.__fq.fq_order.queue_join()
+        return await self.fq_order.queue_join()
 
     async def __aenter__(self):
-        await self.__fq.__aenter__()
-        return await NormFlow.__aenter__(self)
+        await super().__aenter__()
+        return await self.__flow.__aenter__()
 
     async def __aexit__(self, *args):
-        await self.__fq.fq_order.call_step()
-        await NormFlow.__aexit__(self, *args)
-        await self.__fq.__aexit__(self, *args)
+        await self.fq_order.call_step()
+        await self.__flow.__aexit__(*args)
+        await super().__aexit__(*args)
         pass
     pass
