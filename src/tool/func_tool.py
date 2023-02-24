@@ -222,7 +222,7 @@ class FqsSync(FieldSwapSafe):
         pass
 
     @property
-    def fq_order(self):
+    def fq_order(self) -> AsyncExecOrder:
         return self.__fq_order
     pass
 
@@ -237,6 +237,6 @@ class FqsAsync(FieldSwapSafe):
         pass
 
     @property
-    def fq_order(self):
+    def fq_order(self) -> AsyncExecOrder:
         return self.__fq_order
     pass
