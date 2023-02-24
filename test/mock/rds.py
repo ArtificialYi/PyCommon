@@ -41,8 +41,9 @@ class MockCursor(MockDelay, SSDictCursor):
         return self.__exec_res
 
     def close(self):
-        self.mock_sleep()
         pass
+
+    __del__ = close
     pass
 
 
