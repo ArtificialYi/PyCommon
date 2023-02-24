@@ -17,6 +17,6 @@ class Map:
 
 
 class MapKeyOne(Map):
-    def get_value(self, key):
-        return super().get_value(key, key)
+    def get_value(self, key, *args, **kwds):
+        return super().get_value(key, key, *args, **kwds)
     pass
