@@ -1,5 +1,6 @@
 import asyncio
 
+
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.machine.mode import DeadWaitFlow, NormFlow
 
@@ -12,6 +13,13 @@ class FuncTmp:
     async def func(self):
         self.num += 1
         return await asyncio.sleep(0.1)
+    pass
+
+
+class TestActionGraphSign:
+    @PytestAsyncTimeout(1)
+    async def test_(self):
+        pass
     pass
 
 
@@ -35,7 +43,7 @@ class TestNormFlow:
     pass
 
 
-class TestNormFlowDeadWaitAsync:
+class TestDeadWaitFlow:
     @PytestAsyncTimeout(2)
     async def test(self):
         """校验死等

@@ -2,26 +2,8 @@ import asyncio
 from typing import Callable
 
 from ..tool.base import AsyncBase
-from .status import NormStatusGraph
-from ..tool.func_tool import AsyncExecOrder, FqsAsync, FqsSync
-
-
-class FqsStatusChange(FqsSync):
-    """状态图外置函数队列
-    """
-    def __init__(self, graph: NormStatusGraph) -> None:
-        self.__graph = graph
-        super().__init__(self.status_change)
-        pass
-
-    async def status_change(self, status_target, *args, **kwds):
-        # 所有状态转移均在此处处理
-        func = self.__graph.func_get_target(status_target)
-        if func is None:
-            return None
-        res = func(*args, **kwds)
-        return await res if asyncio.iscoroutinefunction(func) else res
-    pass
+from .status import SGFlow, SGFlowMachine
+from ..tool.func_tool import AsyncExecOrder, FqsAsync
 
 
 class ActionGraphSign:
@@ -34,7 +16,7 @@ class ActionGraphSign:
     lock:
     1. 协程内多个main同时运行将会出错
     """
-    def __init__(self, graph: NormStatusGraph, fq_order: AsyncExecOrder) -> None:
+    def __init__(self, graph: SGFlowMachine, fq_order: AsyncExecOrder) -> None:
         self.__future_run = AsyncBase.get_future()
         self.__graph = graph
         self.__fq_order = fq_order
@@ -46,6 +28,7 @@ class ActionGraphSign:
 
     async def __no_sign(self):
         func = self.__graph.func_get()
+        # 运行时状态有2个或以上时才有可能触发
         if func is None:
             return await self.__fq_order.queue_wait()
         res_pre = func()
@@ -79,16 +62,15 @@ class NormFlow:
     3. 队列信号操作逻辑
     """
     def __init__(self, func: Callable) -> None:
-        self.__graph = NormStatusGraph(func)
-        self.__fq_status_change = FqsStatusChange(self.__graph)
-        self.__sign_deal = ActionGraphSign(self.__graph, self.__fq_status_change.fq_order)
+        self.__graph = SGFlowMachine(SGFlow(func))
+        self.__sign_deal = ActionGraphSign(self.__graph, self.__graph.fq_order)
         pass
 
     async def __aenter__(self):
-        await self.__fq_status_change.__aenter__()
         if self.__graph.status != self.__graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self.__graph.status}')
-        self.__graph.start()
+        await self.__graph.status_change(SGFlow.State.STARTED)
+        await self.__graph.__aenter__()
         await self.__sign_deal.run_async()
         return self
 
@@ -96,8 +78,8 @@ class NormFlow:
         # 将状态转移至exited
         if not self.__sign_deal.is_running:
             raise Exception('状态机尚未启动')
-        await self.__fq_status_change.status_change(self.__graph.status_exited)
-        await self.__fq_status_change.__aexit__(*args)
+        await self.__graph.status_change(self.__graph.status_exited)
+        await self.__graph.__aexit__(*args)
         pass
     pass
 

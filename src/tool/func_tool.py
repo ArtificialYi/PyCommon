@@ -71,9 +71,9 @@ class AsyncExecOrder:
 
 class FuncTool:
     @staticmethod
-    async def is_async_err(func: Callable):
+    async def is_async_err(func: Callable, *args, **kwds):
         try:
-            await func()
+            await func(*args, **kwds)
         except Exception:
             return True
         else:

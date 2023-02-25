@@ -1,6 +1,5 @@
-import asyncio
-from ...src.tool.func_tool import FuncTool
-from ...src.machine.status import NormStatusGraph, StatusEdge, StatusGraph, StatusValue
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.machine.status import SGFlow, SGFlowMachine, StatusEdge, StatusGraph, StatusValue
 
 
 class TestStatusEdge(object):
@@ -32,8 +31,8 @@ class TestStatusGraph(object):
         # 一条基本边
         assert a.num_edge == 1
         a.build()
-        assert a.status_graph[0][1].weight == 1
-        assert a.status_graph[1][0].weight == float('inf')
+        assert (value := a.get(0, 1)) is not None and value.weight == 1
+        assert (value := a.get(1, 0)) is not None and value.weight == float('inf')
         pass
 
     def test_edge2(self):
@@ -47,16 +46,16 @@ class TestStatusGraph(object):
         assert a.num_edge == 2
         a.build()
         # 基本数值
-        assert a.status_graph[0][1].weight == 1
-        assert a.status_graph[1][2].weight == 2
-        assert a.status_graph[0][2].weight == 1 + 2
+        assert (value := a.get(0, 1)) is not None and value.weight == 1
+        assert (value := a.get(1, 2)) is not None and value.weight == 2
+        assert (value := a.get(0, 2)) is not None and value.weight == 1 + 2
         # 无效边
-        assert a.status_graph[1][0].weight == float('inf')
-        assert a.status_graph[2][0].weight == float('inf')
-        assert a.status_graph[2][1].weight == float('inf')
+        assert (value := a.get(1, 0)) is not None and value.weight == float('inf')
+        assert (value := a.get(2, 0)) is not None and value.weight == float('inf')
+        assert (value := a.get(2, 1)) is not None and value.weight == float('inf')
         # 只有单边
         a.build(0)
-        assert a.status_graph[0][2].weight == float('inf')
+        assert (value := a.get(0, 2)) is not None and value.weight == float('inf')
         pass
 
     def test_edge4(self):
@@ -72,21 +71,21 @@ class TestStatusGraph(object):
         assert a.num_edge == 4
         a.build()
         # 双边
-        assert a.status_graph[0][2].weight == 1 + 2
+        assert (value := a.get(0, 2)) is not None and value.weight == 1 + 2
         # 3边
-        assert a.status_graph[0][3].weight == 1 + 2 + 1
+        assert (value := a.get(0, 3)) is not None and value.weight == 1 + 2 + 1
         # 双边覆盖单边
-        assert a.status_graph[1][3].weight == 2 + 1
+        assert (value := a.get(1, 3)) is not None and value.weight == 2 + 1
 
         a.build(0)
         # 只有单边
-        assert a.status_graph[0][2].weight == float('inf')
-        assert a.status_graph[0][3].weight == float('inf')
-        assert a.status_graph[1][3].weight == 4
+        assert (value := a.get(0, 2)) is not None and value.weight == float('inf')
+        assert (value := a.get(0, 3)) is not None and value.weight == float('inf')
+        assert (value := a.get(1, 3)) is not None and value.weight == 4
 
         a.build(1)
         # 允许双边,但3边依旧不行
-        assert a.status_graph[0][3].weight == 1 + 4
+        assert (value := a.get(0, 3)) is not None and value.weight == 1 + 4
         pass
 
     def test_edge_self(self):
@@ -108,7 +107,7 @@ class TestStatusGraph(object):
         assert b.weight == 1 + 3
         assert b.count == 2
         for i in range(4):
-            assert a.status_graph[i].get(i, None) is None
+            assert a.get(i, i) is None
             pass
         pass
 
@@ -120,34 +119,25 @@ class TestStatusGraph(object):
         a.add(StatusEdge(0, 0), StatusValue(None))
         a.build()
         assert a.num_edge == 1
-        assert a.status_graph[0].get(0, None) is not None
+        assert (value := a.get(0, 0)) is not None and value.weight == float('inf')
         pass
     pass
 
 
-class TestNormStatusGraph:
-    def test(self):
-        graph = NormStatusGraph(FuncTool.norm_sync_err)
-        assert graph.status == NormStatusGraph.State.EXITED
-        assert graph.func_get_target(NormStatusGraph.State.STARTED) is not None
+class TestSGFlowMachine:
+    """基本状态图
+    """
+    @PytestAsyncTimeout(1)
+    async def test(self):
+        graph = SGFlowMachine(SGFlow(FuncTool.norm_sync_err))
+        assert graph.status == SGFlow.State.EXITED
         assert graph.func_get() is None
 
-        # STARTED状态刚好有函数，但是是会抛出异常的
-        graph = NormStatusGraph(FuncTool.norm_sync_err, NormStatusGraph.State.STARTED)
-        assert graph.status == NormStatusGraph.State.STARTED
-        func0 = graph.func_get()
-        assert func0 is not None and not asyncio.iscoroutinefunction(func0)
-        assert FuncTool.is_func_err(func0)
-
-        # 转换函数-started->started运行成功
-        func_trans2 = graph.func_get_target(NormStatusGraph.State.STARTED)
-        func1 = graph.func_get()
-        assert func1 is not None and func_trans2 is not None and func_trans2 == func1
-        assert FuncTool.is_func_err(func1)
-
-        # 转换函数-started->exited成功
-        func2 = graph.func_get_target(NormStatusGraph.State.EXITED)
-        assert func2 is not None and func2()
-        assert graph.status == NormStatusGraph.State.EXITED
+        # 状态无法转移
+        assert await graph.status_change(SGFlow.State.EXITED) is None
+        # 状态转移成功
+        assert await graph.status_change(SGFlow.State.STARTED)
+        # started状态内函数调用成功
+        assert await FuncTool.is_async_err(graph.status_change, SGFlow.State.STARTED)
         pass
     pass
