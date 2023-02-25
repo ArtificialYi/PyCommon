@@ -186,21 +186,11 @@ class FieldSwap(object):
 class FieldSwapSafe(FieldSwap):
     """为属性替换加上协程锁 & 线程锁
     1. 协程内仅能替换一次
-    2. 多线程也仅能替换一次
     """
     def __init__(self, obj, field, value) -> None:
         super().__init__(obj, field, value)
         self.__lock_async = asyncio.Lock()
-        self.__lock_sync = threading.Lock()
         pass
-
-    def __enter__(self):
-        self.__lock_sync.__enter__()
-        return FieldSwap.__enter__(self)
-
-    def __exit__(self, *args):
-        FieldSwap.__exit__(self, *args)
-        self.__lock_sync.__exit__(*args)
 
     async def __aenter__(self):
         await self.__lock_async.__aenter__()
@@ -209,6 +199,7 @@ class FieldSwapSafe(FieldSwap):
     async def __aexit__(self, *args):
         await FieldSwap.__aexit__(self, *args)
         await self.__lock_async.__aexit__(*args)
+        pass
     pass
 
 
