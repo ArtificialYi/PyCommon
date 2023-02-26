@@ -1,8 +1,10 @@
 import asyncio
 
+from ...src.machine.status import SGForFlow, SGMachineForFlow
 
-from ...src.tool.func_tool import PytestAsyncTimeout
-from ...src.machine.mode import DeadWaitFlow, NormFlow
+
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.machine.mode import ActionGraphSign, DeadWaitFlow, NormFlow
 
 
 class FuncTmp:
@@ -17,21 +19,49 @@ class FuncTmp:
 
 
 class TestActionGraphSign:
-    @PytestAsyncTimeout(1)
-    async def test_(self):
+    @PytestAsyncTimeout(2)
+    async def test_err_sync(self):
+        """同步运行两个会报错
+        """
+        func_tmp = FuncTmp()
+        machine = SGMachineForFlow(SGForFlow(func_tmp.func))
+        action_sign = ActionGraphSign(machine)
+        # 启动流
+        await machine.status_change(SGForFlow.State.STARTED)
+        assert func_tmp.num == 0
+        assert await action_sign.run_async()
+        await asyncio.sleep(1)
+        assert func_tmp.num > 0
+        assert await FuncTool.is_async_err(action_sign.run_async)
+        # 关闭流
+        await machine.status_change(SGForFlow.State.EXITED)
+        pass
+
+    @PytestAsyncTimeout(2)
+    async def test_err_safe(self):
+        """并发运行两个也会报错
+        """
+        func_tmp = FuncTmp()
+        machine = SGMachineForFlow(SGForFlow(func_tmp.func))
+        action_sign = ActionGraphSign(machine)
+        # 启动流
+        await machine.status_change(SGForFlow.State.STARTED)
+        assert await FuncTool.is_async_err(asyncio.gather, action_sign.run_async(), action_sign.run_async())
+        # 关闭流
+        await machine.status_change(SGForFlow.State.EXITED)
         pass
     pass
 
 
 class TestNormFlow:
     @PytestAsyncTimeout(2)
-    async def test(self):
+    async def test_norm(self):
         """校验普通流
         """
+        # 普通运行时：启动，无信号，_starting被调用
         func_tmp = FuncTmp()
         norm_sign_flow = NormFlow(func_tmp.func)
 
-        # 启动，无信号，_starting被调用
         assert func_tmp.num == 0
         assert not hasattr(norm_sign_flow, 'func')
         async with norm_sign_flow:
@@ -39,6 +69,32 @@ class TestNormFlow:
             await asyncio.sleep(1)
             assert func_tmp.num > 0
             pass
+        pass
+
+    @PytestAsyncTimeout(2)
+    async def test_none(self):
+        """校验无starting普通流
+        """
+        # starting为None的运行时：启动，无信号，_starting卡死等待退出信号
+        none_sign_flow = NormFlow(None)  # type: ignore
+        async with none_sign_flow:
+            await asyncio.sleep(1)
+            pass
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_err(self):
+        """流异常
+        1. 不能在流启动时启动
+        2. 不能在流未启动时关闭
+        """
+        func_tmp = FuncTmp()
+        norm_sign_flow = NormFlow(func_tmp.func)
+        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__)
+        async with norm_sign_flow:
+            assert await FuncTool.is_async_err(norm_sign_flow.__aenter__)
+            pass
+        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__)
         pass
     pass
 

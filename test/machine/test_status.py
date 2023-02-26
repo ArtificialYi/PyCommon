@@ -1,5 +1,5 @@
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
-from ...src.machine.status import SGFlow, SGFlowMachine, StatusEdge, StatusGraph, StatusValue
+from ...src.machine.status import SGForFlow, SGMachineForFlow, StatusEdge, StatusGraph, StatusValue
 
 
 class TestStatusEdge(object):
@@ -129,15 +129,15 @@ class TestSGFlowMachine:
     """
     @PytestAsyncTimeout(1)
     async def test(self):
-        graph = SGFlowMachine(SGFlow(FuncTool.norm_sync_err))
-        assert graph.status == SGFlow.State.EXITED
+        graph = SGMachineForFlow(SGForFlow(FuncTool.norm_sync_err))
+        assert graph.status == SGForFlow.State.EXITED
         assert graph.func_get() is None
 
         # 状态无法转移
-        assert await graph.status_change(SGFlow.State.EXITED) is None
+        assert await graph.status_change(SGForFlow.State.EXITED) is None
         # 状态转移成功
-        assert await graph.status_change(SGFlow.State.STARTED)
+        assert await graph.status_change(SGForFlow.State.STARTED)
         # started状态内函数调用成功
-        assert await FuncTool.is_async_err(graph.status_change, SGFlow.State.STARTED)
+        assert await FuncTool.is_async_err(graph.status_change, SGForFlow.State.STARTED)
         pass
     pass

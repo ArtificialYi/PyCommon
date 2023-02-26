@@ -132,7 +132,7 @@ class StatusGraph(object):
     pass
 
 
-class SGFlow:
+class SGForFlow:
     """供给流使用的双状态状态图
     1. 拥有状态图本身
     2. 拥有状态图当前状态
@@ -187,14 +187,14 @@ class SGFlow:
     pass
 
 
-class SGFlowMachine(FqsSync):
+class SGMachineForFlow(FqsSync):
     """有限状态机下的状态图
     1. 拥有状态图的状态转移函数-每个状态图都有
     2. 拥有状态图的当前状态-每个状态图都有
     3. 拥有状态图的退出状态-特殊的状态图才有
     4. 获取状态图当前状态下的函数-每个状态图都有
     """
-    def __init__(self, graph: SGFlow) -> None:
+    def __init__(self, graph: SGForFlow) -> None:
         """状态机的初始可以是任意状态
         1. 所有状态转化应该由自身控制
         2. 状态转化权最好仅由管理员拥有
