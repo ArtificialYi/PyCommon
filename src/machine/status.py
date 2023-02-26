@@ -165,17 +165,12 @@ class SGForFlow:
         return graph
 
     def __start(self):
-        return self.__status2target(self.__class__.State.STARTED)
+        self.__status = self.__class__.State.STARTED
+        return self.__status
 
     def __exit(self):
-        return self.__status2target(self.__class__.State.EXITED)
-
-    def __status2target(self, status: State) -> bool:
-        if self.__graph.get(self.__status, status) is None:
-            return False
-
-        self.__status = status
-        return True
+        self.__status = self.__class__.State.EXITED
+        return self.__status
 
     @property
     def status(self):

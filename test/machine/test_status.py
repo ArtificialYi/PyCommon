@@ -136,7 +136,7 @@ class TestSGFlowMachine:
         # 状态无法转移
         assert await graph.status_change(SGForFlow.State.EXITED) is None
         # 状态转移成功
-        assert await graph.status_change(SGForFlow.State.STARTED)
+        assert await graph.status_change(SGForFlow.State.STARTED) == SGForFlow.State.STARTED
         # started状态内函数调用成功
         assert await FuncTool.is_async_err(graph.status_change, SGForFlow.State.STARTED)
         pass
