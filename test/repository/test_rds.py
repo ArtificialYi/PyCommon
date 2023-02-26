@@ -1,6 +1,6 @@
 from ...src.repository.rds import ServiceDB
 from ..mock.rds import MockConnection, MockCursor, MockDBPool
-from ...src.tool.func_tool import PytestAsyncTimeout
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 
 
 class TestServiceDB:
@@ -24,6 +24,17 @@ class TestServiceDB:
 
         service = ServiceDB(pool)
         assert await service.update('sql', 'args') == res
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_update_err(self):
+        res = []
+        cursor = MockCursor().mock_set_exec(res)
+        conn = MockConnection().mock_set_cursor(cursor)
+        pool = MockDBPool('').mock_set_conn(conn)
+
+        service = ServiceDB(pool)
+        assert await FuncTool.is_async_err(service.update, 'sql', 'args')
         pass
 
     @PytestAsyncTimeout(1)

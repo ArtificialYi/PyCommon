@@ -65,6 +65,11 @@ class TestBaseTool:
         assert str_a == str_d
         assert id(str_a) != id(str_d)
         pass
+
+    def test_is_none(self):
+        assert BaseTool.isnone(None)
+        assert not BaseTool.isnone(1)
+        pass
     pass
 
 

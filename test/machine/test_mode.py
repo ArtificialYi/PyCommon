@@ -83,8 +83,8 @@ class TestNormFlow:
         pass
 
     @PytestAsyncTimeout(1)
-    async def test_err(self):
-        """流异常
+    async def test_err_sync(self):
+        """同步运行会报错
         1. 不能在流启动时启动
         2. 不能在流未启动时关闭
         """
@@ -95,6 +95,16 @@ class TestNormFlow:
             assert await FuncTool.is_async_err(norm_sign_flow.__aenter__)
             pass
         assert await FuncTool.is_async_err(norm_sign_flow.__aexit__)
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_err_safe(self):
+        """并发运行会报错
+        1. 流启动不能并发
+        """
+        func_tmp = FuncTmp()
+        norm_sign_flow = NormFlow(func_tmp.func)
+        assert await FuncTool.is_async_err(asyncio.gather, norm_sign_flow.__aenter__, norm_sign_flow.__aenter__)
         pass
     pass
 

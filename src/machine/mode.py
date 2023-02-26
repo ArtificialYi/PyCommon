@@ -69,10 +69,17 @@ class NormFlow:
         pass
 
     async def __aenter__(self):
+        """
+        1. 同步启动会报错
+        2. 并发启动会报错
+        """
+        # 做好流启动准备
         if self.__graph.status != self.__graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self.__graph.status}')
         await self.__graph.status_change(SGForFlow.State.STARTED)
+        # 状态机开始接收状态转移信号（默认为关闭信号）
         await self.__graph.__aenter__()
+        # 状态机启动，开始处理状态转移信号 & func
         await self.__sign_deal.run_async()
         return self
 
@@ -80,7 +87,9 @@ class NormFlow:
         # 将状态转移至exited
         if not self.__sign_deal.is_running:
             raise Exception('状态机尚未启动')
+        # 状态机处理关闭信号=>关闭，停止处理func
         await self.__graph.status_change(self.__graph.status_exited)
+        # 状态机不再接收状态转移信号
         await self.__graph.__aexit__(*args)
         pass
     pass
@@ -107,12 +116,18 @@ class DeadWaitFlow(FqsAsync):
         return await self.fq_order.queue_join()
 
     async def __aenter__(self):
+        # 状态机启动，开始处理函数队列
+        await self.__flow.__aenter__()
+        # 开始接收函数调用
         await super().__aenter__()
-        return await self.__flow.__aenter__()
+        return self
 
     async def __aexit__(self, *args):
-        await self.fq_order.call_step()
-        await self.__flow.__aexit__(*args)
+        # 关闭接收外部函数队列调用（函数可以直接调用）
         await super().__aexit__(*args)
+        # 发送一个空信号给函数队列
+        await self.fq_order.call_step()
+        # 状态机尝试关闭
+        await self.__flow.__aexit__(*args)
         pass
     pass

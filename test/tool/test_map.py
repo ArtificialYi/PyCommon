@@ -3,6 +3,12 @@ from ...src.tool.map_tool import Map, MapKeyOne
 
 
 class TestMap:
+    def test_get_value_with_repeat(self):
+        m = Map(lambda x, y: x + y)
+        assert m.get_value(1, 1, 2) == 3
+        assert m.get_value(1) == 3
+        pass
+
     def test_get_value_with_args(self):
         m = Map(lambda x, y: x + y)
         assert m.get_value(1, 1, 2) == 3
