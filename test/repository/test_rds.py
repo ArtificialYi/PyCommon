@@ -39,12 +39,13 @@ class TestServiceDB:
 
     @PytestAsyncTimeout(1)
     async def test_select(self):
-        res = []
-        cursor = MockCursor().mock_set_exec(res)
+        res_exec = 0
+        res_fetch = []
+        cursor = MockCursor().mock_set_exec(res_exec).mock_set_fetch_all(res_fetch)
         conn = MockConnection().mock_set_cursor(cursor)
         pool = MockDBPool('').mock_set_conn(conn)
 
         service = ServiceDB(pool)
-        assert await service.select('sql', 'args') == res
+        assert await service.select('sql', 'args') == res_fetch
         pass
     pass

@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Dict, Tuple, Union
 from .tool import ConfigTool
 import pymysql
 from .env import ConfigEnv
@@ -68,6 +69,6 @@ class DBPool:
 
 class ActionDB:
     @abstractmethod
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
+    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> Union[int, Tuple[Dict]]:
         pass
     pass

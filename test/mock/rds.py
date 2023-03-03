@@ -30,15 +30,24 @@ class MockCursor(MockDelay, SSDictCursor):
     def __init__(self, *args):
         MockDelay.__init__(self)
         self.__exec_res = None
+        self.__fetch_all_res = None
         pass
 
-    def mock_set_exec(self, exec_res):
+    def mock_set_exec(self, exec_res: int):
         self.__exec_res = exec_res
+        return self
+
+    def mock_set_fetch_all(self, fetch_all_res):
+        self.__fetch_all_res = fetch_all_res
         return self
 
     def execute(self, query, args=None):
         self.mock_sleep()
         return self.__exec_res
+
+    def fetchall(self):
+        self.mock_sleep()
+        return self.__fetch_all_res
 
     def close(self):
         pass

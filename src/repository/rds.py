@@ -1,3 +1,4 @@
+from typing import Dict, Tuple, Union
 from pymysql.cursors import SSDictCursor, Cursor
 from pymysql.connections import Connection
 from ..tool.base import AsyncBase
@@ -6,7 +7,7 @@ from ...configuration.rds import ActionDB, DBPool
 
 
 class ActionAffectedMore(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
+    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> int:
         conn.begin()
         effected_rows = cursor.execute(sql, args)
         if not isinstance(effected_rows, int):
@@ -18,7 +19,7 @@ class ActionAffectedMore(ActionDB):
 
 
 class ActionForceCommit(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
+    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> int:
         conn.begin()
         effected_rows = cursor.execute(sql, args)
         conn.commit()
@@ -27,8 +28,9 @@ class ActionForceCommit(ActionDB):
 
 
 class ActionNoTranslation(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args):
-        return cursor.execute(sql, args)
+    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> Tuple[Dict]:
+        cursor.execute(sql, args)
+        return cursor.fetchall()  # type: ignore
     pass
 
 
@@ -40,7 +42,7 @@ class OptDBSafe:
         self.__action_db = action_db
         pass
 
-    def __opt(self, pool: DBPool, sql: str, args):
+    def __opt(self, pool: DBPool, sql: str, args) -> Union[int, Tuple[Dict]]:
         """线程安全的DB操作
         """
         with (
@@ -49,7 +51,7 @@ class OptDBSafe:
         ):
             return self.__action_db(conn, cursor, sql, args)
 
-    async def send(self, pool: DBPool, sql: str, args):
+    async def send(self, pool: DBPool, sql: str, args) -> Union[int, Tuple[Dict]]:
         """仅能在主线程中调用
         """
         return await AsyncBase.func2coro_exec(self.__opt, pool, sql, args)
@@ -63,12 +65,12 @@ class ServiceDB:
         self.__pool = pool
         pass
 
-    async def create(self, sql: str, args):
-        return await OptDBSafe(ActionForceCommit).send(self.__pool, sql, args)
+    async def create(self, sql: str, args) -> int:
+        return await OptDBSafe(ActionForceCommit).send(self.__pool, sql, args)  # type: ignore
 
-    async def update(self, sql: str, args):
-        return await OptDBSafe(ActionAffectedMore).send(self.__pool, sql, args)
+    async def update(self, sql: str, args) -> int:
+        return await OptDBSafe(ActionAffectedMore).send(self.__pool, sql, args)  # type: ignore
 
-    async def select(self, sql: str, args):
-        return await OptDBSafe(ActionNoTranslation).send(self.__pool, sql, args)
+    async def select(self, sql: str, args) -> Tuple[Dict]:
+        return await OptDBSafe(ActionNoTranslation).send(self.__pool, sql, args)  # type: ignore
     pass
