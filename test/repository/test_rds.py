@@ -28,7 +28,7 @@ class TestServiceDB:
 
     @PytestAsyncTimeout(1)
     async def test_update_err(self):
-        res = []
+        res = -1
         cursor = MockCursor().mock_set_exec(res)
         conn = MockConnection().mock_set_cursor(cursor)
         pool = MockDBPool('').mock_set_conn(conn)

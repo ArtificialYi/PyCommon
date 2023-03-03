@@ -10,7 +10,7 @@ class ActionAffectedMore(ActionDB):
     def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> int:
         conn.begin()
         effected_rows = cursor.execute(sql, args)
-        if not isinstance(effected_rows, int):
+        if effected_rows < 0:
             conn.rollback()
             raise Exception(f'异常SQL调用:{sql}')
         conn.commit()
