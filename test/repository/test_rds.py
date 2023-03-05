@@ -1,5 +1,5 @@
+from ...mock.rds import MockConnection, MockCursor, MockDBPool
 from ...src.repository.rds import ServiceDB
-from ..mock.rds import MockConnection, MockCursor, MockDBPool
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 
 

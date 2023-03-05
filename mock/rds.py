@@ -1,5 +1,5 @@
 from time import sleep
-from ...configuration.rds import DBPool
+from ..configuration.rds import DBPool
 from pymysql.cursors import SSDictCursor
 from pymysql.connections import Connection
 
