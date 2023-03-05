@@ -39,7 +39,7 @@ class PyramidOut(nn.Module):
         }
         pass
 
-    def forward(self, X: torch.Tensor):
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         residual = self.ln_in(self.fc_in(X))
         output = torch.sigmoid(residual)
         for fc, ln in self.hidden_layers:

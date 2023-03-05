@@ -2,16 +2,6 @@ from torch import nn
 import torch
 
 
-class DropNorm(nn.Module):
-    """带dropout的模型
-    """
-    def __init__(self, dropout: float = 0.5) -> None:
-        super().__init__()
-        self.drop = nn.Dropout(dropout)
-        pass
-    pass
-
-
 class MultiLinear(nn.Module):
     """多项式特征扩充
     """

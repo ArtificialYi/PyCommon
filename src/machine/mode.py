@@ -1,123 +1,133 @@
 import asyncio
+from typing import Callable, Union
 
-from ...src.machine.status import NormStatusGraph, StatusGraphBase
-from ..tool.func_tool import CallableOrder
+from ..tool.base import AsyncBase
+from .status import SGForFlow, SGMachineForFlow
+from ..tool.func_tool import AsyncExecOrder, FqsAsync
 
 
-class SignFlowBase:
-    """信号处理loop
-    1. 有信号时处理状态转换
-    2. 无信号时处理状态运行时
+class ActionGraphSign:
+    """状态图的队列信号操作逻辑
+    1. 有队列信号时 处理 函数队列（函数队列如果是状态图的状态转换则为普通流）
+    2. 无队列信号时 处理 状态图运行时
+        1. 运行时有函数时 无限调用 函数
+        2. 运行时没有函数时 等待 队列信号
+
+    lock:
+    1. 协程内多个main同时运行将会出错
     """
-    def __init__(self, graph: StatusGraphBase) -> None:
-        self._graph = graph
-        self.__callable_order = CallableOrder(self.__sign_deal)
+    def __init__(self, graph: SGMachineForFlow, fq_order: Union[AsyncExecOrder, None] = None) -> None:
+        self.__future_run = AsyncBase.get_future()
+        self.__graph = graph
+        self.__fq_order: AsyncExecOrder = graph.fq_order if fq_order is None else fq_order
         self.__lock = asyncio.Lock()
-        self._running = False
         pass
 
-    async def __sign_deal(self, status_target, *args, **kwds):
-        # 信号处理函数，所有状态转换理论上都应该在这里
-        func = self._graph.func_get_target(status_target)
-        if func is None:
-            return None
-        res = func(*args, **kwds)
-        return await res if asyncio.iscoroutinefunction(func) else res
+    @property
+    def is_running(self):
+        return self.__future_run.done()
 
     async def __no_sign(self):
-        func = self._graph.func_get()
+        func = self.__graph.func_get()
+        # 运行时状态存在为None才可能触发
         if func is None:
-            return await self.__callable_order.queue_wait()
+            return await self.__fq_order.queue_wait()
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
-    async def _main(self):
-        self.__running_err()
-        async with self.__lock:
-            self._running = True
-            while self._graph._status != self._graph._exited_status:
-                if await self.__callable_order.queue_no_wait():
-                    continue
-                await self.__no_sign()
-                pass
-            self._running = False
-            pass
-        pass
-
     def __running_err(self):
-        if self._running:
+        if self.is_running:
             raise Exception('已有loop在运行中')
 
-    async def _call(self, *args, **kwds):
-        return await self.__callable_order.call(*args, **kwds)
-    pass
-
-
-class NormSignFlow(SignFlowBase):
-    """普通的信号流-开放端口给管理员
-    1. 开放启动流端口给管理员
-    2. 开放状态流转端口给管理员
-    """
-    def __init__(self, graph: NormStatusGraph) -> None:
-        super().__init__(graph)
-        self._exit_status = NormStatusGraph.State.EXITED
+    async def __main(self):
+        self.__future_run.set_result(True)
+        while self.__graph.status != self.__graph.status_exited:
+            if await self.__fq_order.queue_no_wait():
+                continue
+            await self.__no_sign()
+            pass
+        self.__future_run = AsyncBase.get_future()
         pass
 
-    async def launch(self):
-        # 启动状态流，并将状态转移至started
-        if self._running or self._graph._status != self._exit_status:
-            raise Exception(f'状态机启动失败|status:{self._graph._status}|run:{self._running}')
-        self._graph.status2target(NormStatusGraph.State.STARTED)
-        return await self._main()
-
-    async def start(self):
-        # 将状态转移至started
-        if not self._running:
-            raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.STARTED)
-
-    async def stop(self):
-        # 将状态转移至stopped
-        if not self._running:
-            raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.STOPPED)
-
-    async def exit(self):
-        # 将状态转移至exited
-        if not self._running:
-            raise Exception('状态机尚未启动')
-        return await self._call(NormStatusGraph.State.EXITED)
+    async def run_async(self) -> asyncio.Future:
+        async with self.__lock:
+            self.__running_err()
+            AsyncBase.coro2task_exec(self.__main())
+            return await self.__future_run
     pass
 
 
-# class NormFlow(NormSignFlow, NormStatusGraph):
-#     def __init__(self) -> None:
-#         NormSignFlow.__init__(self, self)
-#         NormStatusGraph.__init__(self)
-#         pass
-#     pass
+class NormFlow:
+    """基于基本状态机的普通流
+    1. 普通函数的状态图
+    2. 状态转移 函数 <=> 队列
+    3. 队列信号操作逻辑
+    """
+    def __init__(self, func: Callable) -> None:
+        self.__graph = SGMachineForFlow(SGForFlow(func))
+        self.__sign_deal = ActionGraphSign(self.__graph)
+        pass
+
+    async def __aenter__(self):
+        """
+        1. 同步启动会报错
+        2. 并发启动会报错
+        """
+        # 做好流启动准备
+        if self.__graph.status != self.__graph.status_exited:
+            raise Exception(f'状态机启动失败|status:{self.__graph.status}')
+        await self.__graph.status_change(SGForFlow.State.STARTED)
+        # 状态机开始接收状态转移信号（默认为关闭信号）
+        await self.__graph.__aenter__()
+        # 状态机启动，开始处理状态转移信号 & func
+        await self.__sign_deal.run_async()
+        return self
+
+    async def __aexit__(self, *args):
+        # 将状态转移至exited
+        if not self.__sign_deal.is_running:
+            raise Exception('状态机尚未启动')
+        # 状态机处理关闭信号=>关闭，停止处理func
+        await self.__graph.status_change(self.__graph.status_exited)
+        # 状态机不再接收状态转移信号
+        await self.__graph.__aexit__(*args)
+        pass
+    pass
 
 
-# class QueueOwnerFlow(NormFlow):
-#     def __init__(self, q: NormManageQueue, match_case: MatchCase) -> None:
-#         self.__q = q
-#         self.__match_case = match_case
-#         super().__init__()
-#         pass
+class DeadWaitFlow(FqsAsync):
+    """基于基本状态机的异步API流
+    依赖与逻辑链路
+    1. 将普通函数 转化为 队列函数
+    2. 将队列函数开放
 
-#     @property
-#     def queue(self):
-#         return self.__q.q_action
+    1. 清空死等队列后再exit
+    """
+    def __init__(self, func: Callable) -> None:
+        super().__init__(func)
+        self.__flow = NormFlow(self.fq_order.queue_wait)
+        pass
 
-#     async def _stop_async(self):
-#         task = AsyncBase.coro2task_exec(self._sign_change(NormStatusGraph.State.STOPPED))
-#         await self.__q.q_step.step()
-#         future_res = await task
-#         return future_res > 0
+    @property
+    def qsize(self):
+        return self.fq_order.qsize
 
-#     async def _starting(self):
-#         state, args, kwds = await self.__q.q_step.get()
-#         await self.__match_case.match(state, *args, **kwds)
-#         self.__q.q_step.task_done()
-#         pass
-#     pass
+    async def qjoin(self):
+        return await self.fq_order.queue_join()
+
+    async def __aenter__(self):
+        # 状态机启动，开始处理函数队列
+        await self.__flow.__aenter__()
+        # 开始接收函数调用
+        await super().__aenter__()
+        return self
+
+    async def __aexit__(self, *args):
+        # 关闭接收外部函数队列调用（函数可以直接调用）
+        await super().__aexit__(*args)
+        # 发送一个空信号给函数队列
+        await self.fq_order.call_step()
+        # 状态机尝试关闭
+        await self.__flow.__aexit__(*args)
+        pass
+    pass

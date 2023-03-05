@@ -1,8 +1,6 @@
 import asyncio
 from collections import deque
-from configparser import ConfigParser
 from typing import Any, Callable, Dict, Iterable, Union
-import os
 
 
 class BaseTool:
@@ -31,6 +29,10 @@ class BaseTool:
         if type(obj) == str:
             return obj
         return str(obj)
+
+    @staticmethod
+    def isnone(obj):
+        return obj is None
     pass
 
 
@@ -86,11 +88,11 @@ class MatchCase:
 class AsyncBase:
     @staticmethod
     def get_future():
-        return asyncio.get_event_loop().create_future()
+        return asyncio.get_running_loop().create_future()
 
     @staticmethod
     def coro2task_exec(coro):
-        return asyncio.get_event_loop().create_task(coro)
+        return asyncio.get_running_loop().create_task(coro)
 
     @staticmethod
     async def func2coro_exec(func, *args, **kwds):
@@ -99,25 +101,4 @@ class AsyncBase:
         except asyncio.CancelledError as ce:  # pragma: no cover
             print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
             return func(*args, **kwds)  # pragma: no cover
-    pass
-
-
-class ConfigBase:
-    @staticmethod
-    def get_config(path: str):
-        config = ConfigParser()
-        if os.path.exists(path):
-            config.read(path)
-            pass
-        return config
-
-    @staticmethod
-    def get_value(
-        section: str, option: str, *config_lst: ConfigParser, default=''
-    ):
-        res = default
-        for config in config_lst:
-            res = config.get(section, option, fallback=res)
-            pass
-        return res
     pass

@@ -6,3 +6,7 @@ coverage.xml
 
 # python编译文件
 __pycache__
+
+
+# vscode
+.vscode

@@ -1,36 +1,26 @@
-name: test
+name: pytest
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: master
   pull_request:
-    branches: [ main, master ]
+    types:
+      - opened
+      - reopened
+      - synchronize
+    branches: master
 
 jobs:
   codecov:
+    name: 单测覆盖率上传codecov
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.9"]
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v3
-      - name: 安装python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - name: pytest
+        uses: ArtificialYi/actions/python_test@master
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: 安装pytest
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest pytest-cov pytest-xdist pytest-timeout pytest-asyncio pytest_ordering
-          python -m pip install numpy torch
-      - name: 执行单元测试-2^6=64
-        run: make test-ci
-      - name: 上传至Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          name: 单测覆盖率
-          fail_ci_if_error: true
-          flags: unittests
+          core_num: 6
+          python-version: 3.9
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
