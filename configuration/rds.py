@@ -47,18 +47,23 @@ class DBPool:
     1. 开放 从连接池中获取conn
     """
     def __init__(self, db_name: str) -> None:
+        self.__db_name = db_name
         config_db = DBConfigManage.config()
         self.__pool = PooledDB(creator=pymysql, **{
             'host': config_db.host,
             'port': config_db.port,
             'user': config_db.user,
             'password': config_db.password,
-            'db': db_name,
+            'db': self.__db_name,
             'mincached': config_db.mincached,
             'blocking': True,
             'ping': config_db.ping,
         })
         pass
+
+    @property
+    def db_name(self):
+        return self.__db_name
 
     def get_conn(self) -> Connection:
         """线程之间不共享连接
