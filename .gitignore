@@ -10,3 +10,6 @@ __pycache__
 
 # vscode
 .vscode
+
+# MAC
+.DS_Store
