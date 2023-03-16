@@ -1,6 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
+from time import sleep
 from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
     AsyncExecOrder, CallableDecoratorAsync, FieldSwap, FuncTool,
@@ -66,7 +67,9 @@ class TestLockThread:
     @classmethod
     def func_unlock(cls, num):
         for _ in range(num):
-            cls.NUM += 1
+            tmp = cls.NUM + 1
+            sleep(0.001)
+            cls.NUM = tmp
             pass
         return cls
 
@@ -81,7 +84,7 @@ class TestLockThread:
         assert self.__class__.func_unlock(1).NUM == 1
 
         # 多线程无序-如果失败，调大这个值
-        num = 50000
+        num = 10
         pool_size = int(math.log(num))
         pool = ThreadPoolExecutor(pool_size)
         for _ in range(pool_size):

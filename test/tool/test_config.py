@@ -6,9 +6,9 @@ from ...src.tool.config_tool import ConfigBase
 
 class TestConfigBase:
     def test_exists(self):
-        ini_pytest = os.path.join(COMMON_ROOT, 'pytest.ini')
+        ini_pytest = os.path.join(COMMON_ROOT, 'tox.ini')
         config = ConfigBase.get_config(ini_pytest)
-        assert len(config.sections()) == 1
+        assert len(config.sections()) == 2
         assert ConfigBase.get_value('pytest', 'asyncio_mode', config) == 'auto'
         pass
 

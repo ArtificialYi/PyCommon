@@ -24,4 +24,6 @@ jobs:
       - name: 格式校验
         uses: ArtificialYi/actions/python_lint@master
         with:
-          python-version: 3.9
+          python-version:
+            - 3.9
+            - 3.10
