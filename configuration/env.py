@@ -38,7 +38,7 @@ class ConfigEnv:
         if cls.__PROJECT is not None:
             return cls.__PROJECT
 
-        path_project_root = os.path.join(PROJECT_ROOT, 'config_base.ini')
+        path_project_root = os.path.join(PROJECT_ROOT, 'tox.ini')
         if not os.path.exists(path_project_root):
             raise Exception(f'项目缺少必备文件:{path_project_root}')
 
@@ -50,7 +50,7 @@ class ConfigEnv:
         """获取项目环境
         """
         config_project = cls.__config_project()
-        env_pre = config_project.get('project', 'env_pre', fallback='default')
+        env_pre = config_project.get('hy_project', 'env_pre', fallback='HY_ENV')
         env_str = os.environ.get(env_pre, EnvEnum.DEV.value)
         return EnvEnum(env_str)
 
@@ -60,7 +60,7 @@ class ConfigEnv:
         """
         return os.path.join(
             '/usr/local/resource',
-            cls.__config_project().get('project', 'name', fallback='default')
+            cls.__config_project().get('hy_project', 'name', fallback='hy_project')
         )
 
     @classmethod
