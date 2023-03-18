@@ -5,7 +5,7 @@ from pymysql.connections import Connection
 
 
 class MockDelay:
-    def __init__(self, delay: float = 0.1) -> None:
+    def __init__(self, delay: float = 0.01) -> None:
         self.__delay = delay
         pass
 
