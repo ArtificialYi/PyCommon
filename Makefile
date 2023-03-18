@@ -1,5 +1,4 @@
 .PHONY: test
-jobs = 6
 main: lint-local test-local clean
 
 lint: lint-local clean
@@ -10,10 +9,10 @@ lint-local:
 
 test: test-local clean
 test-local:
-	pytest --cov=src -n=$(jobs) -x -v
+	pytest
 	@echo 'test done.'
 test-ci:
-	pytest --cov=src -n=$(jobs) -x -v --cov-report=xml
+	pytest --cov-report=xml
 
 clean: clean-pytest clean-python
 	@echo 'clean done.'
