@@ -9,8 +9,8 @@ class MockDelay:
         self.__delay = delay
         pass
 
-    def mock_sleep(self):
-        sleep(self.__delay)
+    def mock_sleep(self, delay=None):
+        sleep(self.__delay if delay is None else delay)
         pass
 
     def mock_set_delay(self, delay: float):
