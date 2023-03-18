@@ -101,9 +101,14 @@ class MockDBPool(MockDelay, DBPool):
     1. get_conn
     """
     def __init__(self, db_name: str) -> None:
+        self.__db_name = db_name
         MockDelay.__init__(self)
         self.__conn = MockConnection()
         pass
+
+    @property
+    def db_name(self):
+        return self.__db_name
 
     def mock_set_conn(self, conn: MockConnection):
         self.__conn = conn
