@@ -1,79 +1,86 @@
 from abc import abstractmethod
-from typing import Dict, Tuple, Union
+import asyncio
 from .tool import ConfigTool
-import pymysql
 from .env import ConfigEnv
-from dbutils.pooled_db import PooledDB
-from pymysql.connections import Connection
-from pymysql.cursors import Cursor
+from asyncinit import asyncinit
+import aiomysql
+from aiomysql import SSDictCursor
 
 
-class DBConfig:
-    def __init__(self, host: str, port: str, user: str, password: str, mincached: str, ping: str) -> None:
+class DTConfig:
+    def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
         self.user = user
         self.password = password
-        self.mincached = int(mincached) if len(mincached) > 0 else 0
-        self.ping = int(ping) if len(ping) > 0 else 0
+        self.db = db
         pass
     pass
 
 
-class DBConfigManage:
+@asyncinit
+class DTConfigManage:
     __CONFIG = None
 
-    @classmethod
-    def config(cls) -> DBConfig:
+    async def __new__(cls) -> DTConfig:
         if cls.__CONFIG is not None:
             return cls.__CONFIG
 
-        config_env = ConfigEnv.config_env()
-        config_default = ConfigEnv.config_default()
-        cls.__CONFIG = DBConfig(
+        config_env = await ConfigEnv.config_env()
+        config_default = await ConfigEnv.config_default()
+        cls.__CONFIG = DTConfig(
             ConfigTool.get_value('rds', 'host', config_default, config_env),
             ConfigTool.get_value('rds', 'port', config_default, config_env),
             ConfigTool.get_value('rds', 'user', config_default, config_env),
             ConfigTool.get_value('rds', 'password', config_default, config_env),
-            ConfigTool.get_value('rds', 'mincached', config_default, config_env),
-            ConfigTool.get_value('rds', 'ping', config_default, config_env),
+            ConfigTool.get_value('rds', 'db', config_default, config_env),
         )
         return cls.__CONFIG
     pass
 
 
+@asyncinit
 class DBPool:
-    """构造DB对应的连接池
-    1. 开放 从连接池中获取conn
-    """
-    def __init__(self, db_name: str) -> None:
-        self.__db_name = db_name
-        config_db = DBConfigManage.config()
-        self.__pool = PooledDB(creator=pymysql, **{
-            'host': config_db.host,
-            'port': config_db.port,
-            'user': config_db.user,
-            'password': config_db.password,
-            'db': self.__db_name,
-            'mincached': config_db.mincached,
-            'blocking': True,
-            'ping': config_db.ping,
-        })
-        pass
+    __POOL = None
+    __LOCK = None
 
-    @property
-    def db_name(self):
-        return self.__db_name
+    async def __new__(cls) -> aiomysql.Pool:
+        if cls.__POOL is not None:
+            return cls.__POOL
 
-    def get_conn(self) -> Connection:
-        """线程之间不共享连接
-        """
-        return self.__pool.connection(shareable=False)  # type: ignore
+        async with cls.__lock():
+            if cls.__POOL is not None:
+                return cls.__POOL
+
+            config_db = await DTConfigManage()
+            cls.__POOL = await aiomysql.create_pool(**{
+                'host': config_db.host,
+                'port': config_db.port,
+                'user': config_db.user,
+                'password': config_db.password,
+                'db': config_db.db,
+                'cursorclass': SSDictCursor,
+            })
+            pass
+        return cls.__POOL
+
+    @classmethod
+    def __lock(cls) -> asyncio.Lock:
+        if cls.__LOCK is None:
+            cls.__LOCK = asyncio.Lock()
+        return cls.__LOCK
     pass
 
 
-class ActionDB:
+class NormAction:
     @abstractmethod
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> Union[int, Tuple[Dict]]:
+    async def action(self, cursor: aiomysql.SSDictCursor):
         pass
+    pass
+
+
+class IterAction:
+    @abstractmethod
+    async def action(self, cursor: aiomysql.SSDictCursor):
+        yield
     pass

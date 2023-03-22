@@ -1,76 +1,102 @@
-from typing import Dict, Tuple, Union
-from pymysql.cursors import SSDictCursor, Cursor
-from pymysql.connections import Connection
-from ..tool.base import AsyncBase
+import asyncio
+from contextlib import asynccontextmanager
+from typing import Union
+import aiomysql
 
-from ...configuration.rds import ActionDB, DBPool
+from ...configuration.rds import NormAction, IterAction
 
 
-class ActionAffectedMore(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> int:
-        conn.begin()
-        effected_rows = cursor.execute(sql, args)
-        if effected_rows < 0:
-            conn.rollback()
-            raise Exception(f'异常SQL调用:{sql}')
-        conn.commit()
-        return effected_rows
+@asynccontextmanager
+async def __transaction(conn: aiomysql.Connection):
+    try:
+        await conn.begin()
+        yield
+        await conn.commit()
+    except Exception as e:
+        await conn.rollback()
+        raise e
     pass
 
 
-class ActionForceCommit(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> int:
-        conn.begin()
-        effected_rows = cursor.execute(sql, args)
-        conn.commit()
-        return effected_rows
+@asynccontextmanager
+async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
+    async with pool.acquire() as conn:
+        if not use_transaction:
+            yield conn
+            return
+
+        async with __transaction(conn):
+            yield conn
+            pass
+        pass
     pass
 
 
-class ActionNoTranslation(ActionDB):
-    def __new__(cls, conn: Connection, cursor: Cursor, sql: str, args) -> Tuple[Dict]:
-        cursor.execute(sql, args)
-        return cursor.fetchall()  # type: ignore
-    pass
-
-
-class OptDBSafe:
-    """使用固定的DB的业务逻辑调用不同的Action
-    1. conn + cursor + sql + args + action => res
+class DBExecutorSafe:
+    """使用说明
+    1. 异步初始化
+    2. 放入async with来传递conn和事务
     """
-    def __init__(self, action_db: type[ActionDB]) -> None:
-        self.__action_db = action_db
+    def __init__(self, pool: aiomysql.Pool, use_transaction: bool = False):
+        self.__gen = get_conn(pool, use_transaction)
+        self.__lock = asyncio.Lock()
+        self.__conn: Union[aiomysql.Connection, None] = None
         pass
 
-    def __opt(self, pool: DBPool, sql: str, args) -> Union[int, Tuple[Dict]]:
-        """线程安全的DB操作
-        """
-        with (
-            pool.get_conn() as conn,
-            conn.cursor(SSDictCursor) as cursor,
-        ):
-            return self.__action_db(conn, cursor, sql, args)
+    async def execute(self, action: NormAction):
+        if self.__conn is None:
+            raise Exception('尚未获取conn')
 
-    async def send(self, pool: DBPool, sql: str, args) -> Union[int, Tuple[Dict]]:
-        """仅能在主线程中调用
-        """
-        return await AsyncBase.func2coro_exec(self.__opt, pool, sql, args)
+        async with self.__conn.cursor() as cursor:
+            return await action.action(cursor)
+
+    async def iter_opt(self, action: IterAction):
+        if self.__conn is None:
+            raise Exception('尚未获取conn')
+
+        async with self.__conn.cursor() as cursor:
+            async for row in action.action(cursor):
+                yield row
+                pass
+            pass
+        pass
+
+    async def __aenter__(self):
+        await self.__lock.acquire()
+        self.__conn = await self.__gen.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if exc_value is not None:
+            print(exc_value)
+        await self.__gen.__aexit__(exc_type, exc_value, traceback)
+        self.__conn = None
+        self.__lock.release()
     pass
 
 
-class ServiceDB:
-    """对线程池做业务操作
-    """
-    def __init__(self, pool: DBPool) -> None:
-        self.__pool = pool
+class ExecuteAction(NormAction):
+    def __init__(self, sql: str, *args) -> None:
+        self.__sql = sql
+        self.__args = args
         pass
 
-    async def create(self, sql: str, args) -> int:
-        return await OptDBSafe(ActionForceCommit).send(self.__pool, sql, args)  # type: ignore
+    async def action(self, cursor: aiomysql.SSDictCursor):
+        await cursor.execute(self.__sql, self.__args)
+        return cursor.rowcount
+    pass
 
-    async def update(self, sql: str, args) -> int:
-        return await OptDBSafe(ActionAffectedMore).send(self.__pool, sql, args)  # type: ignore
 
-    async def select(self, sql: str, args) -> Tuple[Dict]:
-        return await OptDBSafe(ActionNoTranslation).send(self.__pool, sql, args)  # type: ignore
+class FetchAction(IterAction):
+    def __init__(self, sql: str, *args) -> None:
+        self.__sql = sql
+        self.__args = args
+        pass
+
+    async def action(self, cursor: aiomysql.SSDictCursor):
+        await cursor.execute(self.__sql, self.__args)
+        while (row := await cursor.fetchone()) is not None:
+            yield row
+            pass
+        pass
     pass
