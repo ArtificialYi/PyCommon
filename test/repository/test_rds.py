@@ -1,51 +1,38 @@
+from ...configuration.rds import NormAction
+from ...src.repository.rds import DBExecutorSafe, ExecuteAction, FetchAction
 from ...mock.rds import MockConnection, MockCursor, MockDBPool
-from ...src.repository.rds import ServiceDB
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 
 
-class TestServiceDB:
+class TestDBExecutor:
     @PytestAsyncTimeout(1)
-    async def test_create(self):
-        res = 0
-        cursor = MockCursor().mock_set_exec(res)
-        conn = MockConnection().mock_set_cursor(cursor)
-        pool = MockDBPool('').mock_set_conn(conn)
+    async def test_fail(self):
+        # 不开启asyn with无法使用
+        cursor = MockCursor()
+        pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        db = DBExecutorSafe(pool)
+        assert await FuncTool.is_async_err(db.execute, NormAction())
+        assert await FuncTool.is_async_err(db.iter_opt, FetchAction('sql'))
 
-        service = ServiceDB(pool)
-        assert await service.create('sql', 'args') == res
-        pass
+        # 无事务+iter
+        async with db:
+            sql_res = [1, 2, 3]
+            cursor.mock_set_fetch_all(sql_res)
+            i = 0
+            async for _ in db.iter_opt(FetchAction('sql')):
+                i += 1
+                pass
+            assert i == len(sql_res)
+            pass
 
-    @PytestAsyncTimeout(1)
-    async def test_update(self):
-        res = 1
-        cursor = MockCursor().mock_set_exec(res)
-        conn = MockConnection().mock_set_cursor(cursor)
-        pool = MockDBPool('').mock_set_conn(conn)
-
-        service = ServiceDB(pool)
-        assert await service.update('sql', 'args') == res
-        pass
-
-    @PytestAsyncTimeout(1)
-    async def test_update_err(self):
-        res = -1
-        cursor = MockCursor().mock_set_exec(res)
-        conn = MockConnection().mock_set_cursor(cursor)
-        pool = MockDBPool('').mock_set_conn(conn)
-
-        service = ServiceDB(pool)
-        assert await FuncTool.is_async_err(service.update, 'sql', 'args')
-        pass
-
-    @PytestAsyncTimeout(1)
-    async def test_select(self):
-        res_exec = 0
-        res_fetch = []
-        cursor = MockCursor().mock_set_exec(res_exec).mock_set_fetch_all(res_fetch)
-        conn = MockConnection().mock_set_cursor(cursor)
-        pool = MockDBPool('').mock_set_conn(conn)
-
-        service = ServiceDB(pool)
-        assert await service.select('sql', 'args') == res_fetch
+        # 事务开启+exec
+        db = DBExecutorSafe(pool, True)
+        async with db:
+            # 正常提交事务
+            assert await db.execute(ExecuteAction('sql')) is None
+            pass
+        async with db:
+            # 抛出异常
+            raise Exception('这个异常会被吞掉，代码里需要留下日志')
         pass
     pass
