@@ -87,14 +87,14 @@ class MockConnection(MockDelay, aiomysql.Connection):
         self.__cursor = MockCursor(self)
         pass
 
-    def begin(self):
-        self.mock_sleep()
+    async def begin(self):
+        await self.mock_asleep()
 
-    def rollback(self):
-        self.mock_sleep()
+    async def rollback(self):
+        await self.mock_asleep()
 
-    def commit(self):
-        self.mock_sleep()
+    async def commit(self):
+        await self.mock_asleep()
 
     def mock_set_cursor(self, cursor: MockCursor):
         self.__cursor = cursor

@@ -38,7 +38,8 @@ class DBExecutorSafe:
     2. 放入async with来传递conn和事务
     """
     def __init__(self, pool: aiomysql.Pool, use_transaction: bool = False):
-        self.__gen = get_conn(pool, use_transaction)
+        self.__pool = pool
+        self.__use = use_transaction
         self.__lock = asyncio.Lock()
         self.__conn: Union[aiomysql.Connection, None] = None
         pass
@@ -63,15 +64,18 @@ class DBExecutorSafe:
 
     async def __aenter__(self):
         await self.__lock.acquire()
+        self.__gen = get_conn(self.__pool, self.__use)
         self.__conn = await self.__gen.__aenter__()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if exc_value is not None:
+            # TODO: 需要留下日志
             print(exc_value)
         await self.__gen.__aexit__(exc_type, exc_value, traceback)
         self.__conn = None
         self.__lock.release()
+        return True
     pass
 
 
@@ -82,8 +86,7 @@ class ExecuteAction(NormAction):
         pass
 
     async def action(self, cursor: aiomysql.SSDictCursor):
-        await cursor.execute(self.__sql, self.__args)
-        return cursor.rowcount
+        return await cursor.execute(self.__sql, self.__args)
     pass
 
 
