@@ -9,14 +9,15 @@ lint-local:
 
 test: test-local clean
 test-local:
-	pytest
+	pytest --cov-report=term --cov-report=xml
 	@echo 'test done.'
 test-ci:
-	pytest --cov-report=xml
+	pytest
 
 clean: clean-pytest clean-python
 	@echo 'clean done.'
 clean-pytest:
-	rm -rf coverage.xml .coverage .pytest_cache .coverage.*
+	rm -rf .coverage .pytest_cache .coverage.*
+	# coverage.xml
 clean-python:
 	find . -name '__pycache__' | xargs rm -r
