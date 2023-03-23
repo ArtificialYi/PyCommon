@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Union
+from typing import AsyncGenerator, Union
 import aiomysql
 
 from ...configuration.rds import NormAction, IterAction
@@ -85,7 +85,7 @@ class ExecuteAction(NormAction):
         self.__args = args
         pass
 
-    async def action(self, cursor: aiomysql.SSDictCursor):
+    async def action(self, cursor: aiomysql.SSDictCursor) -> int:
         return await cursor.execute(self.__sql, self.__args)
     pass
 
@@ -96,7 +96,7 @@ class FetchAction(IterAction):
         self.__args = args
         pass
 
-    async def action(self, cursor: aiomysql.SSDictCursor):
+    async def action(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator:
         await cursor.execute(self.__sql, self.__args)
         while (row := await cursor.fetchone()) is not None:
             yield row
