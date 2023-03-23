@@ -1,7 +1,6 @@
 from abc import abstractmethod
 
-from ..src.tool.lock_tool import DCLGlobalAsync
-from .tool import ConfigTool
+from .tool import ConfigTool, DCLGlobalAsync
 from .env import ConfigEnv
 from asyncinit import asyncinit
 import aiomysql
@@ -21,22 +20,17 @@ class DTConfig:
 
 @asyncinit
 class DTConfigManage:
-    __CONFIG = None
-
+    @DCLGlobalAsync()
     async def __new__(cls) -> DTConfig:
-        if cls.__CONFIG is not None:
-            return cls.__CONFIG
-
         config_env = await ConfigEnv.config_env()
         config_default = await ConfigEnv.config_default()
-        cls.__CONFIG = DTConfig(
+        return DTConfig(
             ConfigTool.get_value('rds', 'host', config_default, config_env),
             ConfigTool.get_value('rds', 'port', config_default, config_env),
             ConfigTool.get_value('rds', 'user', config_default, config_env),
             ConfigTool.get_value('rds', 'password', config_default, config_env),
             ConfigTool.get_value('rds', 'db', config_default, config_env),
         )
-        return cls.__CONFIG
     pass
 
 

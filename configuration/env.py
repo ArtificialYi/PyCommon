@@ -2,7 +2,8 @@ from configparser import ConfigParser
 from enum import Enum
 import os
 
-from .tool import ConfigTool
+
+from .tool import ConfigTool, DCLGlobalAsync
 
 
 COMMON_CONFIGURATION_DIR = os.path.dirname(__file__)
@@ -26,24 +27,17 @@ class ConfigEnv:
     1. 排除在common自身的单测范围外
     2. 项目单测调用时需要mock
     """
-    __PROJECT = None
-    __DEFAULT = None
-    __ENV = None
-
+    @DCLGlobalAsync()
     @classmethod
     async def __config_project(cls) -> ConfigParser:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
         """
-        if cls.__PROJECT is not None:
-            return cls.__PROJECT
-
         path_project_root = os.path.join(PROJECT_ROOT, 'tox.ini')
         if not os.path.exists(path_project_root):
             raise Exception(f'项目缺少必备文件:{path_project_root}')
 
-        cls.__PROJECT = await ConfigTool.get_config(path_project_root)
-        return cls.__PROJECT
+        return await ConfigTool.get_config(path_project_root)
 
     @classmethod
     async def __env_enum_project(cls) -> EnvEnum:
@@ -64,26 +58,21 @@ class ConfigEnv:
             config_project.get('hy_project', 'name', fallback='hy_project')
         )
 
+    @DCLGlobalAsync()
     @classmethod
     async def config_default(cls):
         """默认的项目配置文件
         """
-        if cls.__DEFAULT is not None:
-            return cls.__DEFAULT
-
         path_default = os.path.join(await cls.__path_resource_root(), 'default.ini')
-        cls.__DEFAULT = await ConfigTool.get_config(path_default)
-        return cls.__DEFAULT
+        return await ConfigTool.get_config(path_default)
 
+    @DCLGlobalAsync()
     @classmethod
     async def config_env(cls):
         """环境独有的配置文件
         """
-        if cls.__ENV is not None:
-            return cls.__ENV
         dir_root = await cls.__path_resource_root()
         env_project = await cls.__env_enum_project()
         path_env = os.path.join(dir_root, f'{env_project.lower()}.ini')
-        cls.__ENV = await ConfigTool.get_config(path_env)
-        return cls.__ENV
+        return await ConfigTool.get_config(path_env)
     pass
