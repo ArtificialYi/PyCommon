@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import Callable, Union
+from typing import AsyncGenerator, Callable, Union
 from .base import AsyncBase
 import pytest
 
@@ -80,6 +80,22 @@ class FuncTool:
             return False
 
     @staticmethod
+    async def is_async_gen_err(gen: AsyncGenerator):
+        try:
+            await FuncTool.__async_gen(gen)
+        except Exception:
+            return True
+        else:
+            return False
+        pass
+
+    @staticmethod
+    async def __async_gen(gen: AsyncGenerator):
+        async for _ in gen:
+            pass
+        pass
+
+    @staticmethod
     def is_func_err(func: Callable, *args, **kwds):
         """函数有错误
         """
@@ -89,22 +105,6 @@ class FuncTool:
             return True
         else:
             return False
-
-    @staticmethod
-    async def norm_async_err():
-        raise Exception('会抛出异常的coro函数')
-
-    @staticmethod
-    def norm_sync_err():
-        raise Exception('会抛出异常的普通函数')
-
-    @staticmethod
-    async def norm_async():
-        pass
-
-    @staticmethod
-    def norm_sync():
-        pass
     pass
 
 

@@ -1,3 +1,4 @@
+from ...mock.func import MockFunc
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.machine.status import SGForFlow, SGMachineForFlow, StatusEdge, StatusGraph, StatusValue
 
@@ -129,7 +130,7 @@ class TestSGFlowMachine:
     """
     @PytestAsyncTimeout(1)
     async def test(self):
-        graph = SGMachineForFlow(SGForFlow(FuncTool.norm_sync_err))
+        graph = SGMachineForFlow(SGForFlow(MockFunc.norm_sync_err))
         assert graph.status == SGForFlow.State.EXITED
         assert graph.func_get() is None
 

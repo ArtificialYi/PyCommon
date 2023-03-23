@@ -12,7 +12,7 @@ class TestDBExecutor:
         pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
         db = DBExecutorSafe(pool)
         assert await FuncTool.is_async_err(db.execute, NormAction())
-        assert await FuncTool.is_async_err(db.iter_opt, FetchAction('sql'))
+        assert await FuncTool.is_async_gen_err(db.iter_opt(FetchAction('sql')))
 
         # 无事务+iter
         async with db:

@@ -1,5 +1,6 @@
 from abc import abstractmethod
-import asyncio
+
+from ..src.tool.lock_tool import DCLGlobalAsync
 from .tool import ConfigTool
 from .env import ConfigEnv
 from asyncinit import asyncinit
@@ -41,34 +42,17 @@ class DTConfigManage:
 
 @asyncinit
 class DBPool:
-    __POOL = None
-    __LOCK = None
-
+    @DCLGlobalAsync()
     async def __new__(cls) -> aiomysql.Pool:
-        if cls.__POOL is not None:
-            return cls.__POOL
-
-        async with cls.__lock():
-            if cls.__POOL is not None:
-                return cls.__POOL
-
-            config_db = await DTConfigManage()
-            cls.__POOL = await aiomysql.create_pool(**{
-                'host': config_db.host,
-                'port': config_db.port,
-                'user': config_db.user,
-                'password': config_db.password,
-                'db': config_db.db,
-                'cursorclass': SSDictCursor,
-            })
-            pass
-        return cls.__POOL
-
-    @classmethod
-    def __lock(cls) -> asyncio.Lock:
-        if cls.__LOCK is None:
-            cls.__LOCK = asyncio.Lock()
-        return cls.__LOCK
+        config_db = await DTConfigManage()
+        return await aiomysql.create_pool(**{
+            'host': config_db.host,
+            'port': config_db.port,
+            'user': config_db.user,
+            'password': config_db.password,
+            'db': config_db.db,
+            'cursorclass': SSDictCursor,
+        })
     pass
 
 
