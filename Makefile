@@ -9,10 +9,8 @@ lint-local:
 
 test: test-local clean
 test-local:
-	pytest --cov-report=term --cov-report=xml
+	pytest --cov-report=term --cov-report=xml --cov=src  -n=6
 	@echo 'test done.'
-test-ci:
-	pytest
 
 clean: clean-pytest clean-python
 	@echo 'clean done.'

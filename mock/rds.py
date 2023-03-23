@@ -36,6 +36,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
         MockDelay.__init__(self)
         self.__exec_res = None
         self.__fetch_all_res: list = None  # type: ignore
+        self.__fetch_idx = 0
         pass
 
     def mock_set_exec(self, exec_res: int):
@@ -44,7 +45,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
 
     def mock_set_fetch_all(self, fetch_all_res):
         self.__fetch_all_res = fetch_all_res
-        self.__iter_handle = iter(self.__fetch_all_res)
+        self.__fetch_idx = 0
         return self
 
     async def execute(self, query, args=None):
@@ -53,10 +54,12 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
 
     async def fetchone(self):
         await self.mock_asleep()
-        try:
-            return next(self.__iter_handle)
-        except StopIteration as e:
-            return e.value
+        if self.__fetch_idx < len(self.__fetch_all_res):
+            res = self.__fetch_all_res[self.__fetch_idx]
+            self.__fetch_idx += 1
+            return res
+        self.__fetch_idx = 0
+        return None
 
     def close(self):
         pass
