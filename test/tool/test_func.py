@@ -2,6 +2,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
+
+from ...mock.func import MockFunc
 from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
     AsyncExecOrder, CallableDecoratorAsync, FieldSwap, FuncTool,
@@ -53,10 +55,14 @@ def func_custom():
 class TestFuncTool:
     @PytestAsyncTimeout(1)
     async def test(self):
-        assert not FuncTool.is_func_err(FuncTool.norm_sync)
-        assert not await FuncTool.is_async_err(FuncTool.norm_async)
-        assert FuncTool.is_func_err(FuncTool.norm_sync_err)
-        assert await FuncTool.is_async_err(FuncTool.norm_async_err)
+        assert not FuncTool.is_func_err(MockFunc.norm_sync)
+        assert FuncTool.is_func_err(MockFunc.norm_sync_err)
+
+        assert not await FuncTool.is_async_err(MockFunc.norm_async)
+        assert await FuncTool.is_async_err(MockFunc.norm_async_err)
+
+        assert not await FuncTool.is_async_gen_err(MockFunc.norm_async_gen())
+        assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err())
         pass
     pass
 
@@ -115,7 +121,7 @@ class TestCallableDecoratorAsync:
     def __init_err(self):
         flag = False
         try:
-            CallableDecoratorAsync(FuncTool.norm_sync)
+            CallableDecoratorAsync(MockFunc.norm_sync)
             assert False
         except Exception:
             flag = True
@@ -130,7 +136,7 @@ class TestCallableDecoratorAsync:
         # 无法对同步函数封装
         flag = False
         try:
-            decorator(FuncTool.norm_sync)
+            decorator(MockFunc.norm_sync)
             assert False
         except Exception:
             flag = True
