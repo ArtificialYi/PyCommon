@@ -27,8 +27,8 @@ class ConfigEnv:
     1. 排除在common自身的单测范围外
     2. 项目单测调用时需要mock
     """
-    @DCLGlobalAsync()
     @classmethod
+    @DCLGlobalAsync()
     async def __config_project(cls) -> ConfigParser:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
@@ -58,16 +58,16 @@ class ConfigEnv:
             config_project.get('hy_project', 'name', fallback='hy_project')
         )
 
-    @DCLGlobalAsync()
     @classmethod
+    @DCLGlobalAsync()
     async def config_default(cls):
         """默认的项目配置文件
         """
         path_default = os.path.join(await cls.__path_resource_root(), 'default.ini')
         return await ConfigTool.get_config(path_default)
 
-    @DCLGlobalAsync()
     @classmethod
+    @DCLGlobalAsync()
     async def config_env(cls):
         """环境独有的配置文件
         """
