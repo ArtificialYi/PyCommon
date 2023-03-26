@@ -1,9 +1,9 @@
-import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Union
+from typing import AsyncGenerator
 import aiomysql
 
-from ...configuration.rds import NormAction, IterAction
+from ...configuration.rds import pool_manage
+from asyncinit import asyncinit
 
 
 @asynccontextmanager
@@ -32,74 +32,61 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
     pass
 
 
-class DBExecutorSafe:
-    """使用说明
-    1. 异步初始化
-    2. 放入async with来传递conn和事务
-    """
-    def __init__(self, pool: aiomysql.Pool, use_transaction: bool = False):
-        self.__pool = pool
-        self.__use = use_transaction
-        self.__lock = asyncio.Lock()
-        self.__conn: Union[aiomysql.Connection, None] = None
+@asyncinit
+class MysqlConn:
+    async def __init__(self, flag: str):
+        # TODO: 这里的pool应该从全局获取
+        self.__pool = await pool_manage(flag)
         pass
 
-    async def execute(self, action: NormAction):
-        if self.__conn is None:
-            raise Exception('尚未获取conn')
-
-        async with self.__conn.cursor() as cursor:
-            return await action.action(cursor)
-
-    async def iter_opt(self, action: IterAction):
-        if self.__conn is None:
-            raise Exception('尚未获取conn')
-
-        async with self.__conn.cursor() as cursor:
-            async for row in action.action(cursor):
-                yield row
-                pass
-            pass
+    @asynccontextmanager
+    async def __call__(self, use_transaction: bool = False):
+        async with get_conn(self.__pool, use_transaction) as conn:
+            yield ConnExecutor(conn)
         pass
-
-    async def __aenter__(self):
-        await self.__lock.acquire()
-        self.__gen = get_conn(self.__pool, self.__use)
-        self.__conn = await self.__gen.__aenter__()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        if exc_value is not None:
-            # TODO: 需要留下日志
-            print(exc_value)
-        await self.__gen.__aexit__(exc_type, exc_value, traceback)
-        self.__conn = None
-        self.__lock.release()
-        return True
     pass
 
 
-class ExecuteAction(NormAction):
+class ActionExec:
     def __init__(self, sql: str, *args) -> None:
         self.__sql = sql
         self.__args = args
         pass
 
-    async def action(self, cursor: aiomysql.SSDictCursor) -> int:
+    async def __call__(self, cursor: aiomysql.SSDictCursor) -> int:
         return await cursor.execute(self.__sql, self.__args)
     pass
 
 
-class FetchAction(IterAction):
+class ActionIter:
     def __init__(self, sql: str, *args) -> None:
         self.__sql = sql
         self.__args = args
         pass
 
-    async def action(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator:
+    async def __call__(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator:
         await cursor.execute(self.__sql, self.__args)
         while (row := await cursor.fetchone()) is not None:
             yield row
+            pass
+        pass
+    pass
+
+
+class ConnExecutor:
+    def __init__(self, conn: aiomysql.Connection) -> None:
+        self.__conn = conn
+        pass
+
+    async def exec(self, coro: ActionExec):
+        async with self.__conn.cursor() as cursor:
+            return await coro(cursor)
+
+    async def iter(self, gen: ActionIter):
+        async with self.__conn.cursor() as cursor:
+            async for row in gen(cursor):
+                yield row
+                pass
             pass
         pass
     pass

@@ -1,5 +1,5 @@
 from ...configuration.rds import NormAction
-from ...src.repository.rds import DBExecutorSafe, ExecuteAction, FetchAction
+from ...src.repository.rds import DBExecutorSafe, ActionExec, ActionIter
 from ...mock.rds import MockConnection, MockCursor, MockDBPool
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 
@@ -12,14 +12,14 @@ class TestDBExecutor:
         pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
         db = DBExecutorSafe(pool)
         assert await FuncTool.is_async_err(db.execute, NormAction())
-        assert await FuncTool.is_async_gen_err(db.iter_opt(FetchAction('sql')))
+        assert await FuncTool.is_async_gen_err(db.iter_opt(ActionIter('sql')))
 
         # 无事务+iter
         async with db:
             sql_res = [1, 2, 3]
             cursor.mock_set_fetch_all(sql_res)
             i = 0
-            async for _ in db.iter_opt(FetchAction('sql')):
+            async for _ in db.iter_opt(ActionIter('sql')):
                 i += 1
                 pass
             assert i == len(sql_res)
@@ -29,7 +29,7 @@ class TestDBExecutor:
         db = DBExecutorSafe(pool, True)
         async with db:
             # 正常提交事务
-            assert await db.execute(ExecuteAction('sql')) is None
+            assert await db.execute(ActionExec('sql')) is None
             pass
         async with db:
             # 抛出异常
