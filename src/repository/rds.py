@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
+from .db import ActionExec, ActionIter
+
 from ...configuration.rds import pool_manage
 from asyncinit import asyncinit
 
@@ -27,32 +29,6 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
 
         async with __transaction(conn):
             yield conn
-            pass
-        pass
-    pass
-
-
-class ActionExec:
-    def __init__(self, sql: str, *args) -> None:
-        self.__sql = sql
-        self.__args = args
-        pass
-
-    async def __call__(self, cursor: aiomysql.SSDictCursor) -> int:
-        return await cursor.execute(self.__sql, self.__args)
-    pass
-
-
-class ActionIter:
-    def __init__(self, sql: str, *args) -> None:
-        self.__sql = sql
-        self.__args = args
-        pass
-
-    async def __call__(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator[dict, None]:
-        await cursor.execute(self.__sql, self.__args)
-        while (row := await cursor.fetchone()) is not None:
-            yield row
             pass
         pass
     pass
@@ -92,7 +68,6 @@ class MysqlManage:
             pass
         except Exception as e:
             # TODO: 这里需要记录日志
-            print(e)
-            pass
+            raise e
         pass
     pass

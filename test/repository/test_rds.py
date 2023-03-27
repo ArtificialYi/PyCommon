@@ -27,7 +27,7 @@ class TestMysqlManage:
         # 事务开启+exec
         async with mysql_manage(True) as exec:
             # 正常提交事务
-            assert await exec.exec(ActionExec('sql')) is None
+            assert await exec.exec(ActionExec('sql')) == 1
             pass
 
         # 抛出异常

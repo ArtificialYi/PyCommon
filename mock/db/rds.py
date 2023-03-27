@@ -18,10 +18,19 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
         self.__exec_res = None
         self.__fetch_all_res: list = None  # type: ignore
         self.__fetch_idx = 0
+        self.__rowcount = 1
         pass
+
+    @property
+    def rowcount(self):
+        return self.__rowcount
 
     def mock_set_exec(self, exec_res: int):
         self.__exec_res = exec_res
+        return self
+
+    def mock_set_rowcount(self, rowcount: int):
+        self.__rowcount = rowcount
         return self
 
     def mock_set_fetch_all(self, fetch_all_res):

@@ -1,11 +1,14 @@
 from pytest_mock import MockerFixture
 
+from ...src.tool.func_tool import PytestAsyncTimeout
+
 from ...mock.db.sqlite import MockConnection, MockCursor
 
 from ...src.repository.sqlite import ActionExec, ActionIter, SqliteManage
 
 
 class TestSqliteManage:
+    @PytestAsyncTimeout(1)
     async def test(self, mocker: MockerFixture):
         cursor = MockCursor()
         conn = MockConnection().mock_set_cursor(cursor)
