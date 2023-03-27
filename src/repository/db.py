@@ -1,4 +1,3 @@
-from abc import abstractmethod
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Union
 import aiomysql
@@ -52,7 +51,6 @@ class ConnExecutor:
 
 
 class SqlManage:
-    @abstractmethod
     @asynccontextmanager
     async def __call__(self) -> AsyncGenerator[ConnExecutor, None]:
         yield ConnExecutor(None)  # type: ignore
