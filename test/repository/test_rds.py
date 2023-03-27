@@ -1,4 +1,4 @@
-from ...src.tool.func_tool import PytestAsyncTimeout
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.repository.rds import ActionExec, ActionIter, MysqlManage
 from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
 from pytest_mock import MockerFixture
@@ -31,7 +31,10 @@ class TestMysqlManage:
             pass
 
         # 抛出异常
-        async with mysql_manage(True) as exec:
-            raise Exception('这个异常会被吞掉，代码里需要留下日志')
+        assert await FuncTool.is_async_err(self.__raise_exception, mysql_manage)
         pass
+
+    async def __raise_exception(self, manage: MysqlManage):
+        async with manage(True):
+            raise Exception('异常测试')
     pass
