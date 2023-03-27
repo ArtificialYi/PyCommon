@@ -3,6 +3,8 @@ from typing import AsyncGenerator, Union
 import aiomysql
 import aiosqlite
 
+from ..tool.sql_tool import Mysql2Other
+
 
 class ActionExec:
     def __init__(self, sql: str, *args) -> None:
@@ -11,7 +13,8 @@ class ActionExec:
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> int:
-        await cursor.execute(self.__sql, self.__args)
+        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        await cursor.execute(sql, self.__args)
         return cursor.rowcount
     pass
 
@@ -23,7 +26,8 @@ class ActionIter:
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> AsyncGenerator[dict, None]:
-        await cursor.execute(self.__sql, self.__args)
+        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        await cursor.execute(sql, self.__args)
         while (row := await cursor.fetchone()) is not None:
             yield dict(row)
             pass
