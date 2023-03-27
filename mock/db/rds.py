@@ -1,27 +1,8 @@
-import asyncio
 from contextlib import asynccontextmanager
-from time import sleep
 
 import aiomysql
 
-
-class MockDelay:
-    def __init__(self, delay: float = 0.01) -> None:
-        self.__delay = delay
-        pass
-
-    def mock_sleep(self, delay=None):
-        sleep(self.__delay if delay is None else delay)
-        pass
-
-    async def mock_asleep(self, delay=None):
-        await asyncio.sleep(self.__delay if delay is None else delay)
-        pass
-
-    def mock_set_delay(self, delay: float):
-        self.__delay = delay
-        pass
-    pass
+from .base import MockDelay
 
 
 class MockCursor(MockDelay, aiomysql.SSDictCursor):
@@ -116,10 +97,6 @@ class MockConnection(MockDelay, aiomysql.Connection):
 
     __del__ = close
     pass
-
-
-async def pool_manage(flag: str) -> aiomysql.Pool:
-    return MockDBPool(flag)
 
 
 class MockDBPool(MockDelay, aiomysql.Pool):

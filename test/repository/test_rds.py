@@ -1,11 +1,11 @@
+from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.repository.rds import ActionExec, ActionIter, MysqlManage
-from ...mock.rds import MockConnection, MockCursor, MockDBPool
-# from ...src.tool.func_tool import PytestAsyncTimeout
+from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
 from pytest_mock import MockerFixture
 
 
 class TestMysqlManage:
-    # @PytestAsyncTimeout(1)
+    @PytestAsyncTimeout(1)
     async def test(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor()

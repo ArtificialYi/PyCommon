@@ -1,6 +1,3 @@
-from abc import abstractmethod
-from typing import AsyncGenerator
-
 from .tool import ConfigTool, DCLGlobalAsync
 from .env import ConfigEnv
 import aiomysql
@@ -43,17 +40,3 @@ async def pool_manage(flag: str):
         'db': config_db.db,
         'cursorclass': SSDictCursor,
     })
-
-
-class NormAction:
-    @abstractmethod
-    async def action(self, cursor: aiomysql.SSDictCursor) -> int:
-        pass
-    pass
-
-
-class IterAction:
-    @abstractmethod
-    async def action(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator:
-        yield
-    pass
