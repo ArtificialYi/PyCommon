@@ -1,5 +1,6 @@
+from ...src.repository.db import ActionExec, ActionIter
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
-from ...src.repository.rds import ActionExec, ActionIter, MysqlManage
+from ...src.repository.rds import MysqlManage
 from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
 from pytest_mock import MockerFixture
 

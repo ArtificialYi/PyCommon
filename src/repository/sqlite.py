@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
-from .db import ActionExec, ActionIter
+from .db import ConnExecutor, SqlManage
 
 
 @asynccontextmanager
@@ -30,26 +30,7 @@ async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerato
     pass
 
 
-class ConnExecutor:
-    def __init__(self, conn: aiosqlite.Connection) -> None:
-        self.__conn = conn
-        pass
-
-    async def exec(self, coro: ActionExec) -> int:
-        async with self.__conn.cursor() as cursor:
-            return await coro(cursor)
-
-    async def iter(self, gen: ActionIter) -> AsyncGenerator[dict, None]:
-        async with self.__conn.cursor() as cursor:
-            async for row in gen(cursor):
-                yield row
-                pass
-            pass
-        pass
-    pass
-
-
-class SqliteManage:
+class SqliteManage(SqlManage):
     def __init__(self, db_name: str) -> None:
         self.__db_name = db_name
         pass

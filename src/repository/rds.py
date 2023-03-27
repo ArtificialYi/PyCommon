@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from .db import ActionExec, ActionIter
+from .db import ConnExecutor, SqlManage
 
 from ...configuration.rds import pool_manage
 from asyncinit import asyncinit
@@ -34,27 +34,8 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
     pass
 
 
-class ConnExecutor:
-    def __init__(self, conn: aiomysql.Connection) -> None:
-        self.__conn = conn
-        pass
-
-    async def exec(self, coro: ActionExec) -> int:
-        async with self.__conn.cursor() as cursor:
-            return await coro(cursor)
-
-    async def iter(self, gen: ActionIter) -> AsyncGenerator[dict, None]:
-        async with self.__conn.cursor() as cursor:
-            async for row in gen(cursor):
-                yield row
-                pass
-            pass
-        pass
-    pass
-
-
 @asyncinit
-class MysqlManage:
+class MysqlManage(SqlManage):
     async def __init__(self, flag: str):
         # TODO: 这里的pool应该从全局获取
         self.__pool = await pool_manage(flag)
@@ -62,12 +43,7 @@ class MysqlManage:
 
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
-        try:
-            async with get_conn(self.__pool, use_transaction) as conn:
-                yield ConnExecutor(conn)
-            pass
-        except Exception as e:
-            # TODO: 这里需要记录日志
-            raise e
+        async with get_conn(self.__pool, use_transaction) as conn:
+            yield ConnExecutor(conn)
         pass
     pass
