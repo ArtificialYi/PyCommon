@@ -6,7 +6,7 @@ class TestSqlManage:
     @PytestAsyncTimeout(1)
     async def test(self):
         manage = SqlManage()
-        async with manage() as exec:
+        async with manage(True) as exec:
             assert type(exec) == ConnExecutor
             pass
         pass

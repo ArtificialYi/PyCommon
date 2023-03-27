@@ -52,7 +52,7 @@ class ConnExecutor:
 
 class SqlManage:
     @asynccontextmanager
-    async def __call__(self) -> AsyncGenerator[ConnExecutor, None]:
+    async def __call__(self, *args, **kwds) -> AsyncGenerator[ConnExecutor, None]:
         yield ConnExecutor(None)  # type: ignore
         pass
     pass
