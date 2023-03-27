@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Union
 import aiomysql
 import aiosqlite
@@ -52,6 +53,8 @@ class ConnExecutor:
 
 class SqlManage:
     @abstractmethod
-    async def __call__(self) -> AsyncGenerator[ConnExecutor, None]:  # pragma: no cover
+    @asynccontextmanager
+    async def __call__(self) -> AsyncGenerator[ConnExecutor, None]:
+        yield ConnExecutor(None)  # type: ignore
         pass
     pass
