@@ -53,6 +53,9 @@ class TestActionGraphSign:
         assert await FuncTool.is_async_err(asyncio.gather, action_sign.run_async(), action_sign.run_async())
         # 关闭流
         await machine.status_change(SGForFlow.State.EXITED)
+        while action_sign.is_running:
+            await asyncio.sleep(0.1)
+            pass
         pass
     pass
 
