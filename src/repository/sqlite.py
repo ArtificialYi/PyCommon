@@ -1,26 +1,22 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-import aiomysql
-
-from ...configuration.rds import pool_manage
-from asyncinit import asyncinit
+import aiosqlite
 
 
 @asynccontextmanager
-async def __transaction(conn: aiomysql.Connection):
+async def __transaction(conn: aiosqlite.Connection):
     try:
-        await conn.begin()
-        yield
-        await conn.commit()
+        await conn.execute('BEGIN')
+        yield conn
+        await conn.execute('COMMIT')
     except Exception as e:
-        await conn.rollback()
+        await conn.execute('ROLLBACK')
         raise e
-    pass
 
 
 @asynccontextmanager
-async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
-    async with pool.acquire() as conn:
+async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerator[aiosqlite.Connection, None]:
+    async with aiosqlite.connect(db_name) as conn:
         if not use_transaction:
             yield conn
             return
@@ -38,8 +34,9 @@ class ActionExec:
         self.__args = args
         pass
 
-    async def __call__(self, cursor: aiomysql.SSDictCursor) -> int:
-        return await cursor.execute(self.__sql, self.__args)
+    async def __call__(self, cursor: aiosqlite.Cursor) -> int:
+        cursor_res = await cursor.execute(self.__sql, self.__args)
+        return cursor_res.rowcount
     pass
 
 
@@ -49,7 +46,7 @@ class ActionIter:
         self.__args = args
         pass
 
-    async def __call__(self, cursor: aiomysql.SSDictCursor) -> AsyncGenerator[dict, None]:
+    async def __call__(self, cursor: aiosqlite.Cursor) -> AsyncGenerator[aiosqlite.Row, None]:
         await cursor.execute(self.__sql, self.__args)
         while (row := await cursor.fetchone()) is not None:
             yield row
@@ -59,7 +56,7 @@ class ActionIter:
 
 
 class ConnExecutor:
-    def __init__(self, conn: aiomysql.Connection) -> None:
+    def __init__(self, conn: aiosqlite.Connection) -> None:
         self.__conn = conn
         pass
 
@@ -67,7 +64,7 @@ class ConnExecutor:
         async with self.__conn.cursor() as cursor:
             return await coro(cursor)
 
-    async def iter(self, gen: ActionIter) -> AsyncGenerator[dict, None]:
+    async def iter(self, gen: ActionIter) -> AsyncGenerator[aiosqlite.Row, None]:
         async with self.__conn.cursor() as cursor:
             async for row in gen(cursor):
                 yield row
@@ -77,17 +74,15 @@ class ConnExecutor:
     pass
 
 
-@asyncinit
-class MysqlManage:
-    async def __init__(self, flag: str):
-        # TODO: 这里的pool应该从全局获取
-        self.__pool = await pool_manage(flag)
+class SqliteManage:
+    def __init__(self, db_name: str) -> None:
+        self.__db_name = db_name
         pass
 
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
         try:
-            async with get_conn(self.__pool, use_transaction) as conn:
+            async with get_conn(self.__db_name, use_transaction) as conn:
                 yield ConnExecutor(conn)
             pass
         except Exception as e:

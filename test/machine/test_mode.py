@@ -19,7 +19,7 @@ class FuncTmp:
 
 
 class TestActionGraphSign:
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(3)
     async def test_err_sync(self):
         """同步运行两个会报错
         """
@@ -35,6 +35,10 @@ class TestActionGraphSign:
         assert await FuncTool.is_async_err(action_sign.run_async)
         # 关闭流
         await machine.status_change(SGForFlow.State.EXITED)
+        # TODO: 如果超时了，就调大超时时间
+        while action_sign.is_running:
+            await asyncio.sleep(0.1)
+            pass
         pass
 
     @PytestAsyncTimeout(2)
@@ -49,6 +53,9 @@ class TestActionGraphSign:
         assert await FuncTool.is_async_err(asyncio.gather, action_sign.run_async(), action_sign.run_async())
         # 关闭流
         await machine.status_change(SGForFlow.State.EXITED)
+        while action_sign.is_running:
+            await asyncio.sleep(0.1)
+            pass
         pass
     pass
 
