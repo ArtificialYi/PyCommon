@@ -118,13 +118,17 @@ class MockConnection(MockDelay, aiomysql.Connection):
     pass
 
 
+async def pool_manage(flag: str) -> aiomysql.Pool:
+    return MockDBPool(flag)
+
+
 class MockDBPool(MockDelay, aiomysql.Pool):
     """模拟DBPool
     外部调用
     1. get_conn
     """
-    def __init__(self, db_name: str) -> None:
-        self.__db_name = db_name
+    def __init__(self, flag: str) -> None:
+        self.__db_name = flag
         MockDelay.__init__(self)
         self.__conn = MockConnection()
         pass

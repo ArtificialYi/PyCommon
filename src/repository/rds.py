@@ -33,16 +33,22 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
 
 
 @asyncinit
-class MysqlConn:
+class MysqlManage:
     async def __init__(self, flag: str):
         # TODO: 这里的pool应该从全局获取
         self.__pool = await pool_manage(flag)
         pass
 
     @asynccontextmanager
-    async def __call__(self, use_transaction: bool = False):
-        async with get_conn(self.__pool, use_transaction) as conn:
-            yield ConnExecutor(conn)
+    async def __call__(self, use_transaction: bool = False) -> AsyncGenerator:
+        try:
+            async with get_conn(self.__pool, use_transaction) as conn:
+                yield ConnExecutor(conn)
+            pass
+        except Exception as e:
+            # TODO: 这里需要记录日志
+            print(e)
+            pass
         pass
     pass
 
