@@ -53,6 +53,16 @@ class MockConnection(MockDelay, aiosqlite.Connection):
     def __init__(self, *args, **kwds):
         MockDelay.__init__(self)
         self.__cursor = MockCursor()
+        self.__row_factory = None
+        pass
+
+    @property
+    def row_factory(self):
+        return self.__row_factory
+
+    @row_factory.setter
+    def row_factory(self, row_factory):
+        self.__row_factory = row_factory
         pass
 
     def mock_set_cursor(self, cursor: MockCursor):

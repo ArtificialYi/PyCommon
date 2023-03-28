@@ -22,7 +22,8 @@ async def __dict_factory(cursor, row):  # pragma: no cover
 
 @asynccontextmanager
 async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerator[aiosqlite.Connection, None]:
-    async with aiosqlite.connect(db_name, row_factory=__dict_factory) as conn:
+    async with aiosqlite.connect(db_name) as conn:
+        conn.row_factory = __dict_factory
         if not use_transaction:
             yield conn
             return
