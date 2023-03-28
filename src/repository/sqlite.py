@@ -16,9 +16,13 @@ async def __transaction(conn: aiosqlite.Connection):
         raise e
 
 
+async def __dict_factory(cursor, row):  # pragma: no cover
+    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
+
+
 @asynccontextmanager
 async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerator[aiosqlite.Connection, None]:
-    async with aiosqlite.connect(db_name) as conn:
+    async with aiosqlite.connect(db_name, row_factory=__dict_factory) as conn:
         if not use_transaction:
             yield conn
             return
