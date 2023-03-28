@@ -16,7 +16,7 @@ async def __transaction(conn: aiosqlite.Connection):
         raise e
 
 
-async def __dict_factory(cursor, row):  # pragma: no cover
+def __dict_factory(cursor, row):  # pragma: no cover
     return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
 
 
