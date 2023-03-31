@@ -5,7 +5,6 @@ import aiomysql
 from .db import ConnExecutor, SqlManage
 
 from ...configuration.rds import pool_manage
-from asyncinit import asyncinit
 
 
 @asynccontextmanager
@@ -34,16 +33,22 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
     pass
 
 
-@asyncinit
 class MysqlManage(SqlManage):
-    async def __init__(self, flag: str):
-        # TODO: 这里的pool应该从全局获取
-        self.__pool = await pool_manage(flag)
+    def __init__(self, flag: str):
+        self.__flag = flag
+        self.__pool = None
         pass
+
+    async def __get_pool(self):
+        if self.__pool is not None:
+            return self.__pool
+        # TODO: 这里的pool应该从全局获取
+        self.__pool = await pool_manage(self.__flag)
+        return self.__pool
 
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
-        async with get_conn(self.__pool, use_transaction) as conn:
+        async with get_conn(await self.__get_pool(), use_transaction) as conn:
             yield ConnExecutor(conn)
         pass
     pass

@@ -12,7 +12,7 @@ class TestMysqlManage:
         cursor = MockCursor()
         pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
         mocker.patch('PyCommon.src.repository.rds.pool_manage', return_value=pool)
-        mysql_manage = await MysqlManage('test')
+        mysql_manage = MysqlManage('test')
 
         # 无事务+iter
         async with mysql_manage() as exec:
