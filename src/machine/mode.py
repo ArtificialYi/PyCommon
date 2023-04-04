@@ -104,7 +104,7 @@ class DeadWaitFlow(FqsAsync):
     1. 清空死等队列后再exit
     """
     def __init__(self, func: Callable) -> None:
-        super().__init__(func)
+        FqsAsync.__init__(self, func)
         self.__flow = NormFlow(self.fq_order.queue_wait)
         pass
 
@@ -119,12 +119,12 @@ class DeadWaitFlow(FqsAsync):
         # 状态机启动，开始处理函数队列
         await self.__flow.__aenter__()
         # 开始接收函数调用
-        await super().__aenter__()
+        await FqsAsync.__aenter__(self)
         return self
 
     async def __aexit__(self, *args):
         # 关闭接收外部函数队列调用（函数可以直接调用）
-        await super().__aexit__(*args)
+        await FqsAsync.__aexit__(self, *args)
         # 发送一个空信号给函数队列
         await self.fq_order.call_step()
         # 状态机尝试关闭

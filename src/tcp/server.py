@@ -6,7 +6,7 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
     addr = writer.get_extra_info('peername')
     print(f'Connection from {addr}')
 
-    # 启动各种流
+    # 无限调用接收流，直到连接断开
     while True:
         data = await reader.read(1)
         if not data:
