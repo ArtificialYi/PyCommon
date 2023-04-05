@@ -4,6 +4,8 @@ import asyncio
 import inspect
 from typing import Any, Callable, Dict, Generator, Tuple, Union
 
+from ..tool.map_tool import Map
+
 from ..tool.bytes_tool import CODING
 from ..machine.mode import DeadWaitFlow, NormFlow
 import json
@@ -181,5 +183,26 @@ class FlowJsonDealForServer(DeadWaitFlow, ActionJsonDeal):
         if id is None or service_name is None:
             raise Exception(f'Json数据错误:{json_obj}')
         await self.__service_mapping(id, service_name, *json_obj.get('args', []), **json_obj.get('kwds', {}))
+        pass
+    pass
+
+
+class FlowJsonDealForClient(DeadWaitFlow, ActionJsonDeal):
+    """客户端的Json处理流
+    """
+    def __init__(self, map: Map):
+        self.__map = map
+        DeadWaitFlow.__init__(self, self.deal_json)
+        pass
+
+    async def deal_json(self, json_obj: dict):
+        id = json_obj.get('id', None)
+        if id is None:
+            raise Exception(f'Json数据错误:{json_obj}')
+        future: Union[asyncio.Future, None] = self.__map.get_norm_value(id, None)
+        if future is None:
+            raise Exception(f'未找到对应的future:{id}')
+        # 将data结果写入future（超时限制）
+        future.set_result(json_obj.get('data', None))
         pass
     pass

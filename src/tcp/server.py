@@ -1,28 +1,30 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 
+from ..flow.client import FlowJsonDealForServer, FlowRecv, FlowSendServer
+
+
+async def __server_flow(reader: StreamReader, writer: StreamWriter):
+    async with (
+        FlowSendServer(writer) as flow_send,
+        FlowJsonDealForServer(flow_send) as flow_json,
+        FlowRecv(reader, flow_json),
+    ):
+        while True:
+            await asyncio.sleep(1)
+            pass
+
 
 async def __handle_client(reader: StreamReader, writer: StreamWriter):
     addr = writer.get_extra_info('peername')
     print(f'Connection from {addr}')
 
     # 无限调用接收流，直到连接断开
-    while True:
-        data = await reader.read(1)
-        if not data:
-            break
-
-        message = data.decode('utf-8')
-        print(f'Received {message} from {addr}')
-
-        response = f'Server received: {message}\r\n'
-        writer.write(response.encode('utf-8'))
-        await writer.drain()
+    try:
+        await __server_flow(reader, writer)
+    except Exception as e:
+        print(f'Connection from {addr} is closed: {e}')
         pass
-
-    print(f'Closing the connection with {addr}')
-    writer.close()
-    await writer.wait_closed()
     pass
 
 
