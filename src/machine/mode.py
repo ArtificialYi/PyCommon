@@ -17,16 +17,14 @@ class ActionGraphSign:
     1. 协程内多个main同时运行将会出错
     """
     def __init__(self, graph: SGMachineForFlow, fq_order: Union[AsyncExecOrder, None] = None) -> None:
-        self.__future_run = AsyncBase.get_future()
         self.__graph = graph
         self.__fq_order: AsyncExecOrder = graph.fq_order if fq_order is None else fq_order
-        self.__lock = asyncio.Lock()
         self.__task_main = None
         pass
 
     @property
     def is_running(self):
-        return self.__future_run.done()
+        return self.__task_main is not None
 
     async def __no_sign(self):
         func = self.__graph.func_get()
@@ -36,26 +34,19 @@ class ActionGraphSign:
         res_pre = func()
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
-    def __running_err(self):
-        if self.is_running or self.__task_main is not None:
-            raise Exception('已有loop在运行中')
-
     async def __main(self):
-        self.__future_run.set_result(True)
         while self.__graph.status != self.__graph.status_exited:
             if await self.__fq_order.queue_no_wait():
                 continue
             await self.__no_sign()
             pass
-        self.__future_run = AsyncBase.get_future()
         self.__task_main = None
         pass
 
-    async def run_async(self) -> asyncio.Future:
-        async with self.__lock:
-            self.__running_err()
-            self.__task_main = AsyncBase.coro2task_exec(self.__main())
-            return await self.__future_run
+    def run_async(self) -> None:
+        if self.is_running:
+            raise Exception('已有loop在运行中')
+        self.__task_main = AsyncBase.coro2task_exec(self.__main())
     pass
 
 
@@ -82,7 +73,7 @@ class NormFlow:
         # 状态机开始接收状态转移信号（默认为关闭信号）
         await self.__graph.__aenter__()
         # 状态机启动，开始处理状态转移信号 & func
-        await self.__sign_deal.run_async()
+        self.__sign_deal.run_async()
         return self
 
     async def __aexit__(self, *args):

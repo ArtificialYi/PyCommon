@@ -29,10 +29,10 @@ class TestActionGraphSign:
         # 启动流
         await machine.status_change(SGForFlow.State.STARTED)
         assert func_tmp.num == 0
-        assert await action_sign.run_async()
+        assert action_sign.run_async() is None
         await asyncio.sleep(1)
         assert func_tmp.num > 0
-        assert await FuncTool.is_async_err(action_sign.run_async)
+        assert FuncTool.is_func_err(action_sign.run_async)
         # 关闭流
         await machine.status_change(SGForFlow.State.EXITED)
         # TODO: 如果超时了，就调大超时时间
@@ -50,7 +50,7 @@ class TestActionGraphSign:
         action_sign = ActionGraphSign(machine)
         # 启动流
         await machine.status_change(SGForFlow.State.STARTED)
-        assert await FuncTool.is_async_err(asyncio.gather, action_sign.run_async(), action_sign.run_async())
+        assert action_sign.run_async() is None
         # 关闭流
         await machine.status_change(SGForFlow.State.EXITED)
         while action_sign.is_running:
