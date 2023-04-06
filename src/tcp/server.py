@@ -1,7 +1,9 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 
-from ..flow.client import FlowJsonDealForServer, FlowRecv, FlowSendServer
+from ..flow.base import FlowRecv
+
+from ..flow.server import FlowJsonDealForServer, FlowSendServer
 
 
 async def __server_flow(reader: StreamReader, writer: StreamWriter):
@@ -11,6 +13,8 @@ async def __server_flow(reader: StreamReader, writer: StreamWriter):
         FlowRecv(reader, flow_json),
     ):
         while True:
+            # 无限循环，直到连接断开。
+            # TODO: 时间间隔修正
             await asyncio.sleep(1)
             pass
 
@@ -19,12 +23,12 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
     addr = writer.get_extra_info('peername')
     print(f'Connection from {addr}')
 
-    # 无限调用接收流，直到连接断开
     try:
         await __server_flow(reader, writer)
     except Exception as e:
         print(f'Connection from {addr} is closed: {e}')
         pass
+    print('Close the connection')
     pass
 
 
