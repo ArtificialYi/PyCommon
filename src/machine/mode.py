@@ -21,6 +21,7 @@ class ActionGraphSign:
         self.__graph = graph
         self.__fq_order: AsyncExecOrder = graph.fq_order if fq_order is None else fq_order
         self.__lock = asyncio.Lock()
+        self.__task_main = None
         pass
 
     @property
@@ -36,7 +37,7 @@ class ActionGraphSign:
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
     def __running_err(self):
-        if self.is_running:
+        if self.is_running or self.__task_main is not None:
             raise Exception('已有loop在运行中')
 
     async def __main(self):
@@ -47,12 +48,13 @@ class ActionGraphSign:
             await self.__no_sign()
             pass
         self.__future_run = AsyncBase.get_future()
+        self.__task_main = None
         pass
 
     async def run_async(self) -> asyncio.Future:
         async with self.__lock:
             self.__running_err()
-            AsyncBase.coro2task_exec(self.__main())
+            self.__task_main = AsyncBase.coro2task_exec(self.__main())
             return await self.__future_run
     pass
 
