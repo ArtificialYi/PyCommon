@@ -15,6 +15,9 @@ class FuncTmp:
     async def func(self):
         self.num += 1
         return await asyncio.sleep(0.1)
+
+    async def func_err(self):
+        raise Exception('func_err')
     pass
 
 
@@ -141,6 +144,20 @@ class TestDeadWaitFlow:
             await flow.qjoin()
             assert flow.qsize == 0
             pass
-        assert flow.qsize == 0
+        assert flow.qsize == 1
+        pass
+
+    @PytestAsyncTimeout(2)
+    async def test_err_sync(self):
+        func_tmp = FuncTmp()
+        assert await FuncTool.is_async_err(func_tmp.func_err)
+        flow = DeadWaitFlow(func_tmp.func_err)
+        async with flow:
+            assert flow.exception is None
+            await getattr(flow, 'func_err')()
+            await asyncio.sleep(1)
+            assert flow.exception is not None
+            pass
+        assert flow.exception is not None
         pass
     pass

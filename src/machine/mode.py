@@ -19,12 +19,16 @@ class ActionGraphSign:
     def __init__(self, graph: SGMachineForFlow, fq_order: Union[AsyncExecOrder, None] = None) -> None:
         self.__graph = graph
         self.__fq_order: AsyncExecOrder = graph.fq_order if fq_order is None else fq_order
-        self.__task_main = None
+        self.__task_main: Union[asyncio.Task, None] = None
         pass
 
     @property
     def is_running(self):
-        return self.__task_main is not None
+        return self.__task_main is not None and not self.__task_main.done()
+
+    @property
+    def exception(self):
+        return self.__task_main.exception() if self.__task_main is not None and self.__task_main.done() else None
 
     async def __no_sign(self):
         func = self.__graph.func_get()
@@ -40,7 +44,6 @@ class ActionGraphSign:
                 continue
             await self.__no_sign()
             pass
-        self.__task_main = None
         pass
 
     def run_async(self) -> None:
@@ -61,6 +64,10 @@ class NormFlow:
         self.__sign_deal = ActionGraphSign(self.__graph)
         pass
 
+    @property
+    def exception(self):
+        return self.__sign_deal.exception
+
     async def __aenter__(self):
         """
         1. 同步启动会报错
@@ -77,14 +84,14 @@ class NormFlow:
         return self
 
     async def __aexit__(self, *args):
-        # 将状态转移至exited
-        if not self.__sign_deal.is_running:
-            raise Exception('状态机尚未启动')
-        # 状态机处理关闭信号=>关闭，停止处理func
-        await self.__graph.status_change(self.__graph.status_exited)
-        # 状态机不再接收状态转移信号
+        e = (
+            None if self.__sign_deal.is_running
+            else Exception('状态机尚未启动') if self.__sign_deal.exception is None else self.__sign_deal.exception
+        )
+        # 强行关闭状态机
+        args = (None, None, None) if e is None else (None, e, None)
         await self.__graph.__aexit__(*args)
-        pass
+        await self.__graph.status_change(self.__graph.status_exited)
     pass
 
 
@@ -104,6 +111,10 @@ class DeadWaitFlow(FqsAsync):
     @property
     def qsize(self):
         return self.fq_order.qsize
+
+    @property
+    def exception(self):
+        return self.__flow.exception
 
     async def qjoin(self):
         return await self.fq_order.queue_join()
