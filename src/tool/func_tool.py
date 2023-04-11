@@ -238,20 +238,16 @@ class QueueException:
         self.__q: asyncio.Queue[asyncio.Future] = asyncio.Queue()
         pass
 
-    async def __call__(self, future: asyncio.Future):
-        await self.__q.put(future)
+    def __call__(self, future: asyncio.Future):
+        AsyncBase.coro2task_exec(self.__q.put(future))
         pass
-
-    async def __exception(self):
-        future = await self.__q.get()
-        self.__q.task_done()
-        e = future.exception()
-        if e is None:
-            return
-        raise e
 
     async def exception_loop(self):
         while True:
-            await self.__exception()
-            pass
+            future = await self.__q.get()
+            self.__q.task_done()
+            e = future.exception()
+            if e is None:
+                continue
+            raise e
     pass

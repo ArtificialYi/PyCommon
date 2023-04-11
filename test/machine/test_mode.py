@@ -3,7 +3,7 @@ import asyncio
 from ...src.machine.status import SGForFlow, SGMachineForFlow
 
 
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
 from ...src.machine.mode import ActionGraphSign, DeadWaitFlow, NormFlow
 
 
@@ -100,11 +100,11 @@ class TestNormFlow:
         """
         func_tmp = FuncTmp()
         norm_sign_flow = NormFlow(func_tmp.func)
-        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__)
+        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__, None, None, None)
         async with norm_sign_flow:
             assert await FuncTool.is_async_err(norm_sign_flow.__aenter__)
             pass
-        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__)
+        assert await FuncTool.is_async_err(norm_sign_flow.__aexit__, None, None, None)
         pass
 
     @PytestAsyncTimeout(1)
@@ -115,6 +115,24 @@ class TestNormFlow:
         func_tmp = FuncTmp()
         norm_sign_flow = NormFlow(func_tmp.func)
         assert await FuncTool.is_async_err(asyncio.gather, norm_sign_flow.__aenter__, norm_sign_flow.__aenter__)
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_err_func(self):
+        """异常捕获
+        """
+        func_tmp = FuncTmp()
+        q_exception = QueueException()
+        # 常规流
+        flow_norm = NormFlow(func_tmp.func, q_exception)
+        async with flow_norm:
+            pass
+
+        # 异常流
+        flow_err = NormFlow(func_tmp.func_err, q_exception)
+        async with flow_err:
+            assert await FuncTool.is_async_err(q_exception.exception_loop)
+            pass
         pass
     pass
 
