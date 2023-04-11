@@ -12,9 +12,7 @@ class ActionGraphSign:
     2. 无队列信号时 处理 状态图运行时
         1. 运行时有函数时 无限调用 函数
         2. 运行时没有函数时 等待 队列信号
-
-    lock:
-    1. 协程内多个main同时运行将会出错
+    3. 协程内多个main同时运行将会出错
     """
     def __init__(self, graph: SGMachineForFlow, fq_order: Union[AsyncExecOrder, None] = None) -> None:
         self.__graph = graph
@@ -46,10 +44,13 @@ class ActionGraphSign:
             pass
         pass
 
-    def run_async(self) -> None:
+    def run_async(self, callback: Union[Callable, None] = None) -> None:
         if self.is_running:
             raise Exception('已有loop在运行中')
         self.__task_main = AsyncBase.coro2task_exec(self.__main())
+
+        if callback is not None:
+            self.__task_main.add_done_callback(callback)
     pass
 
 
@@ -59,9 +60,10 @@ class NormFlow:
     2. 状态转移 函数 <=> 队列
     3. 队列信号操作逻辑
     """
-    def __init__(self, func: Callable) -> None:
-        self.__graph = SGMachineForFlow(SGForFlow(func))
+    def __init__(self, func_loop: Callable, callback: Union[Callable, None] = None) -> None:
+        self.__graph = SGMachineForFlow(SGForFlow(func_loop))
         self.__sign_deal = ActionGraphSign(self.__graph)
+        self.__callable = callback
         pass
 
     @property
@@ -80,17 +82,23 @@ class NormFlow:
         # 状态机开始接收状态转移信号（默认为关闭信号）
         await self.__graph.__aenter__()
         # 状态机启动，开始处理状态转移信号 & func
-        self.__sign_deal.run_async()
+        self.__sign_deal.run_async(self.__callable)
         return self
 
     async def __aexit__(self, *args):
-        e = (
-            None if self.__sign_deal.is_running
-            else Exception('状态机尚未启动') if self.__sign_deal.exception is None else self.__sign_deal.exception
-        )
-        # 强行关闭状态机
-        args = (None, None, None) if e is None else (None, e, None)
-        await self.__graph.__aexit__(*args)
+        # 流运行中 => 常规关闭
+        if self.__sign_deal.is_running:
+            await self.__graph.status_change(self.__graph.status_exited)
+            await self.__graph.__aexit__(*args)
+            return
+
+        e = args[1] if self.__sign_deal.exception is None else self.__sign_deal.exception
+        # 无异常停止 => 业务逻辑错误
+        if e is None:
+            raise Exception('业务逻辑错误')
+
+        # 异常停止 => 异常关闭
+        await self.__graph.__aexit__(None, e, None)
         await self.__graph.status_change(self.__graph.status_exited)
     pass
 
@@ -103,9 +111,9 @@ class DeadWaitFlow(FqsAsync):
 
     1. 清空死等队列后再exit
     """
-    def __init__(self, func: Callable) -> None:
+    def __init__(self, func: Callable, callback: Union[Callable, None] = None) -> None:
         FqsAsync.__init__(self, func)
-        self.__flow = NormFlow(self.fq_order.queue_wait)
+        self.__flow = NormFlow(self.fq_order.queue_wait, callback)
         pass
 
     @property

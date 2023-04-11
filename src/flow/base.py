@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from asyncio import StreamReader
 import json
-from typing import Generator, Union
+from typing import Callable, Generator, Union
 
 from ..tool.bytes_tool import CODING
 
@@ -51,9 +51,9 @@ class ActionJsonDeal:
 class FlowRecv(NormFlow):
     """持续运行的TCP接收流
     """
-    def __init__(self, reader: StreamReader, json_deal: ActionJsonDeal) -> None:
+    def __init__(self, reader: StreamReader, json_deal: ActionJsonDeal, callback: Callable) -> None:
         self.__reader = reader
-        super().__init__(self.__recv)
+        NormFlow.__init__(self, self.__recv, callback)
         self.__json_online = JsonOnline()
         self.__json_deal = json_deal
         pass

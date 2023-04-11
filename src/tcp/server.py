@@ -1,22 +1,23 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 
+from ..tool.func_tool import QueueException
+
 from ..flow.base import FlowRecv
 
 from ..flow.server import FlowJsonDealForServer, FlowSendServer
 
 
 async def __server_flow(reader: StreamReader, writer: StreamWriter):
+    err_queue = QueueException()
     async with (
-        FlowSendServer(writer) as flow_send,
-        FlowJsonDealForServer(flow_send) as flow_json,
-        FlowRecv(reader, flow_json),
+        FlowSendServer(writer, err_queue) as flow_send,
+        FlowJsonDealForServer(flow_send, err_queue) as flow_json,
+        FlowRecv(reader, flow_json, err_queue),
     ):
-        while True:
-            # 无限循环，直到连接断开。
-            # TODO: 时间间隔修正
-            await asyncio.sleep(1)
-            pass
+        await err_queue.exception_loop()
+        pass
+    pass
 
 
 async def __handle_client(reader: StreamReader, writer: StreamWriter):

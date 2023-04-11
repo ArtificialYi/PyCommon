@@ -144,7 +144,7 @@ class TestDeadWaitFlow:
             await flow.qjoin()
             assert flow.qsize == 0
             pass
-        assert flow.qsize == 1
+        assert flow.qsize == 0
         pass
 
     @PytestAsyncTimeout(2)

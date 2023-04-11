@@ -1,6 +1,5 @@
 from asyncio import StreamWriter
 import asyncio
-import inspect
 import json
 from typing import Any, Callable, Dict, Tuple, Union
 
@@ -22,7 +21,7 @@ class ServerRegister:
         path = f'{ "" if self.__path is None else self.__path}/{func.__name__}'
         if self.__class__.__TABLE.get(path, None) is not None:
             raise Exception(f'服务已存在:{path}')
-        self.__class__.__TABLE[path] = func, inspect.isasyncfunction(func)
+        self.__class__.__TABLE[path] = func, asyncio.iscoroutinefunction(func)
         return func
 
     @classmethod
@@ -38,9 +37,9 @@ class ServerRegister:
 class FlowSendServer(DeadWaitFlow):
     """基于异步API流的TCP发送流-服务端版
     """
-    def __init__(self, writer: StreamWriter) -> None:
+    def __init__(self, writer: StreamWriter, callback: Callable) -> None:
         self.__writer = writer
-        super().__init__(self.send)
+        DeadWaitFlow.__init__(self, self.send, callback)
         pass
 
     async def send(self, id: int, data: Any):
@@ -87,9 +86,9 @@ class ServiceMapping:
 class FlowJsonDealForServer(DeadWaitFlow, ActionJsonDeal):
     """服务端的Json处理流
     """
-    def __init__(self, flow_send: FlowSendServer):
+    def __init__(self, flow_send: FlowSendServer, callback: Callable):
         self.__service_mapping = ServiceMapping(flow_send)
-        DeadWaitFlow.__init__(self, self.deal_json)
+        DeadWaitFlow.__init__(self, self.deal_json, callback)
         pass
 
     async def deal_json(self, json_obj: dict):
