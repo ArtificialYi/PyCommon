@@ -28,16 +28,11 @@ class JsonOnline:
         self.__idx = self.__idx + pos + 1 if pos != -1 else len(self.__cache) - 1
         if pos == -1:
             return None
-        return self.__str2json(self.__cache[:self.__idx + 1])
 
-    def __str2json(self, str_json: str) -> Union[dict, None]:
-        try:
-            json_data = json.loads(str_json)
-            self.__cache = self.__cache[self.__idx + 1:]
-            self.__idx = 0
-            return json_data
-        except json.JSONDecodeError:
-            return None
+        json_data = json.loads(self.__cache[:self.__idx + 1])
+        self.__cache = self.__cache[self.__idx + 1:]
+        self.__idx = 0
+        return json_data
     pass
 
 

@@ -8,24 +8,20 @@ from ..flow.base import FlowRecv
 from ..flow.server import FlowJsonDealForServer, FlowSendServer
 
 
-async def __server_flow(reader: StreamReader, writer: StreamWriter):
-    err_queue = QueueException()
-    async with (
-        FlowSendServer(writer, err_queue) as flow_send,
-        FlowJsonDealForServer(flow_send, err_queue) as flow_json,
-        FlowRecv(reader, flow_json, err_queue),
-    ):
-        await err_queue.exception_loop()
-        pass
-    pass
-
-
 async def __handle_client(reader: StreamReader, writer: StreamWriter):
     addr = writer.get_extra_info('peername')
     print(f'Connection from {addr}')
 
     try:
-        await __server_flow(reader, writer)
+        err_queue = QueueException()
+        async with (
+            FlowSendServer(writer, err_queue) as flow_send,
+            FlowJsonDealForServer(flow_send, err_queue) as flow_json,
+            FlowRecv(reader, flow_json, err_queue),
+        ):
+            await err_queue.exception_loop()
+            pass
+        pass
     except Exception as e:
         print(f'Connection from {addr} is closing: {e}')
         pass
