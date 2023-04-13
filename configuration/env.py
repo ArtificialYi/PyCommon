@@ -2,8 +2,10 @@ from configparser import ConfigParser
 from enum import Enum
 import os
 
+from ..src.tool.map_tool import MapKey
 
-from .tool import ConfigTool, DCLGlobalAsync
+
+from .tool import ConfigTool
 
 
 COMMON_CONFIGURATION_DIR = os.path.dirname(__file__)
@@ -28,7 +30,7 @@ class ConfigEnv:
     2. 项目单测调用时需要mock
     """
     @classmethod
-    @DCLGlobalAsync()
+    @MapKey()
     async def __config_project(cls) -> ConfigParser:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
@@ -59,7 +61,7 @@ class ConfigEnv:
         )
 
     @classmethod
-    @DCLGlobalAsync()
+    @MapKey()
     async def config_default(cls):
         """默认的项目配置文件
         """
@@ -67,7 +69,7 @@ class ConfigEnv:
         return await ConfigTool.get_config(path_default)
 
     @classmethod
-    @DCLGlobalAsync()
+    @MapKey()
     async def config_env(cls):
         """环境独有的配置文件
         """

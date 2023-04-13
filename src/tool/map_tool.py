@@ -36,7 +36,7 @@ class MapKey:
             self.__map = dict()
             self.__func_key = func_key
             self.__iscoro = asyncio.iscoroutinefunction(func_key)
-            self.__lock = None
+            self.__map_lock = dict()
             pass
 
         def __call__(self, func_value: Callable) -> Callable:
@@ -63,9 +63,11 @@ class MapKey:
             return await key_res if self.__iscoro else key_res
 
         def __get_lock(self):
-            if self.__lock is None:
-                self.__lock = asyncio.Lock()
-            return self.__lock
+            # 多个loop间不共享锁
+            loop = asyncio.get_event_loop()
+            if self.__map_lock.get(loop, None) is None:
+                self.__map_lock[loop] = asyncio.Lock()
+            return self.__map_lock[loop]
         pass
 
     def __init__(self, func_key: Union[Callable, None] = None) -> None:
