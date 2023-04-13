@@ -10,8 +10,10 @@ class TestMysqlManage:
     async def test(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor()
-        pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch('PyCommon.src.repository.rds.pool_manage', return_value=pool)
+
+        async def tmp():
+            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch('PyCommon.src.repository.rds.pool_manage', return_value=tmp())
         mysql_manage = MysqlManage('test')
 
         # 无事务+iter

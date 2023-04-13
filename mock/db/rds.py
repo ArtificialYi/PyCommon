@@ -1,7 +1,5 @@
 from contextlib import asynccontextmanager
-
 import aiomysql
-
 from .base import MockDelay
 
 
@@ -118,6 +116,9 @@ class MockDBPool(MockDelay, aiomysql.Pool):
         MockDelay.__init__(self)
         self.__conn = MockConnection()
         pass
+
+    async def __await__(self):
+        yield self
 
     @property
     def db_name(self):
