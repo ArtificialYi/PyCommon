@@ -11,9 +11,9 @@ class TestMysqlManage:
         # 获取一个mysql管理器
         cursor = MockCursor()
 
-        async def tmp():
-            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch('PyCommon.src.repository.rds.pool_manage', return_value=tmp())
+        async def tmp(flag: str):
+            return MockDBPool(flag).mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch('PyCommon.src.repository.rds.pool_manage', new=tmp)
         mysql_manage = MysqlManage('test')
 
         # 无事务+iter

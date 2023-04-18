@@ -195,7 +195,7 @@ class SGMachineForFlow(FqsSync):
         2. 状态转化权最好仅由管理员拥有
         """
         self.__graph = graph
-        super().__init__(self.status_change)
+        super().__init__(self.__status_change)
         self.__status_exited = graph.State.EXITED
         pass
 
@@ -211,7 +211,7 @@ class SGMachineForFlow(FqsSync):
         value = self.__graph.graph.get(self.__graph.status, self.__graph.status)
         return value.func if value is not None else None
 
-    async def status_change(self, status_target, *args, **kwds):
+    async def __status_change(self, status_target, *args, **kwds):
         # 所有状态转移均在此处处理
         value = self.__graph.graph.get(self.__graph.status, status_target)
         func = value.func if value is not None else None
@@ -219,4 +219,13 @@ class SGMachineForFlow(FqsSync):
             return None
         res = func(*args, **kwds)
         return await res if asyncio.iscoroutinefunction(func) else res
+
+    async def __aenter__(self):
+        await self.__status_change(self.__graph.State.STARTED)
+        return await super().__aenter__()
+
+    async def __aexit__(self, *args):
+        res = await super().__aexit__(*args)
+        await self.__status_change(self.__graph.State.EXITED)
+        return res
     pass

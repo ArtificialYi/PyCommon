@@ -26,9 +26,9 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
         print(f'Connection from {addr} is closing: {e}')
         pass
     finally:
+        print('Closed the connection')
         writer.close()
         await writer.wait_closed()
-        print('Closed the connection')
         pass
     pass
 

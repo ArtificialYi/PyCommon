@@ -14,6 +14,7 @@ class TcpApi:
         self.__host = host
         self.__port = port
         self.__task = None
+        self.__lock = None
         pass
 
     async def __flow_run(self, future: asyncio.Future):
@@ -30,6 +31,10 @@ class TcpApi:
                 await err_queue.exception_loop()
                 pass
             pass
+        except Exception as e:
+            # TODO: 此处需记录每次断开连接的原因
+            print(e)
+            raise e
         finally:
             writer.close()
             await writer.wait_closed()
@@ -45,7 +50,7 @@ class TcpApi:
         self.__tcp_id += 1
         return self.__tcp_id
 
-    async def get_flow_send(self) -> Tuple[FlowSendClient, int, dict]:
+    async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict]:
         async with self.__get_lock():
             if self.__task is None or self.__task.done():
                 future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
@@ -58,7 +63,7 @@ class TcpApi:
         return self.__flow_send, tcp_id, self.__future_map
 
     async def api(self, path: str, *args, **kwds):
-        flow_send, tcp_id, future_map = await self.get_flow_send()
+        flow_send, tcp_id, future_map = await self.__get_flow_send()
         # 添加id映射
         future_map[tcp_id] = asyncio.Future()
         await flow_send.send(tcp_id, path, *args, **kwds)

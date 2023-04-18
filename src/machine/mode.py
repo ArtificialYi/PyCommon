@@ -14,15 +14,11 @@ class ActionGraphSign:
         2. 运行时没有函数时 等待 队列信号
     3. 协程内多个main同时运行将会出错
     """
-    def __init__(self, graph: SGMachineForFlow, fq_order: Union[AsyncExecOrder, None] = None) -> None:
+    def __init__(self, graph: SGMachineForFlow) -> None:
         self.__graph = graph
-        self.__fq_order: AsyncExecOrder = graph.fq_order if fq_order is None else fq_order
-        self.__task_main: Union[asyncio.Task, None] = None
+        self.__fq_order: AsyncExecOrder = graph.fq_order
+        self.__task_main: asyncio.Task = AsyncBase.get_done_task()
         pass
-
-    @property
-    def is_running(self):
-        return self.__task_main is not None and not self.__task_main.done()
 
     @property
     def exception(self):
@@ -37,20 +33,24 @@ class ActionGraphSign:
         return await res_pre if asyncio.iscoroutinefunction(func) else res_pre
 
     async def __main(self):
-        while self.__graph.status != self.__graph.status_exited:
+        while True:
             if await self.__fq_order.queue_no_wait():
                 continue
             await self.__no_sign()
-            pass
         pass
 
-    def run_async(self, callback: Union[Callable, None] = None) -> None:
-        if self.is_running:
+    def run(self, callback: Union[Callable, None] = None) -> None:
+        if not self.__task_main.done():
             raise Exception('已有loop在运行中')
         self.__task_main = AsyncBase.coro2task_exec(self.__main())
 
         if callback is not None:
             self.__task_main.add_done_callback(callback)
+
+    def stop(self):
+        if not self.__task_main.done():
+            self.__task_main.cancel()
+        pass
     pass
 
 
@@ -66,10 +66,6 @@ class NormFlow:
         self.__callable = callback
         pass
 
-    @property
-    def exception(self):
-        return self.__sign_deal.exception
-
     async def __aenter__(self):
         """
         1. 同步启动会报错
@@ -78,28 +74,23 @@ class NormFlow:
         # 做好流启动准备
         if self.__graph.status != self.__graph.status_exited:
             raise Exception(f'状态机启动失败|status:{self.__graph.status}')
-        await self.__graph.status_change(SGForFlow.State.STARTED)
-        # 状态机开始接收状态转移信号（默认为关闭信号）
+        # 状态机运行至第一个状态
         await self.__graph.__aenter__()
-        # 状态机启动，开始处理状态转移信号 & func
-        self.__sign_deal.run_async(self.__callable)
+        # 启动状态转移处理
+        self.__sign_deal.run(self.__callable)
         return self
 
     async def __aexit__(self, *args):
-        # 流运行中 => 常规关闭
-        if self.__sign_deal.is_running:
-            await self.__graph.status_change(self.__graph.status_exited)
-            await self.__graph.__aexit__(*args)
-            return
-
-        e = args[1] if self.__sign_deal.exception is None else self.__sign_deal.exception
-        # 无异常停止 => 业务逻辑错误
-        if e is None:
+        e_args = args if self.__sign_deal.exception is None else (None, self.__sign_deal.exception, None)
+        # 无异常+无运行 => 业务逻辑错误
+        if not self.__sign_deal.is_running and e_args[1] is None:
             raise Exception('业务逻辑错误')
 
-        # 异常停止 => 异常关闭
-        await self.__graph.__aexit__(None, e, None)
-        await self.__graph.status_change(self.__graph.status_exited)
+        # 运行中则强行关闭
+        if self.__sign_deal.is_running:
+            self.__sign_deal.run()
+        # 常规关闭
+        await self.__graph.__aexit__(*e_args)
     pass
 
 
@@ -119,10 +110,6 @@ class DeadWaitFlow(FqsAsync):
     @property
     def qsize(self):
         return self.fq_order.qsize
-
-    @property
-    def exception(self):
-        return self.__flow.exception
 
     async def qjoin(self):
         return await self.fq_order.queue_join()

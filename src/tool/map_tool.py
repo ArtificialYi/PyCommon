@@ -78,7 +78,7 @@ class MapKey:
     def __call__(self, func_value: Callable) -> Callable:
         print('注解对象调用')
         return (
-            MapKey.AsyncLock(self.__func_key)
+            MapKey.AsyncLock(self.__func_key)(func_value)
             if asyncio.iscoroutinefunction(func_value)
             else MapKey.Sync(self.__func_key)(func_value)
         )

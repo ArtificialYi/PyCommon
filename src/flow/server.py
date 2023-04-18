@@ -65,7 +65,9 @@ class ServiceMapping:
     async def __service_mapping(self, id: int, service_name: str, *args, **kwds):
         # 1. 从注册表中获取服务
         # 2. 使用返回值调用服务推送流
+        print(f'尝试调用服务{id}|{service_name}|{args}|{kwds}')
         res = await ServerRegister.call(service_name, *args, **kwds)
+        print(f'服务结果{id}|{res}')
         await self.__send.send(id, res)
         pass
 
@@ -93,7 +95,7 @@ class FlowJsonDealForServer(DeadWaitFlow, ActionJsonDeal):
 
     async def deal_json(self, json_obj: dict):
         id = json_obj.get('id', None)
-        service_name = json_obj.get('server_name', None)
+        service_name = json_obj.get('service', None)
         print(f'已接收数据:{id}|{service_name}|{json_obj.get("args", [])}|{json_obj.get("kwds", {})}')
         if id is None or service_name is None:
             raise Exception(f'Json数据错误:{json_obj}')

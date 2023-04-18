@@ -18,10 +18,10 @@ class FlowSendClient(DeadWaitFlow):
         DeadWaitFlow.__init__(self, self.send, callback)
         pass
 
-    async def send(self, id: int, server_name: str, *args, **kwds):
+    async def send(self, id: int, service: str, *args, **kwds):
         str_json = json.dumps({
             'id': id,
-            'server_name': server_name,
+            'service': service,
             'args': args,
             'kwds': kwds,
         })

@@ -30,32 +30,13 @@ class TestActionGraphSign:
         machine = SGMachineForFlow(SGForFlow(func_tmp.func))
         action_sign = ActionGraphSign(machine)
         # 启动流
-        await machine.status_change(SGForFlow.State.STARTED)
-        assert func_tmp.num == 0
-        assert action_sign.run_async() is None
-        await asyncio.sleep(1)
-        assert func_tmp.num > 0
-        assert FuncTool.is_func_err(action_sign.run_async)
-        # 关闭流
-        await machine.status_change(SGForFlow.State.EXITED)
+        async with machine:
+            assert func_tmp.num == 0
+            assert action_sign.run() is None
+            await asyncio.sleep(1)
+            assert func_tmp.num > 0
+            assert FuncTool.is_func_err(action_sign.run)
         # TODO: 如果超时了，就调大超时时间
-        while action_sign.is_running:
-            await asyncio.sleep(0.1)
-            pass
-        pass
-
-    @PytestAsyncTimeout(2)
-    async def test_err_safe(self):
-        """并发运行两个也会报错
-        """
-        func_tmp = FuncTmp()
-        machine = SGMachineForFlow(SGForFlow(func_tmp.func))
-        action_sign = ActionGraphSign(machine)
-        # 启动流
-        await machine.status_change(SGForFlow.State.STARTED)
-        assert action_sign.run_async() is None
-        # 关闭流
-        await machine.status_change(SGForFlow.State.EXITED)
         while action_sign.is_running:
             await asyncio.sleep(0.1)
             pass
