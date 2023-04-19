@@ -1,9 +1,6 @@
-import asyncio
 from enum import Enum, auto
 import itertools
 from typing import Any, Callable, Dict, Union
-
-from ..tool.func_tool import FqsSync
 
 
 class StatusEdge(object):
@@ -133,9 +130,7 @@ class StatusGraph(object):
 
 
 class SGForFlow:
-    """供给流使用的双状态状态图
-    1. 拥有状态图本身
-    2. 拥有状态图当前状态
+    """普通的状态图-已废弃
     """
     class State(Enum):
         STARTED = auto()
@@ -179,53 +174,4 @@ class SGForFlow:
     @property
     def graph(self):
         return self.__graph
-    pass
-
-
-class SGMachineForFlow(FqsSync):
-    """有限状态机下的状态图
-    1. 拥有状态图的状态转移函数-每个状态图都有
-    2. 拥有状态图的当前状态-每个状态图都有
-    3. 拥有状态图的退出状态-特殊的状态图才有
-    4. 获取状态图当前状态下的函数-每个状态图都有
-    """
-    def __init__(self, graph: SGForFlow) -> None:
-        """状态机的初始可以是任意状态
-        1. 所有状态转化应该由自身控制
-        2. 状态转化权最好仅由管理员拥有
-        """
-        self.__graph = graph
-        super().__init__(self.__status_change)
-        self.__status_exited = graph.State.EXITED
-        pass
-
-    @property
-    def status(self):
-        return self.__graph.status
-
-    @property
-    def status_exited(self):
-        return self.__status_exited
-
-    def func_get(self) -> Union[Callable, None]:
-        value = self.__graph.graph.get(self.__graph.status, self.__graph.status)
-        return value.func if value is not None else None
-
-    async def __status_change(self, status_target, *args, **kwds):
-        # 所有状态转移均在此处处理
-        value = self.__graph.graph.get(self.__graph.status, status_target)
-        func = value.func if value is not None else None
-        if func is None:
-            return None
-        res = func(*args, **kwds)
-        return await res if asyncio.iscoroutinefunction(func) else res
-
-    async def __aenter__(self):
-        await self.__status_change(self.__graph.State.STARTED)
-        return await super().__aenter__()
-
-    async def __aexit__(self, *args):
-        res = await super().__aexit__(*args)
-        await self.__status_change(self.__graph.State.EXITED)
-        return res
     pass
