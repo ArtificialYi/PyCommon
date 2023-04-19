@@ -26,7 +26,6 @@ class TestLoopExecBg:
         bg = LoopExecBg(func_tmp.func)
         assert not bg.is_running
         bg.run(q_err)
-
         assert bg.is_running
         # 无法同时启动两个loop
         assert FuncTool.is_func_err(bg.run)
@@ -49,6 +48,25 @@ class TestLoopExecBg:
         assert bg.is_running
         await bg.stop()
         assert not bg.is_running
+        pass
+
+    @PytestAsyncTimeout(2)
+    async def test_err(self):
+        func_tmp = FuncTmp()
+        # 异常捕获器
+        q_err = QueueException()
+        bg = LoopExecBg(func_tmp.func_err)
+        assert not bg.is_running
+        bg.run(q_err)
+        assert bg.is_running
+        # 因为异常自动结束了
+        await asyncio.sleep(1)
+        assert not bg.is_running
+
+        # 因为异常结束的，所以调用stop也不会报错
+        await bg.stop()
+        # 异常错误会被捕获
+        assert await FuncTool.is_await_err(q_err.exception_loop())
         pass
     pass
 

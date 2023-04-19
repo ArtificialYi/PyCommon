@@ -264,6 +264,8 @@ class QueueException:
         while True:
             future = await self.__q.get()
             self.__q.task_done()
-            FuncTool.future_no_cancel(future)
+            e = FuncTool.future_no_cancel(future)
+            if e is not None:
+                raise e
             pass
     pass

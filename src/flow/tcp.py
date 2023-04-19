@@ -59,7 +59,6 @@ class FlowRecv(NormLoop):
             raise Exception('连接已断开')
 
         str_tmp = data.decode(CODING)
-        print('已接收数据:', str_tmp)
         for json_obj in self.__json_online.append(str_tmp):
             # 将json数据发送给其他流处理
             print(f'已接收数据:{json_obj}')

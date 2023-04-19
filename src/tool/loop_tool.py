@@ -1,3 +1,4 @@
+import asyncio
 from typing import Callable, Union
 
 from .map_tool import LockManage
@@ -40,15 +41,25 @@ class LoopExecBg:
             self.__task_main.add_done_callback(callback)
 
     async def stop(self):
+        """
+        1. 未停止 => 任务取消 & 获取任务结果 => 非取消结果则抛出异常
+        2. 已取消的任务 => 逻辑错误 => 抛出异常
+        """
         task = self.__task_main
-        if task.done():
-            raise Exception('loop已停止, 无法再次停止')
+        if task.cancelled():
+            raise Exception('loop已正常停止, 无法再次停止')
 
+        await self.__task_cancel(task)
+        pass
+
+    async def __task_cancel(self, task: asyncio.Task):
         async with self.__task_lock.get_lock():
-            if task.done():
-                raise Exception('loop已停止, 无法再次停止')
-            task.cancel()
-            await FuncTool.await_no_cancel(task)
+            if task.cancelled():
+                raise Exception('loop已正常停止, 无法再次停止')
+            if not task.done():
+                task.cancel()
+                await FuncTool.await_no_cancel(task)
+                pass
             pass
         pass
     pass

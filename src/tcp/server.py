@@ -22,7 +22,7 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
             await err_queue.exception_loop()
             pass
         pass
-    except Exception as e:
+    except BaseException as e:
         print(f'Connection from {addr} is closing: {e}')
         pass
     finally:
