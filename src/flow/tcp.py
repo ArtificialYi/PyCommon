@@ -1,7 +1,12 @@
-from abc import abstractmethod
 from asyncio import StreamReader
 import json
 from typing import Callable, Generator, Union
+
+from .client import FlowJsonDealForClient
+
+from .server import FlowJsonDealForServer
+
+from ..tool.loop_tool import NormLoop
 
 from ..tool.bytes_tool import CODING
 
@@ -34,19 +39,16 @@ class JsonOnline:
     pass
 
 
-class ActionJsonDeal:
-    @abstractmethod
-    async def deal_json(cls, json_obj: dict):
-        raise NotImplementedError
-    pass
-
-
-class FlowRecv(NormFlow):
+class FlowRecv(NormLoop):
     """持续运行的TCP接收流
     """
-    def __init__(self, reader: StreamReader, json_deal: ActionJsonDeal, callback: Callable) -> None:
+    def __init__(
+        self, reader: StreamReader,
+        json_deal: Union[FlowJsonDealForServer, FlowJsonDealForClient],
+        callback: Callable,
+    ) -> None:
         self.__reader = reader
-        NormFlow.__init__(self, self.__recv, callback)
+        NormLoop.__init__(self, self.__recv, callback)
         self.__json_online = JsonOnline()
         self.__json_deal = json_deal
         pass

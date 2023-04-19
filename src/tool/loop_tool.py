@@ -1,8 +1,8 @@
 import asyncio
 from typing import Callable, Union
 
-from ..tool.base import AsyncBase
-from ..tool.func_tool import FqsAsync
+from .base import AsyncBase
+from .func_tool import FqsAsync
 
 
 class LoopExec:

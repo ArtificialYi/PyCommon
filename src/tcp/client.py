@@ -4,7 +4,7 @@ from typing import Tuple
 from ..tool.map_tool import MapKey
 
 from ..tool.base import AsyncBase
-from ..flow.base import FlowRecv
+from ..flow.tcp import FlowRecv
 from ..tool.func_tool import QueueException
 from ..flow.client import FlowJsonDealForClient, FlowSendClient
 

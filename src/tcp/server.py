@@ -3,7 +3,7 @@ import asyncio
 
 from ..tool.func_tool import QueueException
 
-from ..flow.base import FlowRecv
+from ..flow.tcp import FlowRecv
 
 from ..flow.server import FlowJsonDealForServer, FlowSendServer
 

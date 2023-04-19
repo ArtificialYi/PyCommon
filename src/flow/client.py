@@ -2,20 +2,18 @@ from asyncio import StreamWriter
 import asyncio
 from typing import Callable, Dict
 
-from .base import ActionJsonDeal
-
+from ..tool.loop_tool import OrderApi
 
 from ..tool.bytes_tool import CODING
-from ..machine.mode import DeadWaitFlow
 import json
 
 
-class FlowSendClient(DeadWaitFlow):
+class FlowSendClient(OrderApi):
     """基于异步API流的TCP发送流-客户端版
     """
     def __init__(self, writer: StreamWriter, callback: Callable) -> None:
         self.__writer = writer
-        DeadWaitFlow.__init__(self, self.send, callback)
+        OrderApi.__init__(self, self.send, callback)
         pass
 
     async def send(self, id: int, service: str, *args, **kwds):
@@ -31,12 +29,12 @@ class FlowSendClient(DeadWaitFlow):
     pass
 
 
-class FlowJsonDealForClient(DeadWaitFlow, ActionJsonDeal):
+class FlowJsonDealForClient(OrderApi):
     """客户端的Json处理流
     """
     def __init__(self, map: Dict[int, asyncio.Future], callback: Callable) -> None:
         self.__map = map
-        DeadWaitFlow.__init__(self, self.deal_json, callback)
+        OrderApi.__init__(self, self.deal_json, callback)
         pass
 
     async def deal_json(self, json_obj: dict):
