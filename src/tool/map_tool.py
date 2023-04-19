@@ -4,6 +4,19 @@ from typing import Callable, Union
 from .base import AsyncBase
 
 
+class LockManage:
+    def __init__(self) -> None:
+        self.__map_lock = dict()
+        pass
+
+    def get_lock(self) -> asyncio.Lock:
+        loop = asyncio.get_event_loop()
+        if self.__map_lock.get(loop, None) is None:
+            self.__map_lock[loop] = asyncio.Lock()
+        return self.__map_lock[loop]
+    pass
+
+
 class MapKey:
     class Sync:
         def __init__(self, func_key: Union[Callable, None] = None) -> None:
@@ -36,7 +49,7 @@ class MapKey:
             self.__map = dict()
             self.__func_key = func_key
             self.__iscoro = asyncio.iscoroutinefunction(func_key)
-            self.__map_lock = dict()
+            self.__lock = LockManage()
             pass
 
         def __call__(self, func_value: Callable) -> Callable:
@@ -50,7 +63,7 @@ class MapKey:
             if self.__map.get(key, None) is not None:
                 return self.__map[key]
 
-            async with self.__get_lock():
+            async with self.__lock.get_lock():
                 if self.__map.get(key, None) is not None:
                     return self.__map[key]
                 self.__map[key] = await func_value(*args, **kwds)
@@ -61,13 +74,6 @@ class MapKey:
                 return ''
             key_res = self.__func_key(*args, **kwds)
             return await key_res if self.__iscoro else key_res
-
-        def __get_lock(self):
-            # 多个loop间不共享锁
-            loop = asyncio.get_event_loop()
-            if self.__map_lock.get(loop, None) is None:
-                self.__map_lock[loop] = asyncio.Lock()
-            return self.__map_lock[loop]
         pass
 
     def __init__(self, func_key: Union[Callable, None] = None) -> None:

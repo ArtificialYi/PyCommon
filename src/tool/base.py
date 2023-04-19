@@ -104,10 +104,7 @@ class AsyncBase:
 
     @staticmethod
     def get_done_task() -> asyncio.Task:
-        future = asyncio.get_running_loop().create_future()
-        future.set_result(True)
-
-        async def future2task():
-            return await future
-        return asyncio.create_task(future2task())
+        future = asyncio.get_event_loop().create_future()
+        future.cancel()
+        return asyncio.ensure_future(future)
     pass

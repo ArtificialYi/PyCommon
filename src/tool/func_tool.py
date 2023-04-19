@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Callable, Union
+from typing import AsyncGenerator, Awaitable, Callable, Union
 from .base import AsyncBase
 import pytest
 
@@ -71,10 +71,10 @@ class AsyncExecOrder:
 
 class FuncTool:
     @staticmethod
-    async def is_async_err(func: Callable, *args, **kwds):
+    async def is_await_err(func: Awaitable):
         try:
-            await func(*args, **kwds)
-        except Exception:
+            await func
+        except BaseException:
             return True
         else:
             return False
@@ -105,6 +105,24 @@ class FuncTool:
             return True
         else:
             return False
+
+    @staticmethod
+    async def await_no_cancel(func: Awaitable):
+        """取消异常不抛出
+        """
+        try:
+            return await func
+        except asyncio.CancelledError:
+            return None
+
+    @staticmethod
+    def future_no_cancel(future: asyncio.Future):
+        """取消异常不抛出
+        """
+        try:
+            return future.exception()
+        except asyncio.CancelledError:
+            return None
     pass
 
 
@@ -246,8 +264,6 @@ class QueueException:
         while True:
             future = await self.__q.get()
             self.__q.task_done()
-            e = future.exception()
-            if e is None:
-                continue
-            raise e
+            FuncTool.future_no_cancel(future)
+            pass
     pass

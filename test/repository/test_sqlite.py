@@ -35,7 +35,7 @@ class TestSqliteManage:
             pass
 
         # 抛出异常
-        assert await FuncTool.is_async_err(self.__raise_exception, sqlite_manage)
+        assert await FuncTool.is_await_err(self.__raise_exception(sqlite_manage))
         pass
 
     async def __raise_exception(self, sqlite_manage: SqliteManage):
