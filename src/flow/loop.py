@@ -23,7 +23,7 @@ class LoopExec:
 
 
 class LoopExecBg:
-    """后台无限之行函数
+    """后台无限执行函数
     """
     def __init__(self, exec: LoopExec) -> None:
         self.__exec = exec
@@ -53,7 +53,7 @@ class LoopExecBg:
     pass
 
 
-class NormExecFlow:
+class NormLoop:
     """在代码块的后台无限执行函数
     """
     def __init__(self, func: Callable, callback: Union[Callable, None] = None) -> None:
@@ -80,11 +80,11 @@ class NormExecFlow:
 
 
 class OrderApi(FqsAsync):
-    """将某个函数作为有序队列函数开放给外部使用
+    """函数 -> 有序执行
     """
     def __init__(self, func: Callable, callback: Union[Callable, None] = None) -> None:
         FqsAsync.__init__(self, func)
-        self.__norm_flow = NormExecFlow(self.fq_order.queue_wait, callback)
+        self.__norm_flow = NormLoop(self.fq_order.queue_wait, callback)
         pass
 
     async def __aenter__(self):

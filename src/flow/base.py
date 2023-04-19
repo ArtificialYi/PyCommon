@@ -5,8 +5,6 @@ from typing import Callable, Generator, Union
 
 from ..tool.bytes_tool import CODING
 
-from ..machine.mode import NormFlow
-
 
 class JsonOnline:
     def __init__(self) -> None:
