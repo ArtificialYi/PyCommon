@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Awaitable, Callable, Union
+from typing import AsyncGenerator, Awaitable, Callable, Type, Union
 from .base import AsyncBase
 import pytest
 
@@ -71,10 +71,10 @@ class AsyncExecOrder:
 
 class FuncTool:
     @staticmethod
-    async def is_await_err(func: Awaitable):
+    async def is_await_err(func: Awaitable, type_err: Type[BaseException] = BaseException):
         try:
             await func
-        except BaseException:
+        except type_err:
             return True
         else:
             return False

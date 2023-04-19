@@ -1,6 +1,6 @@
 import asyncio
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
-from ...src.tool.loop_tool import LoopExecBg
+from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
 
 class FuncTmp:
@@ -19,11 +19,11 @@ class FuncTmp:
 
 class TestLoopExecBg:
     @PytestAsyncTimeout(1)
-    async def test_loop_exec_bg(self):
-        func_tmp0 = FuncTmp()
+    async def test_norm(self):
+        func_tmp = FuncTmp()
         # 异常捕获器
         q_err = QueueException()
-        bg = LoopExecBg(func_tmp0.func)
+        bg = LoopExecBg(func_tmp.func)
         assert not bg.is_running
         bg.run(q_err)
 
@@ -37,7 +37,60 @@ class TestLoopExecBg:
         # 双检锁
         assert await FuncTool.is_await_err(bg.stop())
 
-        # Cancel异常属于常规异常
-        assert await FuncTool.is_await_err(asyncio.wait_for(q_err.exception_loop(), 0.1))
+        # Cancel异常属于常规异常，不会中断q_err的循环，会触发超时异常
+        assert await FuncTool.is_await_err(
+            asyncio.wait_for(q_err.exception_loop(), 0.1),
+            asyncio.TimeoutError,
+        )
+
+        # bg也可以不设置异常捕获器，这样子就不会抛出任何异常
+        assert not bg.is_running
+        bg.run()
+        assert bg.is_running
+        await bg.stop()
+        assert not bg.is_running
+        pass
+    pass
+
+
+class TestNormLoop:
+    @PytestAsyncTimeout(2)
+    async def test(self):
+        func_tmp = FuncTmp()
+        norm = NormLoop(func_tmp.func)
+        async with norm:
+            assert func_tmp.num == 0
+            await asyncio.sleep(1)
+            assert func_tmp.num > 0
+            pass
+        pass
+    pass
+
+
+class TestOrderApi:
+    class Tmp(OrderApi):
+        def __init__(self) -> None:
+            self.num = 0
+            OrderApi.__init__(self, self.func)
+            pass
+
+        async def func(self):
+            self.num += 1
+            return await asyncio.sleep(0.1)
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test(self):
+        order = TestOrderApi.Tmp()
+        assert order.num == 0
+        await order.func()
+        assert order.num == 1
+        async with order:
+            assert order.num == 1
+            future: asyncio.Future = await order.func()  # type: ignore
+            assert order.num == 1
+            await future
+            assert order.num == 2
+            pass
         pass
     pass

@@ -1,4 +1,3 @@
-import asyncio
 from typing import Callable, Union
 
 from .map_tool import LockManage
@@ -11,15 +10,11 @@ class LoopExec:
     """
     def __init__(self, func: Callable) -> None:
         self.__func = func
-        self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
 
     async def loop(self, *args, **kwds):
         while True:
-            res = self.__func(*args, **kwds)
-            if self.__is_coro:
-                await res
-            pass
+            await self.__func(*args, **kwds)
     pass
 
 
