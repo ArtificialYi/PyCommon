@@ -69,7 +69,7 @@ class ServiceMapping:
         await self.__send.send(id, res)
         pass
 
-    async def __timeout_service(self, timeout: int, id: int, service_name: str, *args, **kwds):
+    async def __timeout_service(self, timeout: float, id: int, service_name: str, *args, **kwds):
         try:
             return await asyncio.wait_for(self.__service_mapping(id, service_name, *args, **kwds), timeout)
         except asyncio.TimeoutError:
@@ -77,7 +77,7 @@ class ServiceMapping:
         pass
 
     async def __call__(self, id: int, service_name: str, *args, **kwds):
-        res = await self.__timeout_service(5, id, service_name, *args, **kwds)
+        res = await self.__timeout_service(1, id, service_name, *args, **kwds)
         await self.__send.send(id, res)
         pass
     pass

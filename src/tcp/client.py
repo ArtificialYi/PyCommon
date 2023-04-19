@@ -10,6 +10,13 @@ from ..flow.client import FlowJsonDealForClient, FlowSendClient
 
 
 class TcpApi:
+    """同步流
+    1. 外部可以调用API
+    2. 每次调用会等待结果：常规、超时、异常，3种情况中的一种
+    3. 常规结果：同步等待，正常返回
+    4. 超时结果：同步等待，超时后抛出异常
+    5. 异常结果：同步等待，连接异常应该让所有调用都感知到
+    """
     def __init__(self, host: str, port: int) -> None:
         self.__host = host
         self.__port = port
@@ -31,9 +38,9 @@ class TcpApi:
                 await err_queue.exception_loop()
                 pass
             pass
-        except Exception as e:
+        except BaseException as e:
             # TODO: 此处需记录每次断开连接的原因
-            print(e)
+            # print(e)
             raise e
         finally:
             writer.close()
@@ -50,7 +57,7 @@ class TcpApi:
         self.__tcp_id += 1
         return self.__tcp_id
 
-    async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict]:
+    async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict, asyncio.Task]:
         async with self.__get_lock():
             if self.__task is None or self.__task.done():
                 future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
@@ -60,15 +67,23 @@ class TcpApi:
                 pass
             pass
         tcp_id = self.__next_id()
-        return self.__flow_send, tcp_id, self.__future_map
+        return self.__flow_send, tcp_id, self.__future_map, self.__task
 
     async def api(self, path: str, *args, **kwds):
-        flow_send, tcp_id, future_map = await self.__get_flow_send()
+        flow_send, tcp_id, future_map, task_main = await self.__get_flow_send()
         # 添加id映射
         future_map[tcp_id] = asyncio.Future()
         await flow_send.send(tcp_id, path, *args, **kwds)
         try:
-            return await asyncio.wait_for(future_map[tcp_id], 10)
+            done, _ = await asyncio.wait([
+                asyncio.wait_for(future_map[tcp_id], 2),
+                task_main,
+            ], return_when=asyncio.FIRST_COMPLETED)
+            task: asyncio.Task = done.pop()
+            e = task.exception()
+            if e is not None:
+                raise e
+            return task.result()
         finally:
             del future_map[tcp_id]
     pass
