@@ -10,12 +10,7 @@ from ..flow.client import FlowJsonDealForClient, FlowSendClient
 
 
 class TcpApi:
-    """同步流
-    1. 外部可以调用API
-    2. 每次调用会等待结果：常规、超时、异常，3种情况中的一种
-    3. 常规结果：同步等待，正常返回
-    4. 超时结果：同步等待，超时后抛出异常
-    5. 异常结果：同步等待，连接异常应该让所有调用都感知到
+    """TCP实际开放的API
     """
     def __init__(self, host: str, port: int) -> None:
         self.__host = host
@@ -74,11 +69,7 @@ class TcpApi:
                 asyncio.wait_for(future_map[tcp_id], 2),
                 task_main,
             ], return_when=asyncio.FIRST_COMPLETED)
-            task: asyncio.Task = done.pop()
-            e = task.exception()
-            if e is not None:
-                raise e
-            return task.result()
+            return done.pop().result()
         finally:
             del future_map[tcp_id]
     pass
@@ -87,11 +78,11 @@ class TcpApi:
 class TcpApiManage:
     @staticmethod
     @MapKey(lambda host, port: f'{host}:{port}')
-    def get_tcp(host: str, port: int) -> TcpApi:
+    def __get_tcp(host: str, port: int) -> TcpApi:
         return TcpApi(host, port)
+
+    @staticmethod
+    async def service(host: str, port: int, path: str, *args, **kwds):
+        tcp: TcpApi = TcpApiManage.__get_tcp(host, port)
+        return await tcp.api(path, *args, **kwds)
     pass
-
-
-async def service(host: str, port: int, path: str, *args, **kwds):
-    tcp: TcpApi = TcpApiManage.get_tcp(host, port)
-    return await tcp.api(path, *args, **kwds)
