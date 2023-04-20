@@ -1,7 +1,7 @@
 import asyncio
 from typing import Tuple
 
-from ..tool.map_tool import MapKey
+from ..tool.map_tool import LockManage, MapKey
 
 from ..tool.base import AsyncBase
 from ..flow.tcp import FlowRecv
@@ -20,8 +20,8 @@ class TcpApi:
     def __init__(self, host: str, port: int) -> None:
         self.__host = host
         self.__port = port
-        self.__task = None
-        self.__lock = None
+        self.__task = AsyncBase.get_done_task()
+        self.__lock = LockManage()
         pass
 
     async def __flow_run(self, future: asyncio.Future):
@@ -48,18 +48,13 @@ class TcpApi:
             pass
         pass
 
-    def __get_lock(self):
-        if self.__lock is None:
-            self.__lock = asyncio.Lock()
-        return self.__lock
-
     def __next_id(self):
         self.__tcp_id += 1
         return self.__tcp_id
 
     async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict, asyncio.Task]:
-        async with self.__get_lock():
-            if self.__task is None or self.__task.done():
+        async with self.__lock.get_lock():
+            if self.__task.done():
                 future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
                 self.__task = AsyncBase.coro2task_exec(self.__flow_run(future))
                 self.__flow_send, self.__future_map = await future
@@ -95,3 +90,8 @@ class TcpApiManage:
     def get_tcp(host: str, port: int) -> TcpApi:
         return TcpApi(host, port)
     pass
+
+
+async def service(host: str, port: int, path: str, *args, **kwds):
+    tcp: TcpApi = TcpApiManage.get_tcp(host, port)
+    return await tcp.api(path, *args, **kwds)
