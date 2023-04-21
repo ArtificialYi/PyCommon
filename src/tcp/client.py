@@ -52,7 +52,10 @@ class TcpApi:
             if self.__task.done():
                 future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
                 self.__task = AsyncBase.coro2task_exec(self.__flow_run(future))
-                self.__flow_send, self.__future_map = await future
+                done, _ = await asyncio.wait([
+                    self.__task, future
+                ], return_when=asyncio.FIRST_COMPLETED)
+                self.__flow_send, self.__future_map = done.pop().result()
                 self.__tcp_id = 0
                 pass
             pass

@@ -41,5 +41,6 @@ async def server_main(host: str, port: int):
 
     async with server:
         await server.serve_forever()
-        pass
-    pass
+
+
+LOCAL_HOST = '127.0.0.1'
