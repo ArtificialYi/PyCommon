@@ -23,7 +23,7 @@ class ServerRegister:
         return func
 
     @classmethod
-    async def call(cls, path: str, *args, **kwds) -> Tuple[Callable, bool]:
+    async def call(cls, path, *args, **kwds) -> Tuple[Callable, bool]:
         if cls.__TABLE.get(path, None) is None:
             raise Exception(f'服务不存在:{path}')
         func, is_async = cls.__TABLE[path]
@@ -40,7 +40,7 @@ class FlowSendServer(OrderApi):
         OrderApi.__init__(self, self.send, callback)
         pass
 
-    async def send(self, id: int, data: Any):
+    async def send(self, id: Union[int, None], data: Any):
         str_json = json.dumps({
             'id': id,
             'data': data,
@@ -56,29 +56,11 @@ class ServiceMapping:
     1. 从注册表中获取服务
     2. 使用返回值调用服务推送流
     """
-    def __init__(self, flow_send: FlowSendServer):
-        self.__send = flow_send
-        pass
-
-    async def __service_mapping(self, id: int, service_name: str, *args, **kwds):
-        # 1. 从注册表中获取服务
-        # 2. 使用返回值调用服务推送流
-        print(f'尝试调用服务{id}|{service_name}|{args}|{kwds}')
-        res = await ServerRegister.call(service_name, *args, **kwds)
-        print(f'服务结果{id}|{res}')
-        await self.__send.send(id, res)
-        pass
-
-    async def __timeout_service(self, timeout: float, id: int, service_name: str, *args, **kwds):
+    async def __call__(self, id: Union[int, None], service_name: Union[str, None], *args, **kwds):
         try:
-            return await asyncio.wait_for(self.__service_mapping(id, service_name, *args, **kwds), timeout)
+            return await asyncio.wait_for(ServerRegister.call(service_name, *args, **kwds), 1)
         except asyncio.TimeoutError:
             raise Exception(f'调用服务超时:{id}|{service_name}|{args}|{kwds}')
-        pass
-
-    async def __call__(self, id: int, service_name: str, *args, **kwds):
-        res = await self.__timeout_service(1, id, service_name, *args, **kwds)
-        await self.__send.send(id, res)
         pass
     pass
 
@@ -87,16 +69,19 @@ class FlowJsonDealForServer(OrderApi):
     """服务端的Json处理流
     """
     def __init__(self, flow_send: FlowSendServer, callback: Callable):
-        self.__service_mapping = ServiceMapping(flow_send)
+        self.__flow_send = flow_send
+        self.__service_mapping = ServiceMapping()
         OrderApi.__init__(self, self.deal_json, callback)
         pass
 
     async def deal_json(self, json_obj: dict):
-        id = json_obj.get('id', None)
-        service_name = json_obj.get('service', None)
-        print(f'已接收数据:{id}|{service_name}|{json_obj.get("args", [])}|{json_obj.get("kwds", {})}')
-        if id is None or service_name is None:
-            raise Exception(f'Json数据错误:{json_obj}')
-        await self.__service_mapping(id, service_name, *json_obj.get('args', []), **json_obj.get('kwds', {}))
+        id = json_obj.get('id')
+        service_name = json_obj.get('service')
+        args = json_obj.get("args", [])
+        kwds = json_obj.get("kwds", {})
+        print(f'已接收数据:{id}|{service_name}|{args}|{kwds}')
+        res_service = await self.__service_mapping(id, service_name, *args, **kwds)
+        print(f'返回结果:{id}|{res_service}')
+        await self.__flow_send.send(id, res_service)
         pass
     pass
