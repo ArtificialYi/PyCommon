@@ -2,6 +2,8 @@ from asyncio import StreamReader
 import json
 from typing import Callable, Generator, Union
 
+from ..exception.tcp import ConnException
+
 from .client import FlowJsonDealForClient
 
 from .server import FlowJsonDealForServer
@@ -56,7 +58,7 @@ class FlowRecv(NormLoop):
     async def __recv(self):
         data = await self.__reader.read(1)
         if not data:
-            raise Exception('连接已断开')
+            raise ConnException('连接已断开')
 
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):

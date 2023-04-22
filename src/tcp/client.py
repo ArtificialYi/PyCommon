@@ -31,8 +31,6 @@ class TcpApi:
             ):
                 future.set_result((flow_send, future_map))
                 await err_queue.exception_loop()
-                pass
-            pass
         except BaseException as e:
             # TODO: 此处需记录每次断开连接的原因
             # print(e)
@@ -40,8 +38,6 @@ class TcpApi:
         finally:
             writer.close()
             await writer.wait_closed()
-            pass
-        pass
 
     def __next_id(self):
         self.__tcp_id += 1
@@ -69,7 +65,7 @@ class TcpApi:
         await flow_send.send(tcp_id, path, *args, **kwds)
         try:
             done, _ = await asyncio.wait([
-                asyncio.wait_for(future_map[tcp_id], 2),
+                AsyncBase.coro2task_exec(asyncio.wait_for(future_map[tcp_id], 2)),
                 task_main,
             ], return_when=asyncio.FIRST_COMPLETED)
             return done.pop().result()

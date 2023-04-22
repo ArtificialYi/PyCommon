@@ -2,9 +2,8 @@ from asyncio import StreamWriter
 import asyncio
 import json
 from typing import Any, Callable, Dict, Tuple, Union
-
+from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 from ..tool.loop_tool import OrderApi
-
 from ..tool.bytes_tool import CODING
 
 
@@ -18,14 +17,14 @@ class ServerRegister:
     def __call__(self, func: Callable):
         path = f'{ "" if self.__path is None else self.__path}/{func.__name__}'
         if self.__class__.__TABLE.get(path, None) is not None:
-            raise Exception(f'服务已存在:{path}')
+            raise ServiceExistException(f'服务已存在，无法注册:{path}')
         self.__class__.__TABLE[path] = func, asyncio.iscoroutinefunction(func)
         return func
 
     @classmethod
     async def call(cls, path, *args, **kwds) -> Tuple[Callable, bool]:
         if cls.__TABLE.get(path, None) is None:
-            raise Exception(f'服务不存在:{path}')
+            raise ServiceNotFoundException(f'服务不存在:{path}')
         func, is_async = cls.__TABLE[path]
         func_res = func(*args, **kwds)
         return await func_res if is_async else func_res

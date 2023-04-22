@@ -20,8 +20,6 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
             FlowRecv(reader, flow_json, err_queue),
         ):
             await err_queue.exception_loop()
-            pass
-        pass
     except BaseException as e:
         print(f'Connection from {addr} is closing: {e}')
         pass
