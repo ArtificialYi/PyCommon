@@ -31,6 +31,7 @@ class TestLoopExecBg:
         assert FuncTool.is_func_err(bg.run)
 
         # loop同时被两个调用方关闭
+        # TODO: 添加异常类型
         assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()))
         assert not bg.is_running
         # 双检锁
@@ -38,7 +39,7 @@ class TestLoopExecBg:
 
         # Cancel异常属于常规异常，不会中断q_err的循环，会触发超时异常
         assert await FuncTool.is_await_err(
-            asyncio.wait_for(q_err.exception_loop(), 0.1),
+            asyncio.wait_for(q_err.exception_loop(1), 0.1),
             asyncio.TimeoutError,
         )
 
@@ -66,7 +67,7 @@ class TestLoopExecBg:
         # 因为异常结束的，所以调用stop也不会报错
         await bg.stop()
         # 异常错误会被捕获
-        assert await FuncTool.is_await_err(q_err.exception_loop())
+        assert await FuncTool.is_await_err(q_err.exception_loop(1))
         pass
     pass
 

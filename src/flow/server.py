@@ -60,7 +60,6 @@ class ServiceMapping:
             return await asyncio.wait_for(ServerRegister.call(service_name, *args, **kwds), 1)
         except asyncio.TimeoutError:
             raise Exception(f'调用服务超时:{id}|{service_name}|{args}|{kwds}')
-        pass
     pass
 
 

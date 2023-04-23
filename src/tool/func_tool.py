@@ -260,12 +260,11 @@ class QueueException:
         AsyncBase.coro2task_exec(self.__q.put(future))
         pass
 
-    async def exception_loop(self):
-        while True:
+    async def exception_loop(self, max_time: int):
+        for _ in range(max_time):
             future = await self.__q.get()
             self.__q.task_done()
             e = FuncTool.future_no_cancel(future)
             if e is not None:
                 raise e
-            pass
     pass

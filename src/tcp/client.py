@@ -30,7 +30,7 @@ class TcpApi:
                 FlowRecv(reader, flow_json, err_queue),
             ):
                 future.set_result((flow_send, future_map))
-                await err_queue.exception_loop()
+                await err_queue.exception_loop(3)
         except BaseException as e:
             # TODO: 此处需记录每次断开连接的原因
             # print(e)
