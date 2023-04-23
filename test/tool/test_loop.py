@@ -1,4 +1,6 @@
 import asyncio
+
+from ...src.exception.tool import AlreadyStopException
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
@@ -32,16 +34,13 @@ class TestLoopExecBg:
 
         # loop同时被两个调用方关闭
         # TODO: 添加异常类型
-        assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()))
+        assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()), AlreadyStopException)
         assert not bg.is_running
         # 双检锁
-        assert await FuncTool.is_await_err(bg.stop())
+        assert await FuncTool.is_await_err(bg.stop(), AlreadyStopException)
 
-        # Cancel异常属于常规异常，不会中断q_err的循环，会触发超时异常
-        assert await FuncTool.is_await_err(
-            asyncio.wait_for(q_err.exception_loop(1), 0.1),
-            asyncio.TimeoutError,
-        )
+        # Cancel异常属于常规异常，不会抛出异常
+        await q_err.exception_loop(1)
 
         # bg也可以不设置异常捕获器，这样子就不会抛出任何异常
         assert not bg.is_running

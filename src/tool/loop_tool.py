@@ -1,6 +1,7 @@
 import asyncio
 from typing import Callable, Union
 
+from ..exception.tool import AlreadyStopException
 from .map_tool import LockManage
 from .base import AsyncBase
 from .func_tool import FqsAsync, FuncTool
@@ -47,7 +48,7 @@ class LoopExecBg:
         """
         task = self.__task_main
         if task.cancelled():
-            raise Exception('loop已正常停止, 无法再次停止')
+            raise AlreadyStopException('loop早已正常停止, 无法再次停止')
 
         await self.__task_cancel(task)
         pass
@@ -55,7 +56,7 @@ class LoopExecBg:
     async def __task_cancel(self, task: asyncio.Task):
         async with self.__task_lock.get_lock():
             if task.cancelled():
-                raise Exception('loop已正常停止, 无法再次停止')
+                raise AlreadyStopException('loop早已正常停止, 无法再次停止')
             if not task.done():
                 task.cancel()
                 await FuncTool.await_no_cancel(task)
