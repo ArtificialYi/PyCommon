@@ -1,7 +1,6 @@
 import asyncio
 from functools import wraps
 from typing import Callable, Union
-from .base import AsyncBase
 
 
 class LockManage:
@@ -22,7 +21,6 @@ class MapKey:
         def __init__(self, func_key: Union[Callable, None] = None) -> None:
             self.__map = dict()
             self.__func_key = func_key
-            self.__iscoro_key = asyncio.iscoroutinefunction(func_key)
             pass
 
         def __call__(self, func_value: Callable) -> Callable:
@@ -37,11 +35,7 @@ class MapKey:
         def __get_key(self, *args, **kwds):
             if self.__func_key is None:
                 return ''
-            key_res = self.__func_key(*args, **kwds)
-            if not self.__iscoro_key:
-                return key_res
-            task = AsyncBase.coro2task_exec(key_res)
-            return task.result()
+            return self.__func_key(*args, **kwds)
         pass
 
     class AsyncLock:
