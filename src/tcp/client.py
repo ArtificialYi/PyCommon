@@ -1,11 +1,13 @@
 import asyncio
 from typing import Tuple
 
+from ..tool.async_tool import AsyncTool
+
 from ..tool.map_tool import LockManage, MapKey
 
 from ..tool.base import AsyncBase
 from ..flow.tcp import FlowRecv
-from ..tool.func_tool import QueueException
+from ..tool.func_tool import FuncTool, QueueException
 from ..flow.client import FlowJsonDealForClient, FlowSendClient
 
 
@@ -64,13 +66,20 @@ class TcpApi:
         future_map[tcp_id] = asyncio.Future()
         await flow_send.send(tcp_id, path, *args, **kwds)
         try:
-            done, _ = await asyncio.wait([
-                AsyncBase.coro2task_exec(asyncio.wait_for(future_map[tcp_id], 2)),
-                task_main,
-            ], return_when=asyncio.FIRST_COMPLETED)
-            return done.pop().result()
+            async with AsyncTool.coro_async_gen(asyncio.wait_for(future_map[tcp_id], 2)) as task:
+                done, _ = await asyncio.wait([
+                    task,
+                    task_main,
+                ], return_when=asyncio.FIRST_COMPLETED)
+                return done.pop().result()
         finally:
             del future_map[tcp_id]
+
+    async def close(self):
+        task = self.__task
+        task.cancel()
+        await FuncTool.await_no_cancel(task)
+        pass
     pass
 
 
@@ -84,4 +93,9 @@ class TcpApiManage:
     async def service(host: str, port: int, path: str, *args, **kwds):
         tcp: TcpApi = TcpApiManage.__get_tcp(host, port)
         return await tcp.api(path, *args, **kwds)
+
+    @staticmethod
+    async def close(host: str, port: int):
+        tcp: TcpApi = TcpApiManage.__get_tcp(host, port)
+        return await tcp.close()
     pass
