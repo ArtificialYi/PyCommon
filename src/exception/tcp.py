@@ -14,3 +14,15 @@ class ServiceExistException(Exception):
     """服务已存在
     """
     pass
+
+
+class JsonIdException(Exception):
+    """Json数据错误
+    """
+    pass
+
+
+class FutureException(Exception):
+    """未找到对应的future
+    """
+    pass

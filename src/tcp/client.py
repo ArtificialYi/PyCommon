@@ -29,7 +29,7 @@ class TcpApi:
             async with (
                 FlowSendClient(writer, err_queue) as flow_send,
                 FlowRecv(reader, deal, err_queue),
-            ):
+            ):  # pragma: no cover
                 future.set_result((flow_send, future_map))
                 await err_queue.exception_loop(3)
         except BaseException as e:

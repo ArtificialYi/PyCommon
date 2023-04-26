@@ -99,17 +99,17 @@ class FuncTool:
     async def is_await_err(func: Awaitable, type_err: Type[BaseException] = BaseException):
         try:
             await func
-        except type_err:
-            return True
+        except BaseException as e:
+            return type(e) == type_err
         else:
             return False
 
     @staticmethod
-    async def is_async_gen_err(gen: AsyncGenerator):
+    async def is_async_gen_err(gen: AsyncGenerator, type_err: Type[BaseException] = BaseException):
         try:
             await FuncTool.__async_gen(gen)
-        except Exception:
-            return True
+        except BaseException as e:
+            return type(e) == type_err
         else:
             return False
         pass

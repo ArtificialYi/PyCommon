@@ -2,7 +2,7 @@ from asyncio import StreamReader, StreamWriter
 import asyncio
 from typing import Callable, Dict
 
-from ..exception.tcp import ConnException
+from ..exception.tcp import ConnException, FutureException, JsonIdException
 
 from .tcp import JsonOnline
 
@@ -42,11 +42,11 @@ class JsonDeal:
 
     def deal_json(self, json_obj: dict):
         id = json_obj.get('id', None)
-        if id is None:
-            raise Exception(f'Json数据错误:{json_obj}')
+        if id is None:  # pragma: no cover
+            raise JsonIdException(f'Json数据错误:{json_obj}')
         future = self.__map.get(id, None)
-        if future is None:
-            raise Exception(f'未找到对应的future:{id}')
+        if future is None:  # pragma: no cover
+            raise FutureException(f'未找到对应的future:{id}')
         # 将data结果写入future（超时限制）
         future.set_result(json_obj.get('data', None))
         pass

@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
 
-from ...mock.func import MockFunc
+from ...mock.func import MockException, MockFunc
 from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
     AsyncExecOrder, CallableDecoratorAsync, FieldSwap, FuncTool,
@@ -59,10 +59,10 @@ class TestFuncTool:
         assert FuncTool.is_func_err(MockFunc.norm_sync_err)
 
         assert not await FuncTool.is_await_err(MockFunc.norm_async())
-        assert await FuncTool.is_await_err(MockFunc.norm_async_err())
+        assert await FuncTool.is_await_err(MockFunc.norm_async_err(), MockException)
 
         assert not await FuncTool.is_async_gen_err(MockFunc.norm_async_gen())
-        assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err())
+        assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err(), MockException)
         pass
     pass
 

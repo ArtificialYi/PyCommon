@@ -1,5 +1,7 @@
 import asyncio
 
+from ...mock.func import MockException
+
 from ...src.exception.tool import AlreadyStopException
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
@@ -15,7 +17,7 @@ class FuncTmp:
         return await asyncio.sleep(0.1)
 
     async def func_err(self):
-        raise Exception('func_err')
+        raise MockException('func_err')
     pass
 
 
@@ -66,7 +68,7 @@ class TestLoopExecBg:
         # 因为异常结束的，所以调用stop也不会报错
         await bg.stop()
         # 异常错误会被捕获
-        assert await FuncTool.is_await_err(q_err.exception_loop(1))
+        assert await FuncTool.is_await_err(q_err.exception_loop(1), MockException)
         pass
     pass
 
