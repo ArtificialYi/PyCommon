@@ -6,9 +6,8 @@ from ..tool.async_tool import AsyncTool
 from ..tool.map_tool import LockManage, MapKey
 
 from ..tool.base import AsyncBase
-from ..flow.tcp import FlowRecv
 from ..tool.func_tool import FuncTool, QueueException
-from ..flow.client import FlowJsonDealForClient, FlowSendClient
+from ..flow.client import JsonDeal, FlowSendClient, FlowRecv
 
 
 class TcpApi:
@@ -26,10 +25,10 @@ class TcpApi:
         try:
             err_queue = QueueException()
             future_map = dict()
+            deal = JsonDeal(future_map)
             async with (
                 FlowSendClient(writer, err_queue) as flow_send,
-                FlowJsonDealForClient(future_map, err_queue) as flow_json,
-                FlowRecv(reader, flow_json, err_queue),
+                FlowRecv(reader, deal, err_queue),
             ):
                 future.set_result((flow_send, future_map))
                 await err_queue.exception_loop(3)

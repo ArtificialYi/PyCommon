@@ -1,9 +1,10 @@
-from asyncio import StreamWriter
-import asyncio
+from asyncio import StreamReader, StreamWriter
 import json
 from typing import Any, Callable, Union
+from ..exception.tcp import ConnException
+from .tcp import JsonOnline
 from ..tool.server_tool import ServerRegister
-from ..tool.loop_tool import OrderApi
+from ..tool.loop_tool import NormLoop, OrderApi, TaskApi
 from ..tool.bytes_tool import CODING
 
 
@@ -26,27 +27,12 @@ class FlowSendServer(OrderApi):
     pass
 
 
-class ServiceMapping:
-    """服务映射（异步无序-有超时）
-    1. 从注册表中获取服务
-    2. 使用返回值调用服务推送流
-    """
-    async def __call__(self, id: Union[int, None], service_name: Union[str, None], *args, **kwds):
-        try:
-            return await asyncio.wait_for(ServerRegister.call(service_name, *args, **kwds), 1)
-        except asyncio.TimeoutError:
-            # TODO: 记录所有超时
-            raise Exception(f'调用服务超时:{id}|{service_name}|{args}|{kwds}')
-    pass
-
-
-class FlowJsonDealForServer(OrderApi):
+class FlowJsonDeal(TaskApi):
     """服务端的Json处理流
     """
-    def __init__(self, flow_send: FlowSendServer, callback: Callable):
+    def __init__(self, flow_send: FlowSendServer, callback: Callable, timeout: float = 1):
         self.__flow_send = flow_send
-        self.__service_mapping = ServiceMapping()
-        OrderApi.__init__(self, self.deal_json, callback)
+        TaskApi.__init__(self, self.deal_json, callback, timeout)
         pass
 
     async def deal_json(self, json_obj: dict):
@@ -55,8 +41,36 @@ class FlowJsonDealForServer(OrderApi):
         args = json_obj.get("args", [])
         kwds = json_obj.get("kwds", {})
         print(f'已接收数据:{id}|{service_name}|{args}|{kwds}')
-        res_service = await self.__service_mapping(id, service_name, *args, **kwds)
+        res_service = await ServerRegister.call(service_name, *args, **kwds)
         print(f'返回结果:{id}|{res_service}')
         await self.__flow_send.send(id, res_service)
+        pass
+    pass
+
+
+class FlowRecv(NormLoop):
+    """持续运行的TCP接收流
+    """
+    def __init__(
+        self, reader: StreamReader,
+        json_deal: FlowJsonDeal,
+        callback: Callable,
+    ) -> None:
+        self.__reader = reader
+        NormLoop.__init__(self, self.__recv, callback)
+        self.__json_online = JsonOnline()
+        self.__json_deal = json_deal
+        pass
+
+    async def __recv(self):
+        data = await self.__reader.read(1)
+        if not data:
+            raise ConnException('客户端断开连接')
+
+        str_tmp = data.decode(CODING)
+        for json_obj in self.__json_online.append(str_tmp):
+            # 将json数据发送给其他流处理
+            print(f'已接收数据:{json_obj}')
+            await self.__json_deal.deal_json(json_obj)
         pass
     pass

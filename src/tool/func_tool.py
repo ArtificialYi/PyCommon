@@ -69,6 +69,31 @@ class AsyncExecOrder:
     pass
 
 
+class AsyncExecTask:
+    def __init__(self, func: Callable, timeout: float) -> None:
+        self.__queue = asyncio.Queue()
+        self.__func = func
+        self.__is_coro = asyncio.iscoroutinefunction(func)
+        self.__timeout = timeout
+        pass
+
+    async def __func_coro(self, *args, **kwds):
+        res_func = self.__func(*args, **kwds)
+        return await res_func if self.__is_coro else res_func
+
+    async def call_async(self, *args, **kwds):
+        task = AsyncBase.coro2task_exec(asyncio.wait_for(self.__func_coro(*args, **kwds), self.__timeout))
+        await self.__queue.put(task)
+        return task
+
+    async def queue_wait(self):
+        task = await self.__queue.get()
+        res = await task
+        self.__queue.task_done()
+        return res
+    pass
+
+
 class FuncTool:
     @staticmethod
     async def is_await_err(func: Awaitable, type_err: Type[BaseException] = BaseException):
@@ -251,13 +276,28 @@ class FqsAsync(FieldSwapSafe):
     pass
 
 
+class TqsAsync(FieldSwapSafe):
+    """任务队列的基类
+    Task Queue Safe
+    """
+    def __init__(self, func: Callable, timeout: float) -> None:
+        self.__tq_order = AsyncExecTask(func, timeout)
+        super().__init__(self, func.__name__, self.__tq_order.call_async)
+        pass
+
+    @property
+    def tq_order(self) -> AsyncExecTask:
+        return self.__tq_order
+    pass
+
+
 class QueueException:
     def __init__(self) -> None:
         self.__q: asyncio.Queue[asyncio.Future] = asyncio.Queue()
         pass
 
     def __call__(self, future: asyncio.Future):
-        AsyncBase.coro2task_exec(self.__q.put(future))
+        self.__q.put_nowait(future)
         pass
 
     async def exception_loop(self, max_time: int):

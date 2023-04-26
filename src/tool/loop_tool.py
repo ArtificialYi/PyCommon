@@ -4,7 +4,7 @@ from typing import Callable, Union
 from ..exception.tool import AlreadyStopException
 from .map_tool import LockManage
 from .base import AsyncBase
-from .func_tool import FqsAsync, FuncTool
+from .func_tool import FqsAsync, FuncTool, TqsAsync
 
 
 class LoopExec:
@@ -85,7 +85,7 @@ class NormLoop:
 
 
 class OrderApi(FqsAsync):
-    """函数 -> 有序执行
+    """函数 -> 有序队列执行
     """
     def __init__(self, func: Callable, callback: Union[Callable, None] = None) -> None:
         FqsAsync.__init__(self, func)
@@ -100,4 +100,23 @@ class OrderApi(FqsAsync):
     async def __aexit__(self, *args):
         await self.__norm_flow.__aexit__(*args)
         return await FqsAsync.__aexit__(self, *args)
+    pass
+
+
+class TaskApi(TqsAsync):
+    """函数 -> 任务队列执行
+    """
+    def __init__(self, func: Callable, callback: Union[Callable, None] = None, timeout: float = 1) -> None:
+        TqsAsync.__init__(self, func, timeout)
+        self.__norm_flow = NormLoop(self.tq_order.queue_wait, callback)
+        pass
+
+    async def __aenter__(self):
+        await TqsAsync.__aenter__(self)
+        await self.__norm_flow.__aenter__()
+        return self
+
+    async def __aexit__(self, *args):
+        await self.__norm_flow.__aexit__(*args)
+        return await TqsAsync.__aexit__(self, *args)
     pass
