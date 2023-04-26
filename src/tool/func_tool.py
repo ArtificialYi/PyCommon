@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Awaitable, Callable, Type, Union
+from typing import AsyncGenerator, Awaitable, Callable, Type
 from .base import AsyncBase
 import pytest
 
@@ -26,40 +26,16 @@ class AsyncExecOrder:
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
 
-    @property
-    def qsize(self):
-        return self.__queue.qsize()
-
-    async def __queue_func(self, future: Union[asyncio.Future, None], *args, **kwds):
-        if future is None:
-            return False
+    async def __queue_func(self, *args, **kwds):
         res0 = self.__func(*args, **kwds)
-        res1 = await res0 if self.__is_coro else res0
-        future.set_result(res1)
-        return True
-
-    async def queue_no_wait(self):
-        # 队列拥有者使用，消费队列
-        if self.__queue.qsize() == 0:
-            return False
-        return await self.queue_wait()
+        return await res0 if self.__is_coro else res0
 
     async def queue_wait(self):
         future, args, kwds = await self.__queue.get()
-        res = await self.__queue_func(future, *args, **kwds)
+        res = await self.__queue_func(*args, **kwds)
         self.__queue.task_done()
+        future.set_result(res)
         return res
-
-    async def queue_join(self):
-        return await self.__queue.join()
-
-    async def call_step(self, *args, **kwds):
-        return await self.__queue.put((None, args, kwds))
-
-    async def call_sync(self, *args, **kwds):
-        # 同步调用，返回函数常规返回值
-        future = await self.call_async(*args, **kwds)
-        return await future
 
     async def call_async(self, *args, **kwds):
         # 异步调用，返回一个future
@@ -243,21 +219,6 @@ class FieldSwapSafe(FieldSwap):
         await FieldSwap.__aexit__(self, *args)
         await self.__lock_async.__aexit__(*args)
         pass
-    pass
-
-
-class FqsSync(FieldSwapSafe):
-    """函数队列的基类
-    Func Queue Safe
-    """
-    def __init__(self, func: Callable) -> None:
-        self.__fq_order = AsyncExecOrder(func)
-        super().__init__(self, func.__name__, self.__fq_order.call_sync)
-        pass
-
-    @property
-    def fq_order(self) -> AsyncExecOrder:
-        return self.__fq_order
     pass
 
 

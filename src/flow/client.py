@@ -1,13 +1,9 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 from typing import Callable, Dict
-
 from ..exception.tcp import ConnException, FutureException, JsonIdException
-
 from .tcp import JsonOnline
-
 from ..tool.loop_tool import NormLoop, OrderApi
-
 from ..tool.bytes_tool import CODING
 import json
 

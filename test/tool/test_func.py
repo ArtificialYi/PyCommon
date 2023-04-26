@@ -1,51 +1,12 @@
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
 
 from ...mock.func import MockException, MockFunc
-from ...src.tool.base import AsyncBase, BaseTool
 from ...src.tool.func_tool import (
-    AsyncExecOrder, CallableDecoratorAsync, FieldSwap, FuncTool,
+    CallableDecoratorAsync, FieldSwap, FuncTool,
     LockThread, PytestAsyncTimeout
 )
-
-
-class TestAsyncExecOrder:
-    @PytestAsyncTimeout(4)
-    async def test(self):
-        # 无信号-不等待调用，啥也没发生
-        call_order = AsyncExecOrder(BaseTool.return_self)
-        assert not await call_order.queue_no_wait()
-        # 无信号-等待调用，锁死
-        task = AsyncBase.coro2task_exec(call_order.queue_wait())
-        await asyncio.sleep(1)
-        assert not task.done()
-        # 产生信号，之前的等待直接生效
-        assert await call_order.call_sync(5) == 5
-        assert task.done()
-        assert await task
-
-        # 产生空信号，但是不消费，产生堆积
-        await call_order.call_step()
-        await asyncio.sleep(1)
-        assert call_order.qsize == 1
-
-        # 产生新信号，但是不消费，产生堆积
-        await call_order.call_async(5)
-        await asyncio.sleep(1)
-        assert call_order.qsize == 2
-
-        # 将信号消费
-        assert not await call_order.queue_wait()
-        assert call_order.qsize == 1
-        assert await call_order.queue_wait()
-        assert call_order.qsize == 0
-
-        # 所有信号消费结束join将不会阻塞
-        await call_order.queue_join()
-        pass
-    pass
 
 
 def func_custom():
