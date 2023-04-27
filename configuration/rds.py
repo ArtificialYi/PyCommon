@@ -1,4 +1,6 @@
-from .tool import ConfigTool, DCLGlobalAsync
+from ..src.tool.base import BaseTool
+from ..src.tool.map_tool import MapKey
+from .tool import ConfigTool
 from .env import ConfigEnv
 import aiomysql
 from aiomysql import SSDictCursor
@@ -15,7 +17,7 @@ class DTConfig:
     pass
 
 
-@DCLGlobalAsync()
+@MapKey(BaseTool.return_self)
 async def config_manage(flag: str):
     config_env = await ConfigEnv.config_env()
     config_default = await ConfigEnv.config_default()
@@ -29,7 +31,7 @@ async def config_manage(flag: str):
     return DTConfig(*args)
 
 
-@DCLGlobalAsync()
+@MapKey(BaseTool.return_self)
 async def pool_manage(flag: str):
     config_db = await config_manage(flag)
     return await aiomysql.create_pool(**{

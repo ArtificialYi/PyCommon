@@ -3,6 +3,9 @@ import numpy as np
 import torch
 
 
+CODING = 'utf-8'
+
+
 class BytesTool:
     @staticmethod
     def torch2bytes(data_tensor: torch.Tensor) -> bytes:

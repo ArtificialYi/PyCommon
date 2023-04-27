@@ -101,4 +101,10 @@ class AsyncBase:
         except asyncio.CancelledError as ce:  # pragma: no cover
             print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
             return func(*args, **kwds)  # pragma: no cover
+
+    @staticmethod
+    def get_done_task() -> asyncio.Task:
+        future = asyncio.get_event_loop().create_future()
+        future.cancel()
+        return asyncio.ensure_future(future)
     pass

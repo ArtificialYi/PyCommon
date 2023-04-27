@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Callable, Union
+from typing import AsyncGenerator, Awaitable, Callable, Type
 from .base import AsyncBase
 import pytest
 
@@ -26,40 +26,16 @@ class AsyncExecOrder:
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
 
-    @property
-    def qsize(self):
-        return self.__queue.qsize()
-
-    async def __queue_func(self, future: Union[asyncio.Future, None], *args, **kwds):
-        if future is None:
-            return False
+    async def __queue_func(self, *args, **kwds):
         res0 = self.__func(*args, **kwds)
-        res1 = await res0 if self.__is_coro else res0
-        future.set_result(res1)
-        return True
-
-    async def queue_no_wait(self):
-        # 队列拥有者使用，消费队列
-        if self.__queue.qsize() == 0:
-            return False
-        return await self.queue_wait()
+        return await res0 if self.__is_coro else res0
 
     async def queue_wait(self):
         future, args, kwds = await self.__queue.get()
-        res = await self.__queue_func(future, *args, **kwds)
+        res = await self.__queue_func(*args, **kwds)
         self.__queue.task_done()
+        future.set_result(res)
         return res
-
-    async def queue_join(self):
-        return await self.__queue.join()
-
-    async def call_step(self, *args, **kwds):
-        return await self.__queue.put((None, args, kwds))
-
-    async def call_sync(self, *args, **kwds):
-        # 同步调用，返回函数常规返回值
-        future = await self.call_async(*args, **kwds)
-        return await future
 
     async def call_async(self, *args, **kwds):
         # 异步调用，返回一个future
@@ -69,22 +45,47 @@ class AsyncExecOrder:
     pass
 
 
+class AsyncExecTask:
+    def __init__(self, func: Callable, timeout: float) -> None:
+        self.__queue = asyncio.Queue()
+        self.__func = func
+        self.__is_coro = asyncio.iscoroutinefunction(func)
+        self.__timeout = timeout
+        pass
+
+    async def __func_coro(self, *args, **kwds):
+        res_func = self.__func(*args, **kwds)
+        return await res_func if self.__is_coro else res_func
+
+    async def call_async(self, *args, **kwds):
+        task = AsyncBase.coro2task_exec(asyncio.wait_for(self.__func_coro(*args, **kwds), self.__timeout))
+        await self.__queue.put(task)
+        return task
+
+    async def queue_wait(self):
+        task = await self.__queue.get()
+        res = await task
+        self.__queue.task_done()
+        return res
+    pass
+
+
 class FuncTool:
     @staticmethod
-    async def is_async_err(func: Callable, *args, **kwds):
+    async def is_await_err(func: Awaitable, type_err: Type[BaseException] = BaseException):
         try:
-            await func(*args, **kwds)
-        except Exception:
-            return True
+            await func
+        except BaseException as e:
+            return type(e) == type_err
         else:
             return False
 
     @staticmethod
-    async def is_async_gen_err(gen: AsyncGenerator):
+    async def is_async_gen_err(gen: AsyncGenerator, type_err: Type[BaseException] = BaseException):
         try:
             await FuncTool.__async_gen(gen)
-        except Exception:
-            return True
+        except BaseException as e:
+            return type(e) == type_err
         else:
             return False
         pass
@@ -105,6 +106,24 @@ class FuncTool:
             return True
         else:
             return False
+
+    @staticmethod
+    async def await_no_cancel(func: Awaitable):
+        """取消异常不抛出
+        """
+        try:
+            return await func
+        except asyncio.CancelledError:
+            return None
+
+    @staticmethod
+    def future_no_cancel(future: asyncio.Future):
+        """取消异常不抛出
+        """
+        try:
+            return future.exception()
+        except asyncio.CancelledError:
+            return None
     pass
 
 
@@ -203,21 +222,6 @@ class FieldSwapSafe(FieldSwap):
     pass
 
 
-class FqsSync(FieldSwapSafe):
-    """函数队列的基类
-    Func Queue Safe
-    """
-    def __init__(self, func: Callable) -> None:
-        self.__fq_order = AsyncExecOrder(func)
-        super().__init__(self, func.__name__, self.__fq_order.call_sync)
-        pass
-
-    @property
-    def fq_order(self) -> AsyncExecOrder:
-        return self.__fq_order
-    pass
-
-
 class FqsAsync(FieldSwapSafe):
     """函数队列的基类
     Func Queue Safe
@@ -230,4 +234,38 @@ class FqsAsync(FieldSwapSafe):
     @property
     def fq_order(self) -> AsyncExecOrder:
         return self.__fq_order
+    pass
+
+
+class TqsAsync(FieldSwapSafe):
+    """任务队列的基类
+    Task Queue Safe
+    """
+    def __init__(self, func: Callable, timeout: float) -> None:
+        self.__tq_order = AsyncExecTask(func, timeout)
+        super().__init__(self, func.__name__, self.__tq_order.call_async)
+        pass
+
+    @property
+    def tq_order(self) -> AsyncExecTask:
+        return self.__tq_order
+    pass
+
+
+class QueueException:
+    def __init__(self) -> None:
+        self.__q: asyncio.Queue[asyncio.Future] = asyncio.Queue()
+        pass
+
+    def __call__(self, future: asyncio.Future):
+        self.__q.put_nowait(future)
+        pass
+
+    async def exception_loop(self, max_time: int):
+        for _ in range(max_time):
+            future = await self.__q.get()
+            self.__q.task_done()
+            e = FuncTool.future_no_cancel(future)
+            if e is not None:
+                raise e
     pass

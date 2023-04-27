@@ -1,3 +1,4 @@
+from ...mock.func import MockException
 from ...src.repository.db import ActionExec, ActionIter
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.repository.rds import MysqlManage
@@ -10,8 +11,10 @@ class TestMysqlManage:
     async def test(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor()
-        pool = MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch('PyCommon.src.repository.rds.pool_manage', return_value=pool)
+
+        async def tmp(flag: str):
+            return MockDBPool(flag).mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch('PyCommon.src.repository.rds.pool_manage', new=tmp)
         mysql_manage = MysqlManage('test')
 
         # 无事务+iter
@@ -32,10 +35,10 @@ class TestMysqlManage:
             pass
 
         # 抛出异常
-        assert await FuncTool.is_async_err(self.__raise_exception, mysql_manage)
+        assert await FuncTool.is_await_err(self.__raise_exception(mysql_manage), MockException)
         pass
 
     async def __raise_exception(self, manage: MysqlManage):
         async with manage(True):
-            raise Exception('异常测试')
+            raise MockException('异常测试')
     pass

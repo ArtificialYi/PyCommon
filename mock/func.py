@@ -1,3 +1,9 @@
+class MockException(Exception):
+    """Mock的Exception
+    """
+    pass
+
+
 class MockFunc:
     @staticmethod
     async def norm_async():
@@ -5,7 +11,7 @@ class MockFunc:
 
     @staticmethod
     async def norm_async_err():
-        raise Exception('会抛出异常的coro函数')
+        raise MockException('会抛出异常的coro函数')
 
     @staticmethod
     async def norm_async_gen():
@@ -15,7 +21,7 @@ class MockFunc:
     @staticmethod
     async def norm_async_gen_err():
         yield
-        raise Exception('会抛出异常的async gen')
+        raise MockException('会抛出异常的async gen')
 
     @staticmethod
     def norm_sync():
@@ -23,5 +29,5 @@ class MockFunc:
 
     @staticmethod
     def norm_sync_err():
-        raise Exception('会抛出异常的func')
+        raise MockException('会抛出异常的func')
     pass
