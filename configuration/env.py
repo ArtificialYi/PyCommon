@@ -10,7 +10,11 @@ from .tool import ConfigTool
 
 COMMON_CONFIGURATION_DIR = os.path.dirname(__file__)
 COMMON_ROOT = os.path.dirname(COMMON_CONFIGURATION_DIR)
-PROJECT_ROOT = os.path.dirname(COMMON_ROOT)
+
+MODULES_ROOT = os.path.dirname(COMMON_ROOT)
+SRC_ROOT = os.path.dirname(MODULES_ROOT)
+PROJECT_ROOT = os.path.dirname(SRC_ROOT)
+CONFIG_ROOT = os.path.join(PROJECT_ROOT, 'configuration')
 
 
 class EnvEnum(Enum):
@@ -51,21 +55,11 @@ class ConfigEnv:
         return EnvEnum(env_str)
 
     @classmethod
-    async def __path_resource_root(cls) -> str:
-        """项目配置器根目录
-        """
-        config_project = await cls.__config_project()
-        return os.path.join(
-            '/usr/local/resource',
-            config_project.get('hy_project', 'name', fallback='hy_project')
-        )
-
-    @classmethod
     @MapKey()
     async def config_default(cls):
         """默认的项目配置文件
         """
-        path_default = os.path.join(await cls.__path_resource_root(), 'default.ini')
+        path_default = os.path.join(CONFIG_ROOT, 'default.ini')
         return await ConfigTool.get_config(path_default)
 
     @classmethod
@@ -73,8 +67,7 @@ class ConfigEnv:
     async def config_env(cls):
         """环境独有的配置文件
         """
-        dir_root = await cls.__path_resource_root()
         env_project = await cls.__env_enum_project()
-        path_env = os.path.join(dir_root, f'{env_project.lower()}.ini')
+        path_env = os.path.join(CONFIG_ROOT, f'{env_project.lower()}.ini')
         return await ConfigTool.get_config(path_env)
     pass
