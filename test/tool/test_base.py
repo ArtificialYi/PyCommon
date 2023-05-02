@@ -194,7 +194,7 @@ class TestAsyncBase:
         # 同步转异步
         res_a = 123
         future = AsyncBase.get_future()
-        task = AsyncBase.coro2task_exec(AsyncBase.func2coro_exec(self.future_set, future, res_a))
+        task = AsyncBase.coro2task_exec(asyncio.to_thread(self.future_set, future, res_a))
         res_b = await future
         res_c = await task
         assert res_a == res_b == res_c

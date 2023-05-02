@@ -95,14 +95,6 @@ class AsyncBase:
         return asyncio.get_running_loop().create_task(coro)
 
     @staticmethod
-    async def func2coro_exec(func, *args, **kwds):
-        try:
-            return await asyncio.to_thread(func, *args, **kwds)
-        except asyncio.CancelledError as ce:  # pragma: no cover
-            print(f'协程被取消:{ce}|{func}|{args}|{kwds}')  # pragma: no cover
-            return func(*args, **kwds)  # pragma: no cover
-
-    @staticmethod
     def get_done_task() -> asyncio.Task:
         future = asyncio.get_event_loop().create_future()
         future.cancel()
