@@ -1,4 +1,4 @@
-.PHONY: test
+.PHONY: test main lint clean
 main: lint-local test-local clean
 
 lint: lint-local clean
@@ -9,13 +9,15 @@ lint-local:
 
 test: test-local clean
 test-local:
-	pytest --cov-report=term --cov-report=xml --cov=src  -n=5 test
+	pytest --cov-report=term --cov-report=xml --cov=src -n=5 test
 	@echo 'test done.'
 
 clean: clean-pytest clean-python
 	@echo 'clean done.'
 clean-pytest:
-	rm -rf .coverage .pytest_cache .coverage.*
-	# coverage.xml
+	rm -rf .coverage.*
+	# rm -rf coverage.xml
+	find . -name '.pytest_cache' | xargs rm -r
+	find . -name '.coverage' | xargs rm -r
 clean-python:
 	find . -name '__pycache__' | xargs rm -r
