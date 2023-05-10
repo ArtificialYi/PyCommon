@@ -92,11 +92,11 @@ class AsyncBase:
 
     @staticmethod
     def coro2task_exec(coro):
-        return asyncio.get_running_loop().create_task(coro)
+        return asyncio.create_task(coro)
 
     @staticmethod
     def get_done_task() -> asyncio.Task:
-        future = asyncio.get_event_loop().create_future()
+        future = AsyncBase.get_future()
         future.cancel()
         return asyncio.ensure_future(future)
     pass
