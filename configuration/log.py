@@ -17,7 +17,7 @@ LOG_NAME = os.path.join(LOG_ROOT, 'local.log')
 class LoggerLocal:
     @staticmethod
     @MapKey(BaseTool.return_self)
-    async def __get_logger(level: LogLevel = LogLevel.INFO):
+    async def __get_logger(level: LogLevel = LogLevel.INFO) -> Logger:
         project_name = await ProjectEnv.get_name()
         logger = Logger(name=project_name, level=level)
         handler_file = AsyncTimedRotatingFileHandler(

@@ -1,3 +1,4 @@
+from ...src.tool.log_tool import Logger
 from ...src.tcp.client import TcpApiManage
 from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 
@@ -10,5 +11,6 @@ class TestClient:
     async def test_client_no_server(self):
         port = 10010
         assert await FuncTool.is_await_err(TcpApiManage.service(LOCAL_HOST, port, ''), ConnectionRefusedError)
+        await Logger.shutdown()
         pass
     pass

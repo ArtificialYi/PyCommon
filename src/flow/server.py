@@ -1,6 +1,8 @@
 from asyncio import StreamReader, StreamWriter
 import json
 from typing import Any, Callable, Optional
+
+from ..tool.log_tool import Logger
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
 from ..tool.server_tool import ServerRegister
@@ -40,9 +42,9 @@ class FlowJsonDeal(TaskApi):
         service_name = json_obj.get('service')
         args = json_obj.get("args", [])
         kwds = json_obj.get("kwds", {})
-        print(f'已接收数据:{id}|{service_name}|{args}|{kwds}')
+        await Logger.info(f'已接收数据:{id}|{service_name}|{args}|{kwds}')
         res_service = await ServerRegister.call(service_name, *args, **kwds)
-        print(f'返回结果:{id}|{res_service}')
+        await Logger.info(f'返回结果:{id}|{res_service}')
         await self.__flow_send.send(id, res_service)
         pass
     pass

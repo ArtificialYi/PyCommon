@@ -1,4 +1,6 @@
 import asyncio
+
+from ...src.tool.log_tool import Logger
 from ...src.tool.server_tool import ServerRegister
 from ...src.exception.tcp import ConnException
 from ...src.tcp.client import TcpApiManage
@@ -19,6 +21,7 @@ class TestServer:
             # 调用不存在的服务
             assert await FuncTool.is_await_err(TcpApiManage.service(LOCAL_HOST, port, ''), ConnException)
             pass
+        await Logger.shutdown()
         pass
 
     @staticmethod
@@ -36,6 +39,7 @@ class TestServer:
                 ConnException,
             )
             pass
+        await Logger.shutdown()
         pass
 
     @staticmethod
@@ -53,5 +57,6 @@ class TestServer:
             # 关闭tcp套接字
             assert await TcpApiManage.close(LOCAL_HOST, port) is None
             pass
+        await Logger.shutdown()
         pass
     pass

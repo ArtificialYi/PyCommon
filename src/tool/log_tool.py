@@ -1,10 +1,10 @@
 import asyncio
 from typing import Callable, Optional
-from ..tool.map_tool import LockManage, MapKey
-from ..tool.base import AsyncBase
-from ..tool.func_tool import FuncTool, QueueException
+from .map_tool import LockManage, MapKey
+from .base import AsyncBase
+from .func_tool import FuncTool, QueueException
 from ...configuration.log import LoggerLocal
-from ..tool.loop_tool import OrderApi
+from .loop_tool import OrderApi
 from aiologger.levels import LogLevel
 
 
@@ -17,6 +17,9 @@ class FlowLogger(OrderApi):
         logger_dict = await LoggerLocal.level_dict(self.__level)
         await logger_dict[level](msg)
         pass
+
+    async def join(self):
+        await self.fq_order.join()
     pass
 
 
@@ -58,6 +61,11 @@ class LoggerApi:
         task.cancel()
         await FuncTool.await_no_cancel(task)
         pass
+
+    async def shutdown(self):
+        flow_logger = await self.__get_logger()
+        await flow_logger.join()
+        await self.close()
     pass
 
 
@@ -109,8 +117,8 @@ class Logger:
         pass
 
     @classmethod
-    async def close(cls):
+    async def shutdown(cls):
         api: LoggerApi = cls.__get_api()
-        await api.close()
+        await api.shutdown()
         pass
     pass

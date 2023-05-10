@@ -33,9 +33,12 @@ class AsyncExecOrder:
     async def queue_wait(self):
         future, args, kwds = await self.__queue.get()
         res = await self.__queue_func(*args, **kwds)
-        self.__queue.task_done()
         future.set_result(res)
+        self.__queue.task_done()
         return res
+
+    async def join(self):
+        await self.__queue.join()
 
     async def call_async(self, *args, **kwds):
         # 异步调用，返回一个future
