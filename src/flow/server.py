@@ -1,6 +1,6 @@
 from asyncio import StreamReader, StreamWriter
 import json
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
 from ..tool.server_tool import ServerRegister
@@ -16,7 +16,7 @@ class FlowSendServer(OrderApi):
         OrderApi.__init__(self, self.send, callback)
         pass
 
-    async def send(self, id: Union[int, None], data: Any):
+    async def send(self, id: Optional[int], data: Any):
         str_json = json.dumps({
             'id': id,
             'data': data,

@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from typing import Callable, Union
+from typing import Callable, Optional
 
 
 class LockManage:
@@ -18,7 +18,7 @@ class LockManage:
 
 class MapKey:
     class Sync:
-        def __init__(self, func_key: Union[Callable, None] = None) -> None:
+        def __init__(self, func_key: Optional[Callable] = None) -> None:
             self.__map = dict()
             self.__func_key = func_key
             pass
@@ -39,7 +39,7 @@ class MapKey:
         pass
 
     class AsyncLock:
-        def __init__(self, func_key: Union[Callable, None]) -> None:
+        def __init__(self, func_key: Optional[Callable]) -> None:
             self.__map = dict()
             self.__func_key = func_key
             self.__iscoro = asyncio.iscoroutinefunction(func_key)
@@ -70,7 +70,7 @@ class MapKey:
             return await key_res if self.__iscoro else key_res
         pass
 
-    def __init__(self, func_key: Union[Callable, None] = None) -> None:
+    def __init__(self, func_key: Optional[Callable] = None) -> None:
         self.__func_key = func_key
         print(f'MapKey初始化:{func_key.__name__ if func_key is not None else func_key}')
         pass

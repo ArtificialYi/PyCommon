@@ -1,6 +1,6 @@
 import asyncio
 from collections import deque
-from typing import Any, Callable, Dict, Iterable, Union
+from typing import Any, Callable, Dict, Iterable, Optional
 
 
 class BaseTool:
@@ -66,7 +66,7 @@ class DelayCountQueue:
 
 
 class MatchCase:
-    def __init__(self, case_dict: Dict[Any, Union[Callable, None]], default: Union[Callable, None] = None) -> None:
+    def __init__(self, case_dict: Dict[Any, Optional[Callable]], default: Optional[Callable] = None) -> None:
         self.__case_dict = case_dict
         self.__case_set = set(self.__case_dict.keys())
         self.__default = default if default is not None else self.__err_default

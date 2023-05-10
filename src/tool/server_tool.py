@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple
 
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
@@ -7,7 +7,7 @@ from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 class ServerRegister:
     __TABLE: Dict[str, Tuple[Callable, bool]] = dict()
 
-    def __init__(self, path: Union[str, None] = None):
+    def __init__(self, path: Optional[str] = None):
         self.__path = path
         pass
 
