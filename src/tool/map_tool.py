@@ -10,7 +10,7 @@ class LockManage:
 
     def get_lock(self) -> asyncio.Lock:
         loop = asyncio.get_event_loop()
-        if self.__map_lock.get(loop, None) is None:
+        if self.__map_lock.get(loop) is None:
             self.__map_lock[loop] = asyncio.Lock()
         return self.__map_lock[loop]
     pass
@@ -27,7 +27,7 @@ class MapKey:
             @wraps(func_value)
             def wrapper(*args, **kwds):
                 key = self.__get_key(*args, **kwds)
-                if self.__map.get(key, None) is None:
+                if self.__map.get(key) is None:
                     self.__map[key] = func_value(*args, **kwds)
                 return self.__map[key]
             return wrapper
@@ -54,11 +54,11 @@ class MapKey:
 
         async def __wrapper(self, func_value: Callable, *args, **kwds):
             key = await self.__get_key(*args, **kwds)
-            if self.__map.get(key, None) is not None:
+            if self.__map.get(key) is not None:
                 return self.__map[key]
 
             async with self.__lock.get_lock():
-                if self.__map.get(key, None) is not None:
+                if self.__map.get(key) is not None:
                     return self.__map[key]
                 self.__map[key] = await func_value(*args, **kwds)
             return self.__map[key]

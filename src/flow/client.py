@@ -37,14 +37,14 @@ class JsonDeal:
         pass
 
     def deal_json(self, json_obj: dict):
-        id = json_obj.get('id', None)
+        id = json_obj.get('id')
         if id is None:  # pragma: no cover
             raise JsonIdException(f'Json数据错误:{json_obj}')
-        future = self.__map.get(id, None)
+        future = self.__map.get(id)
         if future is None:  # pragma: no cover
             raise FutureException(f'未找到对应的future:{id}')
         # 将data结果写入future（超时限制）
-        future.set_result(json_obj.get('data', None))
+        future.set_result(json_obj.get('data'))
         pass
     pass
 
