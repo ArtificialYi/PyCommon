@@ -77,8 +77,7 @@ class TestNormLoop:
     @PytestAsyncTimeout(2)
     async def test(self):
         func_tmp = FuncTmp()
-        norm = NormLoop(func_tmp.func)
-        async with norm:
+        async with NormLoop(func_tmp.func):
             assert func_tmp.num == 0
             await asyncio.sleep(1)
             assert func_tmp.num > 0
