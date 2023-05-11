@@ -51,7 +51,8 @@ class TestServer:
     @staticmethod
     @ServerRegister('test/tcp/server/norm')
     async def func_norm():
-        return await asyncio.sleep(0.1)
+        await asyncio.sleep(0.1)
+        return True
 
     @PytestAsyncTimeout(3)
     async def test_service_norm(self, mocker: MockerFixture):
@@ -59,8 +60,8 @@ class TestServer:
         port = 10002
         async with server_main(LOCAL_HOST, port):
             # 调用一个正常服务
-            assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is None
-            assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is None
+            assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm')
+            assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm')
             # 关闭tcp套接字
             assert await TcpApiManage.close(LOCAL_HOST, port) is None
             pass

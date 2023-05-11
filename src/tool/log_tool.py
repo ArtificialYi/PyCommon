@@ -16,6 +16,7 @@ class FlowLogger(OrderApi):
     async def log(self, level: LogLevel, msg: str):
         logger_dict = await LoggerLocal.level_dict(self.__level)
         await logger_dict[level](msg)
+        pass
 
     async def join(self):
         await self.fq_order.join()

@@ -6,7 +6,7 @@ class MockException(Exception):
 
 class MockFunc:
     @staticmethod
-    async def norm_async():
+    async def norm_async(*args, **kwds):
         pass
 
     @staticmethod
