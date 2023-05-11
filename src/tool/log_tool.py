@@ -16,7 +16,6 @@ class FlowLogger(OrderApi):
     async def log(self, level: LogLevel, msg: str):
         logger_dict = await LoggerLocal.level_dict(self.__level)
         await logger_dict[level](msg)
-        pass
 
     async def join(self):
         await self.fq_order.join()
@@ -32,11 +31,9 @@ class LoggerApi:
 
     async def __flow_run(self, future: asyncio.Future):
         err_queue = QueueException()
-        async with FlowLogger(self.__level, err_queue) as logger:
+        async with FlowLogger(self.__level, err_queue) as logger:  # pragma: no cover
             future.set_result(logger)
             await err_queue.exception_loop(1)
-            pass
-        pass
 
     async def __get_logger(self) -> FlowLogger:
         async with self.__lock.get_lock():

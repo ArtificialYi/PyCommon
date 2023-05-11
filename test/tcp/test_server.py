@@ -1,5 +1,9 @@
 import asyncio
 
+from pytest_mock import MockerFixture
+
+from ...mock.log import MockLog
+
 from ...src.tool.log_tool import Logger
 from ...src.tool.server_tool import ServerRegister
 from ...src.exception.tcp import ConnException
@@ -15,7 +19,8 @@ class TestServer:
     """测试端口范围: 10000-10009
     """
     @PytestAsyncTimeout(3)
-    async def test_not_exist(self):
+    async def test_not_exist(self, mocker: MockerFixture):
+        mocker.patch('PyCommon.configuration.log.LoggerLocal.level_dict', new=MockLog.level_dict)
         port = 10000
         async with server_main(LOCAL_HOST, port):
             # 调用不存在的服务
@@ -30,7 +35,8 @@ class TestServer:
         return await asyncio.sleep(2)
 
     @PytestAsyncTimeout(4)
-    async def test_service_timeout(self):
+    async def test_service_timeout(self, mocker: MockerFixture):
+        mocker.patch('PyCommon.configuration.log.LoggerLocal.level_dict', new=MockLog.level_dict)
         port = 10001
         async with server_main(LOCAL_HOST, port):
             # 调用一个超时服务-1秒超时时间
@@ -48,7 +54,8 @@ class TestServer:
         return await asyncio.sleep(0.1)
 
     @PytestAsyncTimeout(3)
-    async def test_service_norm(self):
+    async def test_service_norm(self, mocker: MockerFixture):
+        mocker.patch('PyCommon.configuration.log.LoggerLocal.level_dict', new=MockLog.level_dict)
         port = 10002
         async with server_main(LOCAL_HOST, port):
             # 调用一个正常服务
