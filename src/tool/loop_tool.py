@@ -33,13 +33,11 @@ class LoopExecBg:
     def is_running(self):
         return not self.__task_main.done()
 
-    def run(self, callback: Optional[Callable] = None) -> None:
+    def run(self) -> None:
         if not self.__task_main.done():
             raise Exception('已有loop在运行中')
         self.__task_main = AsyncBase.coro2task_exec(self.__exec.loop())
-
-        if callback is not None:
-            self.__task_main.add_done_callback(callback)
+        pass
 
     async def stop(self):
         """
@@ -69,13 +67,12 @@ class LoopExecBg:
 class NormLoop:
     """在代码块的后台无限执行函数
     """
-    def __init__(self, func: Callable, callback: Optional[Callable] = None) -> None:
+    def __init__(self, func: Callable) -> None:
         self.__exec_bg = LoopExecBg(func)
-        self.__callback = callback
         pass
 
     async def __aenter__(self):
-        self.__exec_bg.run(self.__callback)
+        self.__exec_bg.run()
         return self
 
     async def __aexit__(self, *args):
@@ -87,9 +84,9 @@ class NormLoop:
 class OrderApi(FqsAsync):
     """函数 -> 有序队列执行
     """
-    def __init__(self, func: Callable, callback: Optional[Callable] = None) -> None:
+    def __init__(self, func: Callable) -> None:
         FqsAsync.__init__(self, func)
-        self.__norm_flow = NormLoop(self.fq_order.queue_wait, callback)
+        self.__norm_flow = NormLoop(self.fq_order.queue_wait)
         pass
 
     async def __aenter__(self):
@@ -106,9 +103,9 @@ class OrderApi(FqsAsync):
 class TaskApi(TqsAsync):
     """函数 -> 任务队列执行
     """
-    def __init__(self, func: Callable, callback: Optional[Callable] = None, timeout: float = 1) -> None:
+    def __init__(self, func: Callable, timeout: float = 1) -> None:
         TqsAsync.__init__(self, func, timeout)
-        self.__norm_flow = NormLoop(self.tq_order.queue_wait, callback)
+        self.__norm_flow = NormLoop(self.tq_order.queue_wait)
         pass
 
     async def __aenter__(self):

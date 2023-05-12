@@ -75,9 +75,10 @@ class TcpApi:
             del future_map[tcp_id]
 
     async def close(self):
-        task = self.__task
-        task.cancel()
-        await FuncTool.await_no_cancel(task)
+        if self.__task.done():
+            return
+        self.__task.cancel()
+        await FuncTool.await_no_cancel(self.__task)
         pass
     pass
 
