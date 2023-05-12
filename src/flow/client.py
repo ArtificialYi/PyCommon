@@ -1,7 +1,7 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
-from typing import Callable, Dict
-from ..exception.tcp import ConnException, FutureException, JsonIdException
+from typing import Dict
+from ..exception.tcp import ConnException
 from .tcp import JsonOnline
 from ..tool.loop_tool import NormLoop, OrderApi
 from ..tool.bytes_tool import CODING
@@ -11,9 +11,9 @@ import json
 class FlowSendClient(OrderApi):
     """基于异步API流的TCP发送流-客户端版
     """
-    def __init__(self, writer: StreamWriter, callback: Callable) -> None:
+    def __init__(self, writer: StreamWriter) -> None:
         self.__writer = writer
-        OrderApi.__init__(self, self.send, callback)
+        OrderApi.__init__(self, self.send)
         pass
 
     async def send(self, id: int, service: str, *args, **kwds):
@@ -38,11 +38,14 @@ class JsonDeal:
 
     def deal_json(self, json_obj: dict):
         id = json_obj.get('id')
-        if id is None:  # pragma: no cover
-            raise JsonIdException(f'Json数据错误:{json_obj}')
+        if id is None:
+            # TODO: 记录日志
+            return
+
         future = self.__map.get(id)
-        if future is None:  # pragma: no cover
-            raise FutureException(f'未找到对应的future:{id}')
+        if future is None:
+            # TODO: 记录日志
+            return
         # 将data结果写入future（超时限制）
         future.set_result(json_obj.get('data'))
         pass
@@ -52,13 +55,9 @@ class JsonDeal:
 class FlowRecv(NormLoop):
     """持续运行的TCP接收流
     """
-    def __init__(
-        self, reader: StreamReader,
-        json_deal: JsonDeal,
-        callback: Callable,
-    ) -> None:
+    def __init__(self, reader: StreamReader, json_deal: JsonDeal,) -> None:
         self.__reader = reader
-        NormLoop.__init__(self, self.__recv, callback)
+        NormLoop.__init__(self, self.__recv)
         self.__json_online = JsonOnline()
         self.__json_deal = json_deal
         pass
