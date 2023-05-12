@@ -17,17 +17,18 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
         FlowRecv(reader, flow_json) as flow_recv,
     ):
         done, _ = await asyncio.wait([flow_send, flow_json, flow_recv], return_when=FIRST_COMPLETED)
-        try:
-            done.pop().result()
-        except ConnException as e:
-            print(f'Connection from {addr} is closing: {e}')
-            pass
-        finally:
-            print('Closed the connection')
-            writer.close()
-            await writer.wait_closed()
-            pass
         pass
+    try:
+        done.pop().result()
+    except ConnException as e:
+        print(f'Connection from {addr} is closing: {e}')
+        pass
+    finally:
+        print('Closed the connection')
+        writer.close()
+        await writer.wait_closed()
+        pass
+    pass
 
 
 # 服务端主流程

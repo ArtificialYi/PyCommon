@@ -253,22 +253,3 @@ class TqsAsync(FieldSwapSafe):
     def tq_order(self) -> AsyncExecTask:
         return self.__tq_order
     pass
-
-
-class QueueException:
-    def __init__(self) -> None:
-        self.__q: asyncio.Queue[asyncio.Future] = asyncio.Queue()
-        pass
-
-    def __call__(self, future: asyncio.Future):
-        self.__q.put_nowait(future)
-        pass
-
-    async def exception_loop(self, max_time: int):
-        for _ in range(max_time):
-            future = await self.__q.get()
-            self.__q.task_done()
-            e = FuncTool.future_no_cancel(future)
-            if e is not None:
-                raise e
-    pass

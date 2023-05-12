@@ -1,12 +1,11 @@
 import asyncio
-from typing import Tuple
+from concurrent.futures import FIRST_COMPLETED
+from typing import Dict, Optional, Tuple
+from asyncio import StreamReader, StreamWriter
 
-from ..tool.async_tool import AsyncTool
-
-from ..tool.map_tool import LockManage, MapKey
-
+from ..tool.loop_tool import LoopExecBg
+from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase
-from ..tool.func_tool import FuncTool, QueueException
 from ..flow.client import JsonDeal, FlowSendClient, FlowRecv
 
 
@@ -16,70 +15,89 @@ class TcpApi:
     def __init__(self, host: str, port: int) -> None:
         self.__host = host
         self.__port = port
-        self.__task = AsyncBase.get_done_task()
-        self.__lock = LockManage()
+        self.__tcp_id = 0
+
+        self.__loop_bg = LoopExecBg(self.__flow_run)
+        self.__loop_bg.run()
+
+        self.__future: asyncio.Future[FlowSendClient] = AsyncBase.get_future()
+        self.__future_map: Dict[int, asyncio.Future] = dict()
         pass
 
-    async def __flow_run(self, future: asyncio.Future):
-        reader, writer = await asyncio.open_connection(self.__host, self.__port)
+    async def __conn_unit(self):
         try:
-            err_queue = QueueException()
-            future_map = dict()
-            deal = JsonDeal(future_map)
-            async with (
-                FlowSendClient(writer, err_queue) as flow_send,
-                FlowRecv(reader, deal, err_queue),
-            ):  # pragma: no cover
-                future.set_result((flow_send, future_map))
-                await err_queue.exception_loop(3)
+            return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
-            # TODO: 此处需记录每次断开连接的原因
-            # print(e)
-            raise e
+            # TODO: 此处需记录断开连接的原因
+            print(e)
+            return None, None
+
+    async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
+        # retry重连机制
+        reader, writer = None, None
+        for i in range(6):
+            reader, writer = await self.__conn_unit()
+            if reader is not None and writer is not None:
+                break
+            await asyncio.sleep(2 ** i)
+        return reader, writer
+
+    async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
+        # 严重错误告警
+        while True:
+            reader, writer = await self.__conn_unit()
+            if reader is not None and writer is not None:
+                break
+            # TODO: 严重错误告警
+            await asyncio.sleep(60)
+        return reader, writer
+
+    async def __conn(self) -> Tuple[StreamReader, StreamWriter]:
+        reader, writer = await self.__conn_warn()
+        if reader is None or writer is None:
+            reader, writer = await self.__conn_error()
+        return reader, writer
+
+    async def __flow_run(self):
+        reader, writer = await self.__conn()
+        deal = JsonDeal(self.__future_map)
+        async with (
+            FlowSendClient(writer) as flow_send,
+            FlowRecv(reader, deal) as flow_recv,
+        ):
+            self.__future.set_result(flow_send)
+            done, _ = await asyncio.wait([flow_send, flow_recv], return_when=FIRST_COMPLETED)
+            pass
+        self.__future = AsyncBase.get_future()
+        try:
+            done.pop().result()
+        except BaseException as e:
+            # TODO: 此处需记录断开连接的原因
+            print(e)
+            pass
         finally:
             writer.close()
             await writer.wait_closed()
+            pass
+        pass
+
+    async def close(self):
+        await self.__loop_bg.stop()
+        pass
 
     def __next_id(self):
         self.__tcp_id += 1
         return self.__tcp_id
 
-    async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict, asyncio.Task]:
-        async with self.__lock.get_lock():
-            if self.__task.done():
-                future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
-                self.__task = AsyncBase.coro2task_exec(self.__flow_run(future))
-                done, _ = await asyncio.wait([
-                    self.__task, future
-                ], return_when=asyncio.FIRST_COMPLETED)
-                self.__flow_send, self.__future_map = done.pop().result()
-                self.__tcp_id = 0
-                pass
-            pass
-        tcp_id = self.__next_id()
-        return self.__flow_send, tcp_id, self.__future_map, self.__task
-
     async def api(self, path: str, *args, **kwds):
-        flow_send, tcp_id, future_map, task_main = await self.__get_flow_send()
-        # 添加id映射
-        future_map[tcp_id] = asyncio.Future()
-        await flow_send.send(tcp_id, path, *args, **kwds)
+        flow_send = await asyncio.wait_for(self.__future, 1) if not self.__future.done() else await self.__future
+        tcp_id = self.__next_id()
+        self.__future_map[tcp_id] = AsyncBase.get_future()
         try:
-            async with AsyncTool.coro_async_gen(asyncio.wait_for(future_map[tcp_id], 2)) as task:
-                done, _ = await asyncio.wait([
-                    task,
-                    task_main,
-                ], return_when=asyncio.FIRST_COMPLETED)
-                return done.pop().result()
+            await flow_send.send(tcp_id, path, *args, **kwds)
+            return await asyncio.wait_for(self.__future_map[tcp_id], 2)
         finally:
-            del future_map[tcp_id]
-
-    async def close(self):
-        if self.__task.done():
-            return
-        self.__task.cancel()
-        await FuncTool.await_no_cancel(self.__task)
-        pass
+            del self.__future_map[tcp_id]
     pass
 
 
