@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
 
@@ -18,10 +18,17 @@ class ServerRegister:
         return func
 
     @classmethod
-    async def call(cls, path, *args, **kwds) -> Tuple[Callable, bool]:
+    async def __call_unit(cls, path, *args, **kwds) -> Tuple[Callable, bool]:
         if cls.__TABLE.get(path) is None:
             raise ServiceNotFoundException(f'服务不存在:{path}')
         func, is_async = cls.__TABLE[path]
         func_res = func(*args, **kwds)
         return await func_res if is_async else func_res
+
+    @classmethod
+    async def call(cls, path, *args, **kwds) -> Any:
+        try:
+            return await cls.__call_unit(path, *args, **kwds)
+        except BaseException as e:
+            return e
     pass

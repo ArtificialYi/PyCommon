@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Optional
+from typing import Callable
 
 from ..exception.tool import AlreadyStopException
 from .map_tool import LockManage
@@ -29,9 +29,8 @@ class LoopExecBg:
         self.__task_lock = LockManage()
         pass
 
-    @property
-    def is_running(self):
-        return not self.__task_main.done()
+    def __await__(self):
+        yield from FuncTool.await_no_cancel(self.__task_main).__await__()
 
     def run(self) -> None:
         if not self.__task_main.done():
@@ -71,6 +70,10 @@ class NormLoop:
         self.__exec_bg = LoopExecBg(func)
         pass
 
+    def __await__(self):
+        yield from self.__exec_bg.__await__()
+        pass
+
     async def __aenter__(self):
         self.__exec_bg.run()
         return self
@@ -88,6 +91,9 @@ class OrderApi(FqsAsync):
         FqsAsync.__init__(self, func)
         self.__norm_flow = NormLoop(self.fq_order.queue_wait)
         pass
+
+    def __await__(self):
+        yield from self.__norm_flow.__await__()
 
     async def __aenter__(self):
         await FqsAsync.__aenter__(self)
@@ -107,6 +113,9 @@ class TaskApi(TqsAsync):
         TqsAsync.__init__(self, func, timeout)
         self.__norm_flow = NormLoop(self.tq_order.queue_wait)
         pass
+
+    def __await__(self):
+        yield from self.__norm_flow.__await__()
 
     async def __aenter__(self):
         await TqsAsync.__aenter__(self)
