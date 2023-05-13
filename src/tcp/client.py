@@ -52,19 +52,20 @@ class TcpConn:
 
 
 class TcpSend:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, api_delay: float = 2) -> None:
         self.__conn = TcpConn(host, port)
         self.__loop_bg = LoopExecBg(self.__flow_run)
         self.__loop_bg.run()
         self.__future: asyncio.Future[FlowSendClient] = AsyncBase.get_future()
 
+        self.__api_delay = api_delay
         self.__tcp_id = 0
         pass
 
     async def __flow_run(self):
         reader, writer = await self.__conn.conn()
         async with (
-            FlowSendClient(writer) as flow_send,
+            FlowSendClient(writer, self.__api_delay * 2) as flow_send,
             FlowRecv(reader, JsonDeal(flow_send.future_map)) as flow_recv,
         ):
             self.__future.set_result(flow_send)
@@ -98,7 +99,7 @@ class TcpSend:
         flow_send = await self.__get_flow_send()
         tcp_id = self.__next_id()
         future = await flow_send.send(tcp_id, path, *args, **kwds)
-        return await asyncio.wait_for(future, 2)
+        return await asyncio.wait_for(future, self.__api_delay)
     pass
 
 
