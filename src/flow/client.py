@@ -1,20 +1,31 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 from typing import Dict
+
+from ..tool.base import AsyncBase
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
-from ..tool.loop_tool import NormLoop, OrderApi
+from ..tool.loop_tool import NormLoop, OrderApiSync
 from ..tool.bytes_tool import CODING
 import json
 
 
-class FlowSendClient(OrderApi):
+class FlowSendClient(OrderApiSync):
     """基于异步API流的TCP发送流-客户端版
     """
-    def __init__(self, writer: StreamWriter) -> None:
+    def __init__(self, writer: StreamWriter, delay: float = 4) -> None:
         self.__writer = writer
-        OrderApi.__init__(self, self.send)
+        OrderApiSync.__init__(self, self.send)
+        self.__future_map: Dict[int, asyncio.Future] = dict()
+        self.__delay = delay
         pass
+
+    def __map_del(self, id: int):
+        del self.__future_map[id]
+
+    @property
+    def future_map(self):
+        return self.__future_map
 
     async def send(self, id: int, service: str, *args, **kwds):
         str_json = json.dumps({
@@ -24,8 +35,11 @@ class FlowSendClient(OrderApi):
             'kwds': kwds,
         })
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
+        future = AsyncBase.get_future()
+        self.__future_map[id] = future
         await self.__writer.drain()
-        pass
+        AsyncBase.call_later(self.__delay, self.__map_del, id)
+        return future
     pass
 
 

@@ -99,4 +99,8 @@ class AsyncBase:
         future = AsyncBase.get_future()
         future.cancel()
         return asyncio.ensure_future(future)
+
+    @staticmethod
+    def call_later(delay, func, *args, **kwds):
+        return asyncio.get_running_loop().call_later(delay, func, *args, **kwds)
     pass
