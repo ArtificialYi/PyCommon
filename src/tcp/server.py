@@ -1,8 +1,9 @@
-from asyncio import FIRST_COMPLETED, StreamReader, StreamWriter
+from asyncio import Server, StreamReader, StreamWriter
 import asyncio
-from contextlib import asynccontextmanager
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
 from ..exception.tcp import ConnException
+
 from ..flow.server import FlowJsonDeal, FlowRecv, FlowSendServer
 
 
@@ -15,32 +16,38 @@ async def __handle_client(reader: StreamReader, writer: StreamWriter):
         FlowJsonDeal(flow_send) as flow_json,
         FlowRecv(reader, flow_json) as flow_recv,
     ):
-        done, _ = await asyncio.wait([flow_send, flow_json, flow_recv], return_when=FIRST_COMPLETED)
-        pass
-    try:
-        done.pop().result()
-    except ConnException as e:
-        print(f'Connection from {addr} is closing: {e}')
-        pass
-    finally:
-        print('Closed the connection')
-        writer.close()
-        await writer.wait_closed()
-        pass
+        set_task = {flow_send.task, flow_json.task, flow_recv.task}
+        try:
+            done, _ = await asyncio.wait(set_task, return_when=FIRST_COMPLETED)
+            done.pop().result()
+            pass
+        except ConnException as e:
+            print(f'Connection from {addr} is closing: {e}')
+            pass
+        except asyncio.CancelledError:
+            print(f'Connection from {addr} is closing')
+            raise
+        except BaseException as e:
+            print(f'什么异常:{type(e)}|{e}')
+            raise e
+        finally:
+            for task in set_task:
+                task.cancel()
+                pass
+            await asyncio.wait(set_task, return_when=ALL_COMPLETED)
+            writer.close()
+            await writer.wait_closed()
+            print('Closed the connection')
+            pass
     pass
 
 
-# 服务端主流程
-@asynccontextmanager
-async def server_main(host: str, port: int):
-    server = await asyncio.start_server(__handle_client, host, port)
-    addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr}')
+async def start_server(host: str, port: int):
+    return await asyncio.start_server(__handle_client, host, port,)
 
+
+async def main(server: Server):
     async with server:
-        await asyncio.sleep(1)
-        task = asyncio.create_task(server.serve_forever())
-        yield task
+        await server.serve_forever()
         pass
-    await asyncio.sleep(1)
     pass

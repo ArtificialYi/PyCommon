@@ -32,7 +32,7 @@ class TcpConn:
             return await asyncio.open_connection(self.__host, self.__port)
         except Exception as e:
             # TODO: 此处需记录断开连接的原因
-            await LoggerLocal.warning(e)
+            await LoggerLocal.warning(f'连接失败原因:{e}')
             return None, None
 
     async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
@@ -82,19 +82,18 @@ class TcpSend:
             FlowRecv(reader, JsonDeal(flow_send.future_map)) as flow_recv,
         ):
             self.__future.set_result(flow_send)
-            done, _ = await asyncio.wait([flow_send, flow_recv], return_when=FIRST_COMPLETED)
-            pass
-
-        self.__future = AsyncBase.get_future()
-        try:
-            done.pop().result()
-        except Exception as e:
-            # TODO: 此处需记录断开连接的原因
-            print(e)
-            pass
-        finally:
-            writer.close()
-            await writer.wait_closed()
+            set_task = {flow_send.task, flow_recv.task}
+            try:
+                done, _ = await asyncio.wait(set_task, return_when=FIRST_COMPLETED)
+                done.pop().result()
+            except Exception as e:
+                # TODO: 此处需记录断开连接的原因
+                print(f'客户端:{type(e)}|{e}')
+                pass
+            finally:
+                self.__future = AsyncBase.get_future()
+                writer.close()
+                await writer.wait_closed()
             pass
         pass
 

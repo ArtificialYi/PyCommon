@@ -26,8 +26,9 @@ class LoopExecBg:
         self.__task_main = AsyncBase.get_done_task()
         pass
 
-    def __await__(self):
-        yield from self.__task_main
+    @property
+    def task(self):
+        return self.__task_main
 
     def run(self):
         if not self.__task_main.done():
@@ -48,8 +49,9 @@ class NormLoop:
         self.__exec_bg = LoopExecBg(func)
         pass
 
-    def __await__(self):
-        yield from self.__exec_bg.__await__()
+    @property
+    def task(self):
+        return self.__exec_bg.task
 
     async def __aenter__(self):
         self.__exec_bg.run()
@@ -69,8 +71,9 @@ class OrderApi(FqsAsync):
         self.__norm_flow = NormLoop(self.fq_order.queue_wait)
         pass
 
-    def __await__(self):
-        yield from self.__norm_flow.__await__()
+    @property
+    def task(self):
+        return self.__norm_flow.task
 
     async def __aenter__(self):
         await FqsAsync.__aenter__(self)
@@ -91,8 +94,9 @@ class OrderApiSync(FqsSync):
         self.__norm_flow = NormLoop(self.fq_order.queue_wait)
         pass
 
-    def __await__(self):
-        yield from self.__norm_flow.__await__()
+    @property
+    def task(self):
+        return self.__norm_flow.task
 
     async def __aenter__(self):
         await FqsSync.__aenter__(self)
@@ -113,8 +117,9 @@ class TaskApi(TqsAsync):
         self.__norm_flow = NormLoop(self.tq_order.queue_wait)
         pass
 
-    def __await__(self):
-        yield from self.__norm_flow.__await__()
+    @property
+    def task(self):
+        return self.__norm_flow.task
 
     async def __aenter__(self):
         await TqsAsync.__aenter__(self)
