@@ -17,7 +17,7 @@ class TestClient:
     async def test_client_no_server(self, mocker: MockerFixture):
         mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
         port = 10010
-        assert await FuncTool.is_await_err(TcpApiManage.service(LOCAL_HOST, port, ''), ConnTimeoutError)
+        assert await FuncTool.await_err(TcpApiManage.service(LOCAL_HOST, port, ''), ConnTimeoutError)
         await TcpApiManage.close(LOCAL_HOST, port)
         await LoggerLocal.shutdown()
         pass

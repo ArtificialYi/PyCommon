@@ -2,6 +2,8 @@ from asyncio import StreamReader, StreamWriter
 import json
 from typing import Any, Optional
 
+from ..tool.json_tool import HyJsonEncoder
+
 from ..tool.loop_tool import NormLoop, OrderApi, TaskApi
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
@@ -22,7 +24,7 @@ class FlowSendServer(OrderApi):
         str_json = json.dumps({
             'id': id,
             'data': data,
-        })
+        }, cls=HyJsonEncoder)
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
         await self.__writer.drain()
         pass
@@ -33,9 +35,9 @@ class FlowJsonDeal(TaskApi):
     """服务端的Json处理流
     不会发生异常
     """
-    def __init__(self, flow_send: FlowSendServer):
+    def __init__(self, flow_send: FlowSendServer, timeout: float = 1):
         self.__flow_send = flow_send
-        TaskApi.__init__(self, self.deal_json)
+        TaskApi.__init__(self, self.deal_json, timeout=timeout)
         pass
 
     async def deal_json(self, json_obj: dict):

@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Awaitable, Callable, Type
+from typing import AsyncGenerator, Awaitable, Callable
 from .base import AsyncBase
 import pytest
 
@@ -80,23 +80,18 @@ class AsyncExecTask:
 
 class FuncTool:
     @staticmethod
-    async def is_await_err(func: Awaitable, type_err: Type[BaseException] = BaseException):
+    async def await_err(func: Awaitable):
         try:
-            await func
-        except BaseException as e:
-            return type(e) == type_err
-        else:
-            return False
+            return await func
+        except Exception as e:
+            return e
 
     @staticmethod
-    async def is_async_gen_err(gen: AsyncGenerator, type_err: Type[BaseException] = BaseException):
+    async def is_async_gen_err(gen: AsyncGenerator):
         try:
-            await FuncTool.__async_gen(gen)
-        except BaseException as e:
-            return type(e) == type_err
-        else:
-            return False
-        pass
+            return await FuncTool.__async_gen(gen)
+        except Exception as e:
+            return e
 
     @staticmethod
     async def __async_gen(gen: AsyncGenerator):

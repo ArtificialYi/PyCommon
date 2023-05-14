@@ -35,7 +35,7 @@ class TestMysqlManage:
             pass
 
         # 抛出异常
-        assert await FuncTool.is_await_err(self.__raise_exception(mysql_manage), MockException)
+        assert await FuncTool.await_err(self.__raise_exception(mysql_manage), MockException)
         pass
 
     async def __raise_exception(self, manage: MysqlManage):

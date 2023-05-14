@@ -32,3 +32,9 @@ class ConnTimeoutError(Exception):
     """连接超时异常
     """
     pass
+
+
+class ServiceTimeoutError(Exception):
+    """服务超时异常
+    """
+    pass

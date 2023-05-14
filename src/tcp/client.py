@@ -3,7 +3,7 @@ from concurrent.futures import FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
-from ..exception.tcp import ConnTimeoutError
+from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 
 from ...configuration.log import LoggerLocal
 
@@ -30,7 +30,7 @@ class TcpConn:
     async def __conn_unit(self):
         try:
             return await asyncio.open_connection(self.__host, self.__port)
-        except BaseException as e:
+        except Exception as e:
             # TODO: 此处需记录断开连接的原因
             await LoggerLocal.warning(e)
             return None, None
@@ -88,7 +88,7 @@ class TcpSend:
         self.__future = AsyncBase.get_future()
         try:
             done.pop().result()
-        except BaseException as e:
+        except Exception as e:
             # TODO: 此处需记录断开连接的原因
             print(e)
             pass
@@ -116,7 +116,10 @@ class TcpSend:
         flow_send = await self.__get_flow_send()
         tcp_id = self.__next_id()
         future = await flow_send.send(tcp_id, path, *args, **kwds)
-        return await asyncio.wait_for(future, self.__api_delay)
+        try:
+            return await asyncio.wait_for(future, self.__api_delay)
+        except asyncio.TimeoutError:
+            raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
     pass
 
 

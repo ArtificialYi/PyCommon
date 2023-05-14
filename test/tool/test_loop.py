@@ -30,16 +30,16 @@ class TestLoopExecBg:
         bg = LoopExecBg(func_tmp.func)
         assert await bg is None
         bg.run()
-        assert await FuncTool.is_await_err(AsyncBase.wait_err(bg, 0.1), asyncio.TimeoutError)
+        assert await FuncTool.await_err(AsyncBase.wait_err(bg, 0.1), asyncio.TimeoutError)
         # 无法同时启动两个loop
         assert FuncTool.is_func_err(bg.run)
 
         # loop同时被两个调用方关闭
         # TODO: 添加异常类型
-        assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()), AlreadyStopException)
+        assert await FuncTool.await_err(asyncio.gather(bg.stop(), bg.stop()), AlreadyStopException)
         assert await bg is None
         # 双检锁
-        assert await FuncTool.is_await_err(bg.stop(), AlreadyStopException)
+        assert await FuncTool.await_err(bg.stop(), AlreadyStopException)
         pass
 
     @PytestAsyncTimeout(2)
@@ -48,7 +48,7 @@ class TestLoopExecBg:
         bg = LoopExecBg(func_tmp.func_err)
         assert await bg is None
         bg.run()
-        assert await FuncTool.is_await_err(bg, MockException)
+        assert await FuncTool.await_err(bg, MockException)
 
         # 因为异常结束的，所以调用stop也不会报错
         await bg.stop()

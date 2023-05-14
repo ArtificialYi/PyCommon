@@ -19,8 +19,8 @@ class TestFuncTool:
         assert not FuncTool.is_func_err(MockFunc.norm_sync)
         assert FuncTool.is_func_err(MockFunc.norm_sync_err)
 
-        assert not await FuncTool.is_await_err(MockFunc.norm_async())
-        assert await FuncTool.is_await_err(MockFunc.norm_async_err(), MockException)
+        assert not await FuncTool.await_err(MockFunc.norm_async())
+        assert await FuncTool.await_err(MockFunc.norm_async_err(), MockException)
 
         assert not await FuncTool.is_async_gen_err(MockFunc.norm_async_gen())
         assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err(), MockException)

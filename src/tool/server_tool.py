@@ -29,6 +29,6 @@ class ServerRegister:
     async def call(cls, path, *args, **kwds) -> Any:
         try:
             return await cls.__call_unit(path, *args, **kwds)
-        except BaseException as e:
+        except Exception as e:
             return e
     pass
