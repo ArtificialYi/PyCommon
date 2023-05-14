@@ -2,6 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
 
+import pytest
+
 from ...mock.func import MockException, MockFunc
 from ...src.tool.func_tool import (
     CallableDecoratorAsync, FieldSwap, FuncTool,
@@ -19,11 +21,14 @@ class TestFuncTool:
         assert not FuncTool.is_func_err(MockFunc.norm_sync)
         assert FuncTool.is_func_err(MockFunc.norm_sync_err)
 
-        assert not await FuncTool.await_err(MockFunc.norm_async())
-        assert await FuncTool.await_err(MockFunc.norm_async_err(), MockException)
+        await MockFunc.norm_async()
+        with pytest.raises(MockException):
+            await MockFunc.norm_async_err()
+            pass
 
-        assert not await FuncTool.is_async_gen_err(MockFunc.norm_async_gen())
-        assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err(), MockException)
+        [_ async for _ in MockFunc.norm_async_gen()]
+        with pytest.raises(MockException):
+            [_ async for _ in MockFunc.norm_async_gen_err()]
         pass
     pass
 

@@ -1,5 +1,7 @@
 import asyncio
 from typing import Any, Callable, Dict, Optional, Tuple
+
+from .func_tool import FuncTool
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
 
@@ -29,6 +31,7 @@ class ServerRegister:
     async def call(cls, path, *args, **kwds) -> Any:
         try:
             return await cls.__call_unit(path, *args, **kwds)
-        except Exception as e:
+        except BaseException as e:
+            FuncTool.cancel_raise(e)
             return e
     pass

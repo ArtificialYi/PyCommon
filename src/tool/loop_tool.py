@@ -4,7 +4,7 @@ from typing import Callable
 from ..exception.tool import AlreadyStopException
 from .map_tool import LockManage
 from .base import AsyncBase
-from .func_tool import FqsAsync, FqsSync, FuncTool, TqsAsync
+from .func_tool import FqsAsync, FqsSync, TqsAsync
 
 
 class LoopExec:
@@ -30,24 +30,12 @@ class LoopExecBg:
         pass
 
     def __await__(self):
-        return (yield from FuncTool.await_no_cancel(self.__task_main).__await__())
+        return (yield from self.__task_main)
 
     def run(self) -> None:
         if not self.__task_main.done():
             raise Exception('已有loop在运行中')
         self.__task_main = AsyncBase.coro2task_exec(self.__exec.loop())
-        pass
-
-    async def stop(self):
-        """
-        1. 未停止 => 任务取消 & 获取任务结果 => 非取消结果则抛出异常
-        2. 已取消的任务 => 逻辑错误 => 抛出异常
-        """
-        task = self.__task_main
-        if task.cancelled():
-            raise AlreadyStopException('loop早已正常停止, 无法再次停止')
-
-        await self.__task_cancel(task)
         pass
 
     async def __task_cancel(self, task: asyncio.Task):
@@ -56,9 +44,23 @@ class LoopExecBg:
                 raise AlreadyStopException('loop早已正常停止, 无法再次停止')
             if not task.done():
                 task.cancel()
-                await FuncTool.await_no_cancel(task)
                 pass
+            await asyncio.sleep(0.1)
             pass
+        pass
+
+    async def __stop(self):
+        if self.__task_main.cancelled():
+            raise AlreadyStopException('loop早已正常停止, 无法再次停止')
+        await self.__task_cancel(self.__task_main)
+
+    async def stop(self):
+        try:
+            await self.__stop()
+        except asyncio.CancelledError:
+            self.__task_main.cancel()
+            await self.__task_main
+            raise
         pass
     pass
 

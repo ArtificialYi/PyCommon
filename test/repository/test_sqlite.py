@@ -1,10 +1,11 @@
+import pytest
 from pytest_mock import MockerFixture
 
 from ...mock.func import MockException
 
 from ...src.repository.db import ActionExec, ActionIter
 
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.tool.func_tool import PytestAsyncTimeout
 
 from ...mock.db.sqlite import MockConnection, MockCursor
 
@@ -37,7 +38,8 @@ class TestSqliteManage:
             pass
 
         # 抛出异常
-        assert await FuncTool.await_err(self.__raise_exception(sqlite_manage), MockException)
+        with pytest.raises(MockException):
+            await self.__raise_exception(sqlite_manage)
         pass
 
     async def __raise_exception(self, sqlite_manage: SqliteManage):

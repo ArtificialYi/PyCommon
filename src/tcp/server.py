@@ -3,7 +3,6 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from ..exception.tcp import ConnException
-from ..tool.base import AsyncBase
 from ..flow.server import FlowJsonDeal, FlowRecv, FlowSendServer
 
 
@@ -39,8 +38,8 @@ async def server_main(host: str, port: int):
     print(f'Serving on {addr}')
 
     async with server:
-        task = AsyncBase.coro2task_exec(server.serve_forever())
         await asyncio.sleep(1)
+        task = asyncio.create_task(server.serve_forever())
         yield task
         pass
     await asyncio.sleep(1)

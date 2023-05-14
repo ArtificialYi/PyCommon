@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import AsyncGenerator, Awaitable, Callable
+from typing import Callable
 from .base import AsyncBase
 import pytest
 
@@ -80,23 +80,9 @@ class AsyncExecTask:
 
 class FuncTool:
     @staticmethod
-    async def await_err(func: Awaitable):
-        try:
-            return await func
-        except Exception as e:
-            return e
-
-    @staticmethod
-    async def is_async_gen_err(gen: AsyncGenerator):
-        try:
-            return await FuncTool.__async_gen(gen)
-        except Exception as e:
-            return e
-
-    @staticmethod
-    async def __async_gen(gen: AsyncGenerator):
-        async for _ in gen:
-            pass
+    def cancel_raise(e: BaseException):
+        if isinstance(e, asyncio.CancelledError):
+            raise e
         pass
 
     @staticmethod
@@ -109,15 +95,6 @@ class FuncTool:
             return True
         else:
             return False
-
-    @staticmethod
-    async def await_no_cancel(func: Awaitable):
-        """取消异常不抛出
-        """
-        try:
-            return await func
-        except asyncio.CancelledError:
-            return None
 
     @staticmethod
     def future_no_cancel(future: asyncio.Future):
