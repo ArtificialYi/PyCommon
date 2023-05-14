@@ -1,6 +1,6 @@
 import asyncio
 from collections import deque
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
 
 
 class BaseTool:
@@ -103,4 +103,11 @@ class AsyncBase:
     @staticmethod
     def call_later(delay, func, *args, **kwds):
         return asyncio.get_running_loop().call_later(delay, func, *args, **kwds)
+
+    @staticmethod
+    async def wait_err(task: Awaitable, timeout: float):
+        done, _ = await asyncio.wait({task}, timeout=timeout)
+        if task not in done:
+            raise asyncio.TimeoutError()
+        return task.result()
     pass

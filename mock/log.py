@@ -1,24 +1,9 @@
+from aiologger import Logger
 
-from .db.base import MockDelay
+from ..src.tool.map_tool import MapKey
 
 
+@MapKey()
 async def get_mock_logger():
-    return MockLog()
-
-
-class MockLog(MockDelay):
-    async def debug(self, *args, **kwds) -> None:
-        await self.mock_asleep()
-
-    async def info(self, *args, **kwds) -> None:
-        await self.mock_asleep()
-
-    async def warning(self, *args, **kwds) -> None:
-        await self.mock_asleep()
-
-    async def error(self, *args, **kwds) -> None:
-        await self.mock_asleep()
-
-    async def shutdown(self) -> None:
-        await self.mock_asleep()
-    pass
+    print('testtestestsetsetsteste')
+    return Logger.with_default_handlers()

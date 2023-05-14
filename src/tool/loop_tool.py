@@ -30,7 +30,7 @@ class LoopExecBg:
         pass
 
     def __await__(self):
-        yield from FuncTool.await_no_cancel(self.__task_main).__await__()
+        return (yield from FuncTool.await_no_cancel(self.__task_main).__await__())
 
     def run(self) -> None:
         if not self.__task_main.done():

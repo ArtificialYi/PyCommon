@@ -1,5 +1,8 @@
 from pytest_mock import MockerFixture
-from asyncio.exceptions import TimeoutError
+
+from ...configuration.log import LoggerLocal
+
+from ...src.exception.tcp import ConnTimeoutError
 
 from ...mock.log import get_mock_logger
 from ...src.tcp.client import TcpApiManage
@@ -14,6 +17,8 @@ class TestClient:
     async def test_client_no_server(self, mocker: MockerFixture):
         mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
         port = 10010
-        assert await FuncTool.is_await_err(TcpApiManage.service(LOCAL_HOST, port, ''), TimeoutError)
+        assert await FuncTool.is_await_err(TcpApiManage.service(LOCAL_HOST, port, ''), ConnTimeoutError)
+        await TcpApiManage.close(LOCAL_HOST, port)
+        await LoggerLocal.shutdown()
         pass
     pass

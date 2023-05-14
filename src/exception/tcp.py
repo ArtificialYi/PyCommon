@@ -26,3 +26,9 @@ class FutureException(Exception):
     """未找到对应的future
     """
     pass
+
+
+class ConnTimeoutError(Exception):
+    """连接超时异常
+    """
+    pass

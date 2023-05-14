@@ -1,9 +1,11 @@
 import asyncio
 
+from ...src.tool.base import AsyncBase
+
 from ...mock.func import MockException
 
 from ...src.exception.tool import AlreadyStopException
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
+from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
 
@@ -25,50 +27,31 @@ class TestLoopExecBg:
     @PytestAsyncTimeout(1)
     async def test_norm(self):
         func_tmp = FuncTmp()
-        # 异常捕获器
-        q_err = QueueException()
         bg = LoopExecBg(func_tmp.func)
-        assert not bg.is_running
-        bg.run(q_err)
-        assert bg.is_running
+        assert await bg is None
+        bg.run()
+        assert await FuncTool.is_await_err(AsyncBase.wait_err(bg, 0.1), asyncio.TimeoutError)
         # 无法同时启动两个loop
         assert FuncTool.is_func_err(bg.run)
 
         # loop同时被两个调用方关闭
         # TODO: 添加异常类型
         assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()), AlreadyStopException)
-        assert not bg.is_running
+        assert await bg is None
         # 双检锁
         assert await FuncTool.is_await_err(bg.stop(), AlreadyStopException)
-
-        # Cancel异常属于常规异常，不会抛出异常
-        await q_err.exception_loop(1)
-
-        # bg也可以不设置异常捕获器，这样子就不会抛出任何异常
-        assert not bg.is_running
-        bg.run()
-        assert bg.is_running
-        await bg.stop()
-        assert not bg.is_running
         pass
 
     @PytestAsyncTimeout(2)
     async def test_err(self):
         func_tmp = FuncTmp()
-        # 异常捕获器
-        q_err = QueueException()
         bg = LoopExecBg(func_tmp.func_err)
-        assert not bg.is_running
-        bg.run(q_err)
-        assert bg.is_running
-        # 因为异常自动结束了
-        await asyncio.sleep(1)
-        assert not bg.is_running
+        assert await bg is None
+        bg.run()
+        assert await FuncTool.is_await_err(bg, MockException)
 
         # 因为异常结束的，所以调用stop也不会报错
         await bg.stop()
-        # 异常错误会被捕获
-        assert await FuncTool.is_await_err(q_err.exception_loop(1), MockException)
         pass
     pass
 

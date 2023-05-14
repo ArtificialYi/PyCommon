@@ -3,6 +3,8 @@ from concurrent.futures import FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
+from ..exception.tcp import ConnTimeoutError
+
 from ...configuration.log import LoggerLocal
 
 from ..tool.loop_tool import LoopExecBg
@@ -16,6 +18,14 @@ class TcpConn:
         self.__host = host
         self.__port = port
         pass
+
+    @property
+    def host(self) -> str:
+        return self.__host
+
+    @property
+    def port(self) -> int:
+        return self.__port
 
     async def __conn_unit(self):
         try:
@@ -93,7 +103,10 @@ class TcpSend:
         pass
 
     async def __get_flow_send(self):
-        return await asyncio.wait_for(self.__future, 0.1) if not self.__future.done() else await self.__future
+        try:
+            return await asyncio.wait_for(self.__future, 0.1) if not self.__future.done() else await self.__future
+        except asyncio.TimeoutError:
+            raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')
 
     def __next_id(self):
         self.__tcp_id += 1
