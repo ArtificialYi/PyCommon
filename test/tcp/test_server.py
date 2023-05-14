@@ -29,7 +29,7 @@ class TestServer:
             # 调用不存在的服务
             res = await TcpApiManage.service(LOCAL_HOST, port, '')
             assert res.get('type') == 'ServiceNotFoundException'
-            await TcpApiManage.close(LOCAL_HOST, port)
+            TcpApiManage.close(LOCAL_HOST, port)
             pass
         await LoggerLocal.shutdown()
         pass
@@ -48,7 +48,7 @@ class TestServer:
             with pytest.raises(ServiceTimeoutError):
                 await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/timeout/func_timeout')
                 pass
-            await TcpApiManage.close(LOCAL_HOST, port)
+            TcpApiManage.close(LOCAL_HOST, port)
             pass
         await LoggerLocal.shutdown()
         pass
@@ -68,7 +68,7 @@ class TestServer:
             assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
             assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
             # 关闭tcp套接字
-            assert await TcpApiManage.close(LOCAL_HOST, port) is None
+            TcpApiManage.close(LOCAL_HOST, port)
             pass
         await LoggerLocal.shutdown()
         pass

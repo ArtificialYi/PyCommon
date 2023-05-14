@@ -3,7 +3,7 @@ import pytest
 
 from ...src.tool.base import AsyncBase
 from ...mock.func import MockException
-from ...src.exception.tool import AlreadyRunException, AlreadyStopException
+from ...src.exception.tool import AlreadyRunException
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
@@ -38,26 +38,26 @@ class TestLoopExecBg:
 
         # loop同时被两个调用方关闭
         # TODO: 添加异常类型
-        bg.stop()
-        # 取消不是实时的
-        bg.stop()
         with pytest.raises(asyncio.CancelledError):
-            await bg
-        with pytest.raises(AlreadyStopException):
-            bg.stop()
+            await bg.stop()
         pass
 
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(1)
     async def test_err(self):
         func_tmp = FuncTmp()
         bg = LoopExecBg(func_tmp.func_err)
         with pytest.raises(asyncio.CancelledError):
             await bg
         bg.run()
+        # 尚未真实运行就被停止了
+        with pytest.raises(asyncio.CancelledError):
+            await bg.stop()
+
+        bg.run()
         with pytest.raises(MockException):
             await bg
-        with pytest.raises(AlreadyStopException):
-            bg.stop()
+        with pytest.raises(MockException):
+            await bg.stop()
         pass
     pass
 

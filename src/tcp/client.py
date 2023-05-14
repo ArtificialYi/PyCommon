@@ -98,8 +98,8 @@ class TcpSend:
             pass
         pass
 
-    async def close(self):
-        await self.__loop_bg.stop()
+    def close(self):
+        self.__loop_bg.stop()
         pass
 
     async def __get_flow_send(self):
@@ -135,7 +135,7 @@ class TcpApiManage:
         return await tcp.api(path, *args, **kwds)
 
     @staticmethod
-    async def close(host: str, port: int):
+    def close(host: str, port: int):
         tcp: TcpSend = TcpApiManage.__get_tcp(host, port)
-        return await tcp.close()
+        return tcp.close()
     pass

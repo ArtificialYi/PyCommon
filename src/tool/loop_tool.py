@@ -1,6 +1,6 @@
 from typing import Callable
 
-from ..exception.tool import AlreadyRunException, AlreadyStopException
+from ..exception.tool import AlreadyRunException
 from .base import AsyncBase
 from .func_tool import FqsAsync, FqsSync, TqsAsync
 
@@ -36,8 +36,6 @@ class LoopExecBg:
         return self
 
     def stop(self):
-        if self.__task_main.done():
-            raise AlreadyStopException('loop早已正常停止, 无法再次停止')
         self.__task_main.cancel()
         return self
     pass
