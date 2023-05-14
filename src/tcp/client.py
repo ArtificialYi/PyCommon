@@ -3,6 +3,8 @@ from concurrent.futures import FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
+from ...configuration.log import LoggerLocal
+
 from ..tool.loop_tool import LoopExecBg
 from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase
@@ -20,7 +22,7 @@ class TcpConn:
             return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
             # TODO: 此处需记录断开连接的原因
-            print(e)
+            await LoggerLocal.warning(e)
             return None, None
 
     async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
@@ -40,6 +42,7 @@ class TcpConn:
             if reader is not None and writer is not None:
                 break
             # TODO: 严重错误告警
+            await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60)
         return reader, writer
 
@@ -71,6 +74,7 @@ class TcpSend:
             self.__future.set_result(flow_send)
             done, _ = await asyncio.wait([flow_send, flow_recv], return_when=FIRST_COMPLETED)
             pass
+
         self.__future = AsyncBase.get_future()
         try:
             done.pop().result()
@@ -89,7 +93,7 @@ class TcpSend:
         pass
 
     async def __get_flow_send(self):
-        return await asyncio.wait_for(self.__future, 1) if not self.__future.done() else await self.__future
+        return await asyncio.wait_for(self.__future, 0.1) if not self.__future.done() else await self.__future
 
     def __next_id(self):
         self.__tcp_id += 1

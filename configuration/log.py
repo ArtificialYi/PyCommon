@@ -17,7 +17,7 @@ LOG_NAME = os.path.join(LOG_ROOT, 'local.log')
 class LoggerLocal:
     @staticmethod
     @MapKey(BaseTool.return_self)
-    async def __get_logger(level: LogLevel = LogLevel.INFO) -> Logger:
+    async def get_logger(level: LogLevel = LogLevel.INFO) -> Logger:
         project_name = await ProjectEnv.get_name()
         logger = Logger(name=project_name, level=level)
         handler_file = AsyncTimedRotatingFileHandler(
@@ -30,21 +30,26 @@ class LoggerLocal:
 
     @staticmethod
     async def debug(*args, **kwds):
-        logger: Logger = await LoggerLocal.__get_logger()
+        logger: Logger = await LoggerLocal.get_logger()
         await logger.debug(*args, **kwds)
 
     @staticmethod
     async def info(*args, **kwds):
-        logger: Logger = await LoggerLocal.__get_logger()
+        logger: Logger = await LoggerLocal.get_logger()
         await logger.info(*args, **kwds)
 
     @staticmethod
     async def warning(*args, **kwds):
-        logger: Logger = await LoggerLocal.__get_logger()
+        logger: Logger = await LoggerLocal.get_logger()
         await logger.warning(*args, **kwds)
 
     @staticmethod
     async def error(*args, **kwds):
-        logger: Logger = await LoggerLocal.__get_logger()
+        logger: Logger = await LoggerLocal.get_logger()
         await logger.error(*args, **kwds)
+
+    @staticmethod
+    async def shutdown():
+        logger: Logger = await LoggerLocal.get_logger()
+        await logger.shutdown()
     pass

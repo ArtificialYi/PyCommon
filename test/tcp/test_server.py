@@ -3,8 +3,6 @@ import asyncio
 from pytest_mock import MockerFixture
 
 from ...mock.log import MockLog
-
-from ...src.tool.log_tool import Logger
 from ...src.tool.server_tool import ServerRegister
 from ...src.exception.tcp import ConnException
 from ...src.tcp.client import TcpApiManage

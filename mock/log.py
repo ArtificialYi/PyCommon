@@ -1,16 +1,24 @@
-from typing import Callable, Dict
-from aiologger.levels import LogLevel
-from .func import MockFunc
+
+from .db.base import MockDelay
 
 
-class MockLog:
-    @staticmethod
-    async def level_dict(level: LogLevel) -> Dict[LogLevel, Callable]:
-        return {
-            LogLevel.DEBUG: MockFunc.norm_async,
-            LogLevel.INFO: MockFunc.norm_async,
-            LogLevel.WARNING: MockFunc.norm_async,
-            LogLevel.ERROR: MockFunc.norm_async,
-            LogLevel.CRITICAL: MockFunc.norm_async,
-        }
+async def get_mock_logger():
+    return MockLog()
+
+
+class MockLog(MockDelay):
+    async def debug(self, *args, **kwds) -> None:
+        await self.mock_asleep()
+
+    async def info(self, *args, **kwds) -> None:
+        await self.mock_asleep()
+
+    async def warning(self, *args, **kwds) -> None:
+        await self.mock_asleep()
+
+    async def error(self, *args, **kwds) -> None:
+        await self.mock_asleep()
+
+    async def shutdown(self) -> None:
+        await self.mock_asleep()
     pass
