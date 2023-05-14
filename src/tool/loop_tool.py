@@ -1,3 +1,5 @@
+import asyncio
+from concurrent.futures import ALL_COMPLETED
 from typing import Callable
 
 from ..exception.tool import AlreadyRunException
@@ -38,7 +40,7 @@ class LoopExecBg:
 
     def stop(self):
         self.__task_main.cancel()
-        return self
+        pass
     pass
 
 

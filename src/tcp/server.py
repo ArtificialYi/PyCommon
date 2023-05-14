@@ -1,53 +1,106 @@
-from asyncio import Server, StreamReader, StreamWriter
+from asyncio import StreamReader, StreamWriter
 import asyncio
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
-from ..exception.tcp import ConnException
-
+from ..tool.base import AsyncBase, BaseTool
+from ..tool.map_tool import MapKey
+from ...configuration.log import LoggerLocal
 from ..flow.server import FlowJsonDeal, FlowRecv, FlowSendServer
 
 
-async def __handle_client(reader: StreamReader, writer: StreamWriter):
-    addr = writer.get_extra_info('peername')
-    print(f'Connection from {addr}')
+class ServerTcp:
+    def __init__(self, host: str, port: int) -> None:
+        self.__host = host
+        self.__port = port
+        self.__task_main = AsyncBase.get_done_task()
+        self.__tasks_handle = set[asyncio.Task]()
+        pass
 
-    async with (
-        FlowSendServer(writer) as flow_send,
-        FlowJsonDeal(flow_send) as flow_json,
-        FlowRecv(reader, flow_json) as flow_recv,
-    ):
-        set_task = {flow_send.task, flow_json.task, flow_recv.task}
+    async def __except(self, e: BaseException, addr: str):
+        if isinstance(e, asyncio.CancelledError):
+            await LoggerLocal.info(f'Connection from {addr} is closing: 服务端关闭')
+            raise
+        await LoggerLocal.warning(f'Connection from {addr} is closing: {type(e)}:{e}')
+
+    async def __tasks_await(self, tasks_flow: set[asyncio.Task], addr):
         try:
-            done, _ = await asyncio.wait(set_task, return_when=FIRST_COMPLETED)
+            done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
             done.pop().result()
+        except BaseException as e:
+            await self.__except(e, addr)
+        finally:
+            for task_flow in tasks_flow:
+                task_flow.cancel()
+                pass
+            await asyncio.wait(tasks_flow, return_when=ALL_COMPLETED)
             pass
-        except ConnException as e:
-            print(f'Connection from {addr} is closing: {e}')
+        pass
+
+    async def __handle(self, reader: StreamReader, writer: StreamWriter):
+        addr = writer.get_extra_info('peername')
+        await LoggerLocal.info(f'Connection from {addr}')
+
+        task_handle: asyncio.Task = asyncio.current_task()  # type: ignore
+        self.__tasks_handle.add(task_handle)
+
+        try:
+            async with (
+                FlowSendServer(writer) as flow_send,
+                FlowJsonDeal(flow_send) as flow_json,
+                FlowRecv(reader, flow_json) as flow_recv,
+            ):
+                tasks_flow = {flow_send.task, flow_json.task, flow_recv.task}
+                try:
+                    await self.__tasks_await(tasks_flow, addr)
+                    pass
+                finally:
+                    writer.close()
+                    await writer.wait_closed()
+                    await LoggerLocal.info('Closed the connection')
+                pass
+            pass
+        finally:
+            self.__tasks_handle.remove(task_handle)
+        pass
+
+    @MapKey(BaseTool.return_self)
+    async def __get_server(self) -> asyncio.Server:
+        return await asyncio.start_server(self.__handle, self.__host, self.__port,)
+
+    async def __handle_await(self):
+        for task_handle in self.__tasks_handle:
+            task_handle.cancel()
+        await asyncio.wait(self.__tasks_handle, return_when=ALL_COMPLETED)
+
+    async def __start(self):
+        server: asyncio.Server = await self.__get_server()
+        try:
+            async with server:
+                await server.serve_forever()
+                pass
             pass
         except asyncio.CancelledError:
-            print(f'Connection from {addr} is closing')
-            raise
-        except BaseException as e:
-            print(f'什么异常:{type(e)}|{e}')
-            raise e
-        finally:
-            for task in set_task:
-                task.cancel()
-                pass
-            await asyncio.wait(set_task, return_when=ALL_COMPLETED)
-            writer.close()
-            await writer.wait_closed()
-            print('Closed the connection')
+            print('server is closing')
+            await self.__handle_await()
+            print('server is closed')
             pass
-    pass
+        pass
 
+    async def start(self):
+        """同一时间只能启动一个task
 
-async def start_server(host: str, port: int):
-    return await asyncio.start_server(__handle_client, host, port,)
+        Returns:
+            _type_: _description_
+        """
+        if not self.__task_main.done():
+            raise Exception(f'已经启动了一个服务:{self.__host}:{self.__port}')
+        self.__task_main = asyncio.create_task(self.__start())
+        await asyncio.sleep(1)
+        return self
 
-
-async def main(server: Server):
-    async with server:
-        await server.serve_forever()
+    async def close(self):
+        server: asyncio.Server = await self.__get_server()
+        server.close()
+        await server.wait_closed()
         pass
     pass

@@ -2,12 +2,13 @@ import asyncio
 from typing import Any, Dict
 from pytest_mock import MockerFixture
 
+from ...src.tool.func_tool import PytestAsyncTimeout
+
+from ...configuration.log import LoggerLocal
 from ...src.tcp.client import TcpApiManage
-
-
 from ...mock.log import get_mock_logger
 from ...src.tool.server_tool import ServerRegister
-from ...src.tcp.server import start_server
+from ...src.tcp.server import ServerTcp
 
 
 LOCAL_HOST = '127.0.0.1'
@@ -16,24 +17,17 @@ LOCAL_HOST = '127.0.0.1'
 class TestServer:
     """测试端口范围: 10000-10009
     """
-    # @PytestAsyncTimeout(3)
+    @PytestAsyncTimeout(2)
     async def test_not_exist(self, mocker: MockerFixture):
         mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
         port = 10000
-        server = await start_server(LOCAL_HOST, port)
-        await asyncio.sleep(2)
+        server = await ServerTcp(LOCAL_HOST, port).start()
         # # 调用不存在的服务
         res: Dict[str, Any] = await TcpApiManage.service(LOCAL_HOST, port, '')
         assert res.get('type') == 'ServiceNotFoundException'
         TcpApiManage.close(LOCAL_HOST, port)
-        server.close()
-        await server.wait_closed()
-        await asyncio.sleep(1)
-        # await asyncio.sleep(1)
-        # res: Dict[str, Any] = await TcpApiManage.service(LOCAL_HOST, port, '')
-        # assert res.get('type') == 'ServiceNotFoundException'
-        # TcpApiManage.close(LOCAL_HOST, port)
-        # await LoggerLocal.shutdown()
+        await server.close()
+        await LoggerLocal.shutdown()
         pass
 
     @staticmethod
