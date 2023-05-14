@@ -1,8 +1,6 @@
-import asyncio
 from typing import Callable
 
-from ..exception.tool import AlreadyStopException
-from .map_tool import LockManage
+from ..exception.tool import AlreadyRunException, AlreadyStopException
 from .base import AsyncBase
 from .func_tool import FqsAsync, FqsSync, TqsAsync
 
@@ -26,42 +24,22 @@ class LoopExecBg:
     def __init__(self, func: Callable) -> None:
         self.__exec = LoopExec(func)
         self.__task_main = AsyncBase.get_done_task()
-        self.__task_lock = LockManage()
         pass
 
     def __await__(self):
-        return (yield from self.__task_main)
+        yield from self.__task_main
 
-    def run(self) -> None:
+    def run(self):
         if not self.__task_main.done():
-            raise Exception('已有loop在运行中')
+            raise AlreadyRunException('已有loop在运行中')
         self.__task_main = AsyncBase.coro2task_exec(self.__exec.loop())
-        pass
+        return self
 
-    async def __task_cancel(self, task: asyncio.Task):
-        async with self.__task_lock.get_lock():
-            if task.cancelled():
-                raise AlreadyStopException('loop早已正常停止, 无法再次停止')
-            if not task.done():
-                task.cancel()
-                pass
-            await asyncio.sleep(0.1)
-            pass
-        pass
-
-    async def __stop(self):
-        if self.__task_main.cancelled():
+    def stop(self):
+        if self.__task_main.done():
             raise AlreadyStopException('loop早已正常停止, 无法再次停止')
-        await self.__task_cancel(self.__task_main)
-
-    async def stop(self):
-        try:
-            await self.__stop()
-        except asyncio.CancelledError:
-            self.__task_main.cancel()
-            await self.__task_main
-            raise
-        pass
+        self.__task_main.cancel()
+        return self
     pass
 
 
@@ -74,14 +52,13 @@ class NormLoop:
 
     def __await__(self):
         yield from self.__exec_bg.__await__()
-        pass
 
     async def __aenter__(self):
         self.__exec_bg.run()
         return self
 
     async def __aexit__(self, *args):
-        await self.__exec_bg.stop()
+        self.__exec_bg.stop()
         pass
     pass
 
