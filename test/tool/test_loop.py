@@ -28,10 +28,10 @@ class TestLoopExecBg:
         func_tmp = FuncTmp()
         bg = LoopExecBg(func_tmp.func)
         with pytest.raises(asyncio.CancelledError):
-            await bg
+            await bg.task
         bg.run()
         with pytest.raises(asyncio.TimeoutError):
-            await AsyncBase.wait_err(bg, 0.1)
+            await AsyncBase.wait_err(bg.task, 0.1)
         # 无法同时启动两个loop
         with pytest.raises(AlreadyRunException):
             bg.run()
@@ -47,7 +47,7 @@ class TestLoopExecBg:
         func_tmp = FuncTmp()
         bg = LoopExecBg(func_tmp.func_err)
         with pytest.raises(asyncio.CancelledError):
-            await bg
+            await bg.task
         bg.run()
         # 尚未真实运行就被停止了
         with pytest.raises(asyncio.CancelledError):
@@ -55,7 +55,7 @@ class TestLoopExecBg:
 
         bg.run()
         with pytest.raises(MockException):
-            await bg
+            await bg.task
         with pytest.raises(MockException):
             await bg.stop()
         pass

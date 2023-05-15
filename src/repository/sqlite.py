@@ -2,7 +2,24 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
+from ..tool.func_tool import FuncTool
+
+from ...configuration.log import LoggerLocal
+
 from .db import ConnExecutor, SqlManage
+
+
+async def __rollback_unit(conn: aiosqlite.Connection):
+    """执行SQL回滚
+    抛出非业务异常
+    """
+    try:
+        await conn.execute('ROLLBACK')
+    except BaseException as e:
+        await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
+        FuncTool.raise_not_exception(e)
+        pass
+    pass
 
 
 @asynccontextmanager
@@ -11,9 +28,10 @@ async def __transaction(conn: aiosqlite.Connection):
         await conn.execute('BEGIN')
         yield conn
         await conn.execute('COMMIT')
-    except Exception:
-        await conn.execute('ROLLBACK')
-        raise
+    except BaseException as e:
+        await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        await __rollback_unit(conn) if isinstance(e, Exception) else None
+        raise e
 
 
 def __dict_factory(cursor, row):  # pragma: no cover

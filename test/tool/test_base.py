@@ -1,6 +1,8 @@
 from asyncio import Future
 import asyncio
 
+import pytest
+
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue, MatchCase
 
@@ -106,11 +108,8 @@ class TestMatchCase:
         # 不存在的key，默认会抛出异常
         match_case_a = MatchCase({})
         key_input = 'tmp'
-        try:
+        with pytest.raises(Exception):
             await match_case_a.match(key_input)
-            assert False
-        except Exception:
-            assert True
             pass
 
         # 不存在key，执行自定义异步函数

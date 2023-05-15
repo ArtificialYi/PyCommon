@@ -85,19 +85,15 @@ class FuncTool:
         """
         try:
             func(*args, **kwds)
-        except Exception:
+        except BaseException:
             return True
         else:
             return False
 
     @staticmethod
-    def future_no_cancel(future: asyncio.Future):
-        """取消异常不抛出
-        """
-        try:
-            return future.exception()
-        except asyncio.CancelledError:
-            return None
+    def raise_not_exception(e: BaseException):
+        if not isinstance(e, Exception):
+            raise
     pass
 
 

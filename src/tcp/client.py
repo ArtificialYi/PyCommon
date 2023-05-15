@@ -3,6 +3,8 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
+from ..tool.func_tool import FuncTool
+
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 
 from ...configuration.log import LoggerLocal
@@ -14,9 +16,10 @@ from ..flow.client import JsonDeal, FlowSendClient, FlowRecv
 
 
 class TcpConn:
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, base: float = 1) -> None:
         self.__host = host
         self.__port = port
+        self.__base = base
         pass
 
     @property
@@ -30,9 +33,9 @@ class TcpConn:
     async def __conn_unit(self):
         try:
             return await asyncio.open_connection(self.__host, self.__port)
-        except Exception as e:
-            # TODO: 此处需记录断开连接的原因
-            await LoggerLocal.warning(f'连接失败原因:{e}')
+        except BaseException as e:
+            await LoggerLocal.exception(e, f'连接失败原因:{e}')
+            FuncTool.raise_not_exception(e)
             return None, None
 
     async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
@@ -42,7 +45,7 @@ class TcpConn:
             reader, writer = await self.__conn_unit()
             if reader is not None and writer is not None:
                 break
-            await asyncio.sleep(2 ** i)
+            await asyncio.sleep(2**i * self.__base)
         return reader, writer
 
     async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
@@ -53,7 +56,7 @@ class TcpConn:
                 break
             # TODO: 严重错误告警
             await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
-            await asyncio.sleep(60)
+            await asyncio.sleep(60 * self.__base)
         return reader, writer
 
     async def conn(self) -> Tuple[StreamReader, StreamWriter]:
@@ -120,12 +123,9 @@ class TcpSend:
         tcp_id = self.__next_id()
         future = await flow_send.send(tcp_id, path, *args, **kwds)
         try:
-            res = await asyncio.wait_for(future, self.__api_delay)
-            return res
+            return await asyncio.wait_for(future, self.__api_delay)
         except asyncio.TimeoutError:
             raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
-        except BaseException:
-            raise
     pass
 
 

@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from ...configuration.log import LoggerLocal
-
 from .func_tool import FuncTool
+
+from ...configuration.log import LoggerLocal
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
 
@@ -33,7 +33,8 @@ class ServerRegister:
     async def call(cls, path, *args, **kwds) -> Any:
         try:
             return await cls.__call_unit(path, *args, **kwds)
-        except Exception as e:
-            await LoggerLocal.warning(f'服务:{path}|{args}|{kwds}|遇到|{type(e).__name__}|{e}')
+        except BaseException as e:
+            await LoggerLocal.exception(e, f'服务:{path}|{args}|{kwds}|遇到|{type(e).__name__}|{e}')
+            FuncTool.raise_not_exception(e)
             return e
     pass

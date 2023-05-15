@@ -3,6 +3,7 @@ import math
 from time import sleep
 
 import pytest
+from sympy import EX
 
 from ...mock.func import MockException, MockFunc
 from ...src.tool.func_tool import (
@@ -84,28 +85,17 @@ class TestCallableDecoratorAsync:
     async def func_tmp(self):
         return True
 
-    def __init_err(self):
-        flag = False
-        try:
-            CallableDecoratorAsync(MockFunc.norm_sync)
-            assert False
-        except Exception:
-            flag = True
-        assert flag
-
     @PytestAsyncTimeout(1)
     async def test(self):
         # 无法使用同步函数构造
-        self.__init_err()
+        with pytest.raises(Exception):
+            CallableDecoratorAsync(MockFunc.norm_sync)
 
         decorator = CallableDecoratorAsync(self.func_decorator)
         # 无法对同步函数封装
         flag = False
-        try:
+        with pytest.raises(Exception):
             decorator(MockFunc.norm_sync)
-            assert False
-        except Exception:
-            flag = True
         assert flag
 
         # 常规

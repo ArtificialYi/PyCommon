@@ -21,6 +21,5 @@ class TestClient:
         with pytest.raises(ConnTimeoutError):
             await TcpApiManage.service(LOCAL_HOST, port, '')
         await TcpApiManage.close(LOCAL_HOST, port)
-        await LoggerLocal.shutdown()
         pass
     pass
