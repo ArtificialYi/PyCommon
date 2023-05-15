@@ -17,15 +17,15 @@ LOCAL_HOST = '127.0.0.1'
 class TestServer:
     """测试端口范围: 10000-10009
     """
-    @PytestAsyncTimeout(4)
+    @PytestAsyncTimeout(1)
     async def test_not_exist(self):
         port = 10000
-        server = await ServerTcp(LOCAL_HOST, port).start(1)
+        server = await ServerTcp(LOCAL_HOST, port).start()
         # # 调用不存在的服务
         res: Dict[str, Any] = await TcpApiManage.service(LOCAL_HOST, port, '')
         assert res.get('type') == 'ServiceNotFoundException'
         await TcpApiManage.close(LOCAL_HOST, port)
-        await server.close(2)
+        await server.close()
         pass
 
     @staticmethod
@@ -33,16 +33,16 @@ class TestServer:
     async def func_timeout():
         return await asyncio.sleep(2)
 
-    @PytestAsyncTimeout(6)
+    @PytestAsyncTimeout(3)
     async def test_service_timeout(self):
         port = 10001
-        server = await ServerTcp(LOCAL_HOST, port).start(1)
+        server = await ServerTcp(LOCAL_HOST, port).start()
         # 调用一个超时服务-2秒超时时间
         with pytest.raises(ServiceTimeoutError):
             await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/timeout/func_timeout')
             pass
         await TcpApiManage.close(LOCAL_HOST, port)
-        await server.close(2)
+        await server.close()
         pass
 
     @staticmethod
@@ -51,15 +51,15 @@ class TestServer:
         await asyncio.sleep(0.1)
         return True
 
-    # @PytestAsyncTimeout(4)
+    @PytestAsyncTimeout(1)
     async def test_service_norm(self):
         port = 10002
-        server = await ServerTcp(LOCAL_HOST, port).start(1)
+        server = await ServerTcp(LOCAL_HOST, port).start()
         # 调用一个正常服务
         assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
         assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
-        # 关闭tcp套接字
         await TcpApiManage.close(LOCAL_HOST, port)
-        await server.close(10)
+        # 关闭tcp套接字
+        await server.close()
         pass
     pass
