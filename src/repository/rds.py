@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from ..tool.func_tool import FuncTool
+from ..tool.func_tool import ExceptTool
 
 from ...configuration.log import LoggerLocal
 
@@ -19,7 +19,7 @@ async def __rollback_unit(conn: aiomysql.Connection):
         await conn.rollback()
     except BaseException as e:
         await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
-        FuncTool.raise_not_exception(e)
+        ExceptTool.raise_not_exception(e)
         pass
     pass
 

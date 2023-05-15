@@ -4,10 +4,7 @@ from time import sleep
 import pytest
 
 from ...mock.func import MockException, MockFunc
-from ...src.tool.func_tool import (
-    CallableDecoratorAsync, FieldSwap, FuncTool,
-    LockThread, PytestAsyncTimeout
-)
+from ...src.tool.func_tool import CallableDecoratorAsync, FieldSwap, LockThread, PytestAsyncTimeout
 
 
 def func_custom():
@@ -17,8 +14,9 @@ def func_custom():
 class TestFuncTool:
     @PytestAsyncTimeout(1)
     async def test(self):
-        assert not FuncTool.is_func_err(MockFunc.norm_sync)
-        assert FuncTool.is_func_err(MockFunc.norm_sync_err)
+        assert MockFunc.norm_sync() is None
+        with pytest.raises(MockException):
+            MockFunc.norm_sync_err()
 
         await MockFunc.norm_async()
         with pytest.raises(MockException):

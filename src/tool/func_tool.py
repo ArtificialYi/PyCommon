@@ -78,18 +78,7 @@ class AsyncExecTask:
     pass
 
 
-class FuncTool:
-    @staticmethod
-    def is_func_err(func: Callable, *args, **kwds):
-        """函数有错误
-        """
-        try:
-            func(*args, **kwds)
-        except BaseException:
-            return True
-        else:
-            return False
-
+class ExceptTool:
     @staticmethod
     def raise_not_exception(e: BaseException):
         if not isinstance(e, Exception):

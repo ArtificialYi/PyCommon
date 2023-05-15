@@ -3,7 +3,7 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
-from ..tool.func_tool import FuncTool
+from ..tool.func_tool import ExceptTool
 
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 
@@ -35,7 +35,7 @@ class TcpConn:
             return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
             await LoggerLocal.exception(e, f'连接失败原因:{e}')
-            FuncTool.raise_not_exception(e)
+            ExceptTool.raise_not_exception(e)
             return None, None
 
     async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
