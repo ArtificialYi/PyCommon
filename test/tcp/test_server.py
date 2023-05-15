@@ -1,10 +1,8 @@
 import asyncio
 from typing import Any, Dict
-from pytest_mock import MockerFixture
 
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tcp.client import TcpApiManage
-from ...mock.log import get_mock_logger
 from ...src.tool.server_tool import ServerRegister
 from ...src.tcp.server import ServerTcp
 
@@ -16,8 +14,7 @@ class TestServer:
     """测试端口范围: 10000-10009
     """
     @PytestAsyncTimeout(3)
-    async def test_not_exist(self, mocker: MockerFixture):
-        mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
+    async def test_not_exist(self):
         port = 10000
         server = await ServerTcp(LOCAL_HOST, port).start()
         # # 调用不存在的服务

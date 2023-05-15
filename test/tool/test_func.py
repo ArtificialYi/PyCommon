@@ -1,9 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
-
 import pytest
-from sympy import EX
 
 from ...mock.func import MockException, MockFunc
 from ...src.tool.func_tool import (
@@ -93,10 +91,8 @@ class TestCallableDecoratorAsync:
 
         decorator = CallableDecoratorAsync(self.func_decorator)
         # 无法对同步函数封装
-        flag = False
         with pytest.raises(Exception):
             decorator(MockFunc.norm_sync)
-        assert flag
 
         # 常规
         assert await self.func_tmp()

@@ -36,10 +36,10 @@ class TestLoopExecBg:
         with pytest.raises(AlreadyRunException):
             bg.run()
 
-        # loop同时被两个调用方关闭
-        # TODO: 添加异常类型
-        with pytest.raises(asyncio.CancelledError):
-            await bg.stop()
+        # 关闭可以调用多次
+        await bg.stop()
+        await bg.stop()
+        await asyncio.gather(bg.stop(), bg.stop())
         pass
 
     @PytestAsyncTimeout(1)
@@ -48,16 +48,13 @@ class TestLoopExecBg:
         bg = LoopExecBg(func_tmp.func_err)
         with pytest.raises(asyncio.CancelledError):
             await bg.task
-        bg.run()
-        # 尚未真实运行就被停止了
-        with pytest.raises(asyncio.CancelledError):
-            await bg.stop()
 
         bg.run()
         with pytest.raises(MockException):
             await bg.task
+        await bg.stop()
         with pytest.raises(MockException):
-            await bg.stop()
+            await bg.task
         pass
     pass
 
