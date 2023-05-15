@@ -31,7 +31,7 @@ class TestBytesTool:
         data_tensor4 = torch.zeros(5).float().requires_grad_(False)
         nn.init.uniform_(data_tensor4)
         data_bytes1 = BytesTool.torch2bytes(data_tensor4)
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             BytesTool.bytes2torch(data_bytes1)
         pass
     pass

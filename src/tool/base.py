@@ -1,6 +1,6 @@
 import asyncio
 from collections import deque
-from typing import Any, Awaitable, Callable, Dict, Iterable, Optional
+from typing import Awaitable, Iterable
 
 
 class BaseTool:
@@ -62,26 +62,6 @@ class DelayCountQueue:
     @property
     def average(self):
         return (self.__deque_sum[-1] - self.__deque_sum[0]) / (len(self.__deque_sum) - 1)
-    pass
-
-
-class MatchCase:
-    def __init__(self, case_dict: Dict[Any, Optional[Callable]], default: Optional[Callable] = None) -> None:
-        self.__case_dict = case_dict
-        self.__case_set = set(self.__case_dict.keys())
-        self.__default = default if default is not None else self.__err_default
-        pass
-
-    async def match(self, key, *args, **kwds):
-        if key not in self.__case_set:
-            return await self.__default(key, *args, **kwds)
-        coro = self.__case_dict[key]
-        if coro is None:
-            return
-        return await coro(*args, **kwds)
-
-    async def __err_default(self, key, *args, **kwds):
-        raise Exception(f'{self}未知{key}异常:{args}|{kwds}')
     pass
 
 

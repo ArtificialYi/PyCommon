@@ -4,7 +4,7 @@ from time import sleep
 import pytest
 
 from ...mock.func import MockException, MockFunc
-from ...src.tool.func_tool import CallableDecoratorAsync, FieldSwap, LockThread, PytestAsyncTimeout
+from ...src.tool.func_tool import FieldSwap, LockThread, PytestAsyncTimeout
 
 
 def func_custom():
@@ -70,31 +70,6 @@ class TestLockThread:
             pass
         pool.shutdown()
         assert self.__class__.NUM == num * pool_size + num_tmp
-        pass
-    pass
-
-
-class TestCallableDecoratorAsync:
-    async def func_decorator(self, func_async, obj, *args, **kwds):
-        return False
-
-    async def func_tmp(self):
-        return True
-
-    @PytestAsyncTimeout(1)
-    async def test(self):
-        # 无法使用同步函数构造
-        with pytest.raises(Exception):
-            CallableDecoratorAsync(MockFunc.norm_sync)
-
-        decorator = CallableDecoratorAsync(self.func_decorator)
-        # 无法对同步函数封装
-        with pytest.raises(Exception):
-            decorator(MockFunc.norm_sync)
-
-        # 常规
-        assert await self.func_tmp()
-        assert not await decorator(self.func_tmp)(self)
         pass
     pass
 
