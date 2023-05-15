@@ -63,12 +63,9 @@ class ServerTcp:
         return await asyncio.start_server(self.__handle, self.__host, self.__port,)
 
     async def __handle_await(self):
-        try:
-            for task_handle in self.__tasks_handle:
-                task_handle.cancel()
-            await asyncio.wait(self.__tasks_handle.copy(), return_when=ALL_COMPLETED)
-        except BaseException:
-            raise
+        for task_handle in self.__tasks_handle:
+            task_handle.cancel()
+        await asyncio.wait(self.__tasks_handle, return_when=ALL_COMPLETED)
 
     async def __start(self):
         server: asyncio.Server = await self.__get_server()
@@ -84,7 +81,7 @@ class ServerTcp:
             raise
         pass
 
-    async def start(self):
+    async def start(self, delay: float = 1):
         """同一时间只能启动一个task
 
         Returns:
@@ -93,7 +90,7 @@ class ServerTcp:
         if not self.__task_main.done():
             raise Exception(f'已经启动了一个服务:{self.__host}:{self.__port}')
         self.__task_main = asyncio.create_task(self.__start())
-        await asyncio.sleep(1)
+        await asyncio.sleep(delay)
         return self
 
     async def close(self, delay: float = 1):
