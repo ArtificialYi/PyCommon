@@ -11,9 +11,9 @@ async def __transaction(conn: aiosqlite.Connection):
         await conn.execute('BEGIN')
         yield conn
         await conn.execute('COMMIT')
-    except Exception as e:
+    except Exception:
         await conn.execute('ROLLBACK')
-        raise e
+        raise
 
 
 def __dict_factory(cursor, row):  # pragma: no cover

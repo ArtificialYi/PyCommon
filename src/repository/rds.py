@@ -13,9 +13,9 @@ async def __transaction(conn: aiomysql.Connection):
         await conn.begin()
         yield
         await conn.commit()
-    except Exception as e:
+    except Exception:
         await conn.rollback()
-        raise e
+        raise
     pass
 
 

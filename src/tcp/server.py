@@ -16,18 +16,13 @@ class ServerTcp:
         self.__tasks_handle = set[asyncio.Task]()
         pass
 
-    async def __except(self, e: BaseException, addr: str):
-        if isinstance(e, asyncio.CancelledError):
-            await LoggerLocal.info(f'Connection from {addr} is closing: 服务端关闭')
-            raise
-        await LoggerLocal.warning(f'Connection from {addr} is closing: {type(e)}:{e}')
-
     async def __tasks_await(self, tasks_flow: set[asyncio.Task], addr):
         try:
             done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
             done.pop().result()
         except BaseException as e:
-            await self.__except(e, addr)
+            await LoggerLocal.exception(e, f'服务端关闭:Connection from {addr} is closing: {type(e).__name__}:{e}')
+            raise
         finally:
             for task_flow in tasks_flow:
                 task_flow.cancel()
@@ -38,7 +33,7 @@ class ServerTcp:
 
     async def __handle(self, reader: StreamReader, writer: StreamWriter):
         addr = writer.get_extra_info('peername')
-        await LoggerLocal.info(f'Connection from {addr}')
+        await LoggerLocal.info(f'服务端：Connection from {addr}')
 
         task_handle: asyncio.Task = asyncio.current_task()  # type: ignore
         self.__tasks_handle.add(task_handle)
@@ -56,7 +51,7 @@ class ServerTcp:
                 finally:
                     writer.close()
                     await writer.wait_closed()
-                    await LoggerLocal.info('Closed the connection')
+                    await LoggerLocal.info('服务端：Closed the connection')
                 pass
             pass
         finally:
@@ -68,9 +63,12 @@ class ServerTcp:
         return await asyncio.start_server(self.__handle, self.__host, self.__port,)
 
     async def __handle_await(self):
-        for task_handle in self.__tasks_handle:
-            task_handle.cancel()
-        await asyncio.wait(self.__tasks_handle, return_when=ALL_COMPLETED)
+        try:
+            for task_handle in self.__tasks_handle:
+                task_handle.cancel()
+            await asyncio.wait(self.__tasks_handle.copy(), return_when=ALL_COMPLETED)
+        except BaseException:
+            raise
 
     async def __start(self):
         server: asyncio.Server = await self.__get_server()
@@ -80,10 +78,10 @@ class ServerTcp:
                 pass
             pass
         except asyncio.CancelledError:
-            print('server is closing')
+            await LoggerLocal.warning('服务端：server is closing')
             await self.__handle_await()
-            print('server is closed')
-            pass
+            await LoggerLocal.warning('服务端：server is closed')
+            raise
         pass
 
     async def start(self):
@@ -98,9 +96,10 @@ class ServerTcp:
         await asyncio.sleep(1)
         return self
 
-    async def close(self):
+    async def close(self, delay: float = 1):
         server: asyncio.Server = await self.__get_server()
         server.close()
         await server.wait_closed()
+        await asyncio.sleep(delay)
         pass
     pass

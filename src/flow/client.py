@@ -2,6 +2,8 @@ from asyncio import StreamReader, StreamWriter
 import asyncio
 from typing import Dict
 
+from ...configuration.log import LoggerLocal
+
 from ..tool.base import AsyncBase
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
@@ -84,7 +86,7 @@ class FlowRecv(NormLoop):
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):
             # 将json数据发送给其他流处理
-            print(f'已接收数据:{json_obj}')
+            await LoggerLocal.info(f'客户端：已接收数据:{json_obj}')
             self.__json_deal.deal_json(json_obj)
         pass
     pass

@@ -2,6 +2,8 @@ from asyncio import StreamReader, StreamWriter
 import json
 from typing import Any, Optional
 
+from ...configuration.log import LoggerLocal
+
 from ..tool.json_tool import HyJsonEncoder
 
 from ..tool.loop_tool import NormLoop, OrderApi, TaskApi
@@ -73,7 +75,7 @@ class FlowRecv(NormLoop):
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):
             # 将json数据发送给其他流处理
-            print(f'已接收数据:{json_obj}')
+            await LoggerLocal.info(f'服务端：已接收数据:{json_obj}')
             await self.__json_deal.deal_json(json_obj)
         pass
     pass

@@ -1,5 +1,5 @@
 import asyncio
-from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from typing import Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
@@ -82,23 +82,27 @@ class TcpSend:
             FlowRecv(reader, JsonDeal(flow_send.future_map)) as flow_recv,
         ):
             self.__future.set_result(flow_send)
-            set_task = {flow_send.task, flow_recv.task}
+            tasks_flow = {flow_send.task, flow_recv.task}
             try:
-                done, _ = await asyncio.wait(set_task, return_when=FIRST_COMPLETED)
+                done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
                 done.pop().result()
-            except Exception as e:
+            except BaseException as e:
                 # TODO: 此处需记录断开连接的原因
-                print(f'客户端:{type(e)}|{e}')
-                pass
+                await LoggerLocal.exception(e, f'客户端关闭:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
+                raise
             finally:
+                for task_flow in tasks_flow:
+                    task_flow.cancel()
                 self.__future = AsyncBase.get_future()
                 writer.close()
-                await writer.wait_closed()
+                task_close = asyncio.create_task(writer.wait_closed())
+                await asyncio.wait({*tasks_flow, task_close}, return_when=ALL_COMPLETED)
+                pass
             pass
         pass
 
-    def close(self):
-        self.__loop_bg.stop()
+    async def close(self):
+        await self.__loop_bg.stop()
         pass
 
     async def __get_flow_send(self):
@@ -116,9 +120,12 @@ class TcpSend:
         tcp_id = self.__next_id()
         future = await flow_send.send(tcp_id, path, *args, **kwds)
         try:
-            return await asyncio.wait_for(future, self.__api_delay)
+            res = await asyncio.wait_for(future, self.__api_delay)
+            return res
         except asyncio.TimeoutError:
             raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+        except BaseException:
+            raise
     pass
 
 
@@ -134,7 +141,7 @@ class TcpApiManage:
         return await tcp.api(path, *args, **kwds)
 
     @staticmethod
-    def close(host: str, port: int):
+    async def close(host: str, port: int):
         tcp: TcpSend = TcpApiManage.__get_tcp(host, port)
-        return tcp.close()
+        return await tcp.close()
     pass

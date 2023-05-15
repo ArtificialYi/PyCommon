@@ -1,3 +1,4 @@
+import asyncio
 from datetime import time
 import os
 from aiologger.levels import LogLevel
@@ -47,6 +48,19 @@ class LoggerLocal:
     async def error(*args, **kwds):
         logger: Logger = await LoggerLocal.get_logger()
         await logger.error(*args, **kwds)
+
+    @staticmethod
+    async def exception(e: BaseException, *args, **kwds):
+        logger: Logger = await LoggerLocal.get_logger()
+        if isinstance(e, Exception):
+            await logger.error(*args, **kwds)
+            return
+
+        if isinstance(e, asyncio.CancelledError):
+            await logger.warning(*args, **kwds)
+            return
+
+        await logger.exception(e, *args, **kwds)
 
     @staticmethod
     async def shutdown():

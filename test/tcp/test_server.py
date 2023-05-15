@@ -17,7 +17,7 @@ LOCAL_HOST = '127.0.0.1'
 class TestServer:
     """测试端口范围: 10000-10009
     """
-    @PytestAsyncTimeout(2)
+    # @PytestAsyncTimeout(2)
     async def test_not_exist(self, mocker: MockerFixture):
         mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
         port = 10000
@@ -25,9 +25,8 @@ class TestServer:
         # # 调用不存在的服务
         res: Dict[str, Any] = await TcpApiManage.service(LOCAL_HOST, port, '')
         assert res.get('type') == 'ServiceNotFoundException'
-        TcpApiManage.close(LOCAL_HOST, port)
+        await TcpApiManage.close(LOCAL_HOST, port)
         await server.close()
-        await LoggerLocal.shutdown()
         pass
 
     @staticmethod

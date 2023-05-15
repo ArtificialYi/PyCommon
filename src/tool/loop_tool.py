@@ -38,8 +38,9 @@ class LoopExecBg:
         self.__task_main = AsyncBase.coro2task_exec(self.__exec.loop())
         return self
 
-    def stop(self):
+    async def stop(self):
         self.__task_main.cancel()
+        await asyncio.wait({self.__task_main}, return_when=ALL_COMPLETED)
         pass
     pass
 
@@ -60,7 +61,7 @@ class NormLoop:
         return self
 
     async def __aexit__(self, *args):
-        self.__exec_bg.stop()
+        await self.__exec_bg.stop()
         pass
     pass
 
@@ -84,7 +85,7 @@ class OrderApi(FqsAsync):
 
     async def __aexit__(self, *args):
         await self.__norm_flow.__aexit__(*args)
-        return await FqsAsync.__aexit__(self, *args)
+        await FqsAsync.__aexit__(self, *args)
     pass
 
 
@@ -107,7 +108,7 @@ class OrderApiSync(FqsSync):
 
     async def __aexit__(self, *args):
         await self.__norm_flow.__aexit__(*args)
-        return await FqsSync.__aexit__(self, *args)
+        await FqsSync.__aexit__(self, *args)
     pass
 
 

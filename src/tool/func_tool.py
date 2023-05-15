@@ -80,12 +80,6 @@ class AsyncExecTask:
 
 class FuncTool:
     @staticmethod
-    def cancel_raise(e: BaseException):
-        if isinstance(e, asyncio.CancelledError):
-            raise e
-        pass
-
-    @staticmethod
     def is_func_err(func: Callable, *args, **kwds):
         """函数有错误
         """
