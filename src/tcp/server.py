@@ -2,8 +2,10 @@ from asyncio import StreamReader, StreamWriter
 import asyncio
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
+from ..exception.tcp import ServerAlreadyStartError
+
 from ..tool.base import AsyncBase, BaseTool
-from ..tool.map_tool import MapKey
+from ..tool.map_tool import LockManage, MapKey
 from ...configuration.log import LoggerLocal
 from ..flow.server import FlowRecv, FlowSendServer
 
@@ -14,6 +16,7 @@ class ServerTcp:
         self.__port = port
         self.__task_main = AsyncBase.get_done_task()
         self.__tasks_handle = set[asyncio.Task]()
+        self.__lock = LockManage()
         pass
 
     async def __tasks_await(self, tasks_flow: set[asyncio.Task], addr):
@@ -61,7 +64,7 @@ class ServerTcp:
     async def __start(self):
         server: asyncio.Server = await self.__get_server()
         try:
-            async with server:
+            async with server:  # pragma: no cover
                 await server.serve_forever()
         except asyncio.CancelledError:
             await LoggerLocal.warning('服务端：server is closing')
@@ -73,14 +76,22 @@ class ServerTcp:
         """同一时间只能启动一个task
         """
         if not self.__task_main.done():
-            raise Exception(f'已经启动了一个服务:{self.__host}:{self.__port}')
+            raise ServerAlreadyStartError(f'已经启动了一个服务:{self.__host}:{self.__port}')
         self.__task_main = asyncio.create_task(self.__start())
         await self.__get_server()
         return self
 
     async def close(self):
-        server: asyncio.Server = await self.__get_server()
-        server.close()
-        await asyncio.wait({self.__task_main}, return_when=ALL_COMPLETED)
+        if self.__task_main.done():
+            return
+
+        async with self.__lock.get_lock():
+            if self.__task_main.done():
+                return
+
+            server: asyncio.Server = await self.__get_server()
+            server.close()
+            await asyncio.wait({self.__task_main}, return_when=ALL_COMPLETED)
+            pass
         pass
     pass

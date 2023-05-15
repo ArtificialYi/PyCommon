@@ -68,8 +68,8 @@ class TcpConn:
 
 
 class TcpSend:
-    def __init__(self, host: str, port: int, api_delay: float = 2) -> None:
-        self.__conn = TcpConn(host, port)
+    def __init__(self, host: str, port: int, api_delay: float = 2, conn_delay: float = 1) -> None:
+        self.__conn = TcpConn(host, port, conn_delay)
         self.__loop_bg = LoopExecBg(self.__flow_run)
         self.__loop_bg.run()
         self.__future: asyncio.Future[FlowSendClient] = AsyncBase.get_future()
@@ -100,9 +100,6 @@ class TcpSend:
                 writer.close()
                 task_close = asyncio.create_task(writer.wait_closed())
                 await asyncio.wait({*tasks_flow, task_close}, return_when=ALL_COMPLETED)
-                pass
-            pass
-        pass
 
     async def close(self):
         await self.__loop_bg.stop()

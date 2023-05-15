@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import pytest
 
-from ...src.exception.tcp import ServiceTimeoutError
+from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
 
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tcp.client import TcpApiManage
@@ -17,6 +17,21 @@ LOCAL_HOST = '127.0.0.1'
 class TestServer:
     """测试端口范围: 10000-10009
     """
+
+    @PytestAsyncTimeout(1)
+    async def test_err(self):
+        port = 10000
+        server = ServerTcp(LOCAL_HOST, port)
+        # 同时启动两个会报错
+        with pytest.raises(ServerAlreadyStartError):
+            await asyncio.gather(server.start(), server.start(),)
+
+        # 同时关闭两个没有影响
+        await asyncio.gather(server.close(), server.close(),)
+        # 双检锁
+        await server.close()
+        pass
+
     @PytestAsyncTimeout(1)
     async def test_not_exist(self):
         port = 10000

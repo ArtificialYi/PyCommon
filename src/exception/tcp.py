@@ -16,6 +16,12 @@ class ServiceExistException(Exception):
     pass
 
 
+class ServerAlreadyStartError(Exception):
+    """服务已启动
+    """
+    pass
+
+
 class JsonIdException(Exception):
     """Json数据错误
     """
