@@ -2,26 +2,22 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from ..tool.func_tool import ExceptTool
-
 from ...configuration.log import LoggerLocal
-
 from .db import ConnExecutor, SqlManage
-
 from ...configuration.rds import pool_manage
 
 
-async def __rollback_unit(conn: aiomysql.Connection):
-    """执行SQL回滚
-    抛出非业务异常
-    """
-    try:
-        await conn.rollback()
-    except BaseException as e:
-        await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
-        ExceptTool.raise_not_exception(e)
-        pass
-    pass
+# async def __rollback_unit(conn: aiomysql.Connection):
+#     """执行SQL回滚
+#     抛出非业务异常
+#     """
+#     try:
+#         await conn.rollback()
+#     except BaseException as e:
+#         await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
+#         ExceptTool.raise_not_exception(e)
+#         pass
+#     pass
 
 
 @asynccontextmanager
@@ -35,7 +31,7 @@ async def __transaction(conn: aiomysql.Connection):
         await conn.commit()
     except BaseException as e:
         await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
-        await __rollback_unit(conn) if isinstance(e, Exception) else None
+        await conn.rollback()
         raise
     pass
 

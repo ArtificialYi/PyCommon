@@ -1,10 +1,8 @@
 import asyncio
-from concurrent.futures import ALL_COMPLETED
 from functools import wraps
 import threading
 from typing import Callable
 
-from ...configuration.log import LoggerLocal
 from .base import AsyncBase
 import pytest
 
@@ -40,9 +38,6 @@ class AsyncExecOrder:
         self.__queue.task_done()
         return res
 
-    async def join(self):
-        await self.__queue.join()
-
     async def call_async(self, *args, **kwds):
         # 异步调用，返回一个future
         future = AsyncBase.get_future()
@@ -53,35 +48,6 @@ class AsyncExecOrder:
         # 同步调用，返回一个结果
         future = await self.call_async(*args, **kwds)
         return await future
-    pass
-
-
-class AsyncExecTask:
-    def __init__(self, func: Callable, timeout: float) -> None:
-        self.__queue = asyncio.Queue()
-        self.__func = func
-        self.__is_coro = asyncio.iscoroutinefunction(func)
-        self.__timeout = timeout
-        pass
-
-    async def __func_coro(self, *args, **kwds):
-        res_func = self.__func(*args, **kwds)
-        return await res_func if self.__is_coro else res_func
-
-    async def call_async(self, *args, **kwds):
-        task = AsyncBase.coro2task_exec(asyncio.wait_for(self.__func_coro(*args, **kwds), self.__timeout))
-        await self.__queue.put(task)
-        return task
-
-    async def queue_wait(self):
-        try:
-            task = await self.__queue.get()
-            self.__queue.task_done()
-            await asyncio.wait({task}, return_when=ALL_COMPLETED)
-        except BaseException as e:
-            await LoggerLocal.exception(e, f'任务队列异常:{type(e).__name__}|{e}')
-
-            raise
     pass
 
 

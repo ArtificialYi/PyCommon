@@ -30,8 +30,7 @@ class TestLoopExecBg:
         with pytest.raises(asyncio.CancelledError):
             await bg.task
         bg.run()
-        with pytest.raises(asyncio.TimeoutError):
-            await AsyncBase.wait_err(bg.task, 0.1)
+        assert not await AsyncBase.wait_done(bg.task, 0.1)
         # 无法同时启动两个loop
         with pytest.raises(AlreadyRunException):
             bg.run()

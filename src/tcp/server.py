@@ -28,8 +28,6 @@ class ServerTcp:
                 task_flow.cancel()
                 pass
             await asyncio.wait(tasks_flow, return_when=ALL_COMPLETED)
-            pass
-        pass
 
     async def __handle(self, reader: StreamReader, writer: StreamWriter):
         addr = writer.get_extra_info('peername')
@@ -46,16 +44,13 @@ class ServerTcp:
                 tasks_flow = {flow_send.task, flow_recv.task}
                 try:
                     await self.__tasks_await(tasks_flow, addr)
-                    pass
                 finally:
                     writer.close()
+                    await LoggerLocal.info(f'服务端：Closing connection:{addr}')
                     await writer.wait_closed()
-                    await LoggerLocal.info('服务端：Closed the connection')
-                pass
-            pass
+                    await LoggerLocal.info(f'服务端：Closedthe connection:{addr}')
         finally:
             self.__tasks_handle.remove(task_handle)
-        pass
 
     @MapKey(BaseTool.return_self)
     async def __get_server(self) -> asyncio.Server:
@@ -76,7 +71,6 @@ class ServerTcp:
             await self.__handle_await()
             await LoggerLocal.warning('服务端：server is closed')
             raise
-        pass
 
     async def start(self, delay: float = 1):
         """同一时间只能启动一个task

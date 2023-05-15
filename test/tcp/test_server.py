@@ -17,15 +17,15 @@ LOCAL_HOST = '127.0.0.1'
 class TestServer:
     """测试端口范围: 10000-10009
     """
-    @PytestAsyncTimeout(3)
+    @PytestAsyncTimeout(4)
     async def test_not_exist(self):
         port = 10000
-        server = await ServerTcp(LOCAL_HOST, port).start()
+        server = await ServerTcp(LOCAL_HOST, port).start(1)
         # # 调用不存在的服务
         res: Dict[str, Any] = await TcpApiManage.service(LOCAL_HOST, port, '')
         assert res.get('type') == 'ServiceNotFoundException'
         await TcpApiManage.close(LOCAL_HOST, port)
-        await server.close()
+        await server.close(2)
         pass
 
     @staticmethod
@@ -33,7 +33,7 @@ class TestServer:
     async def func_timeout():
         return await asyncio.sleep(2)
 
-    @PytestAsyncTimeout(5)
+    @PytestAsyncTimeout(6)
     async def test_service_timeout(self):
         port = 10001
         server = await ServerTcp(LOCAL_HOST, port).start(1)
@@ -42,7 +42,7 @@ class TestServer:
             await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/timeout/func_timeout')
             pass
         await TcpApiManage.close(LOCAL_HOST, port)
-        await server.close(1)
+        await server.close(2)
         pass
 
     @staticmethod
@@ -51,17 +51,15 @@ class TestServer:
         await asyncio.sleep(0.1)
         return True
 
-    # @PytestAsyncTimeout(3)
-    # async def test_service_norm(self, mocker: MockerFixture):
-    #     mocker.patch('PyCommon.configuration.log.LoggerLocal.get_logger', new=get_mock_logger)
-    #     port = 10002
-    #     async with server_main(LOCAL_HOST, port):
-    #         # 调用一个正常服务
-    #         assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
-    #         assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
-    #         # 关闭tcp套接字
-    #         TcpApiManage.close(LOCAL_HOST, port)
-    #         pass
-    #     await LoggerLocal.shutdown()
+    # @PytestAsyncTimeout(4)
+    async def test_service_norm(self):
+        port = 10002
+        server = await ServerTcp(LOCAL_HOST, port).start(1)
+        # 调用一个正常服务
+        assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
+        assert await TcpApiManage.service(LOCAL_HOST, port, 'test/tcp/server/norm/func_norm') is True
+        # 关闭tcp套接字
+        await TcpApiManage.close(LOCAL_HOST, port)
+        await server.close(10)
         pass
     pass

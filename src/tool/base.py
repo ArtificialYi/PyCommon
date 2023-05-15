@@ -85,9 +85,7 @@ class AsyncBase:
         return asyncio.get_running_loop().call_later(delay, func, *args, **kwds)
 
     @staticmethod
-    async def wait_err(task: Awaitable, timeout: float):
+    async def wait_done(task: Awaitable, timeout: float):
         done, _ = await asyncio.wait({task}, timeout=timeout)
-        if task not in done:
-            raise asyncio.TimeoutError()
-        return task.result()
+        return task in done
     pass
