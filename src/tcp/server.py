@@ -5,7 +5,7 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from ..tool.base import AsyncBase, BaseTool
 from ..tool.map_tool import MapKey
 from ...configuration.log import LoggerLocal
-from ..flow.server import FlowJsonDeal, FlowRecv, FlowSendServer
+from ..flow.server import FlowRecv, FlowSendServer
 
 
 class ServerTcp:
@@ -41,10 +41,9 @@ class ServerTcp:
         try:
             async with (
                 FlowSendServer(writer) as flow_send,
-                FlowJsonDeal(flow_send) as flow_json,
-                FlowRecv(reader, flow_json) as flow_recv,
+                FlowRecv(reader, flow_send) as flow_recv,
             ):
-                tasks_flow = {flow_send.task, flow_json.task, flow_recv.task}
+                tasks_flow = {flow_send.task, flow_recv.task}
                 try:
                     await self.__tasks_await(tasks_flow, addr)
                     pass
@@ -72,8 +71,6 @@ class ServerTcp:
         try:
             async with server:
                 await server.serve_forever()
-                pass
-            pass
         except asyncio.CancelledError:
             await LoggerLocal.warning('服务端：server is closing')
             await self.__handle_await()

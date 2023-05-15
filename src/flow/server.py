@@ -1,4 +1,5 @@
 from asyncio import StreamReader, StreamWriter
+import asyncio
 import json
 from typing import Any, Optional
 
@@ -6,7 +7,7 @@ from ...configuration.log import LoggerLocal
 
 from ..tool.json_tool import HyJsonEncoder
 
-from ..tool.loop_tool import NormLoop, OrderApi, TaskApi
+from ..tool.loop_tool import NormLoop, OrderApi
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
 from ..tool.server_tool import ServerRegister
@@ -33,13 +34,12 @@ class FlowSendServer(OrderApi):
     pass
 
 
-class FlowJsonDeal(TaskApi):
+class JsonDeal:
     """服务端的Json处理流
     不会发生异常
     """
-    def __init__(self, flow_send: FlowSendServer, timeout: float = 1):
+    def __init__(self, flow_send: FlowSendServer):
         self.__flow_send = flow_send
-        TaskApi.__init__(self, self.deal_json, timeout=timeout)
         pass
 
     async def deal_json(self, json_obj: dict):
@@ -59,11 +59,13 @@ class FlowRecv(NormLoop):
     """
     def __init__(
         self, reader: StreamReader,
-        json_deal: FlowJsonDeal,
+        flow_send: FlowSendServer,
+        timeout: float = 1,
     ) -> None:
         self.__reader = reader
         self.__json_online = JsonOnline()
-        self.__json_deal = json_deal
+        self.__json_deal = JsonDeal(flow_send)
+        self.__timeout = timeout
         NormLoop.__init__(self, self.__recv)
         pass
 
@@ -74,8 +76,8 @@ class FlowRecv(NormLoop):
 
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):
-            # 将json数据发送给其他流处理
             await LoggerLocal.info(f'服务端：已接收数据:{json_obj}')
-            await self.__json_deal.deal_json(json_obj)
+            # 将json数据 异步处理
+            asyncio.create_task(asyncio.wait_for(self.__json_deal.deal_json(json_obj), self.__timeout))
         pass
     pass

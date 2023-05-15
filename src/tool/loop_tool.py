@@ -4,7 +4,7 @@ from typing import Callable
 
 from ..exception.tool import AlreadyRunException
 from .base import AsyncBase
-from .func_tool import FqsAsync, FqsSync, TqsAsync
+from .func_tool import FqsAsync, FqsSync
 
 
 class LoopExec:
@@ -109,27 +109,4 @@ class OrderApiSync(FqsSync):
     async def __aexit__(self, *args):
         await self.__norm_flow.__aexit__(*args)
         await FqsSync.__aexit__(self, *args)
-    pass
-
-
-class TaskApi(TqsAsync):
-    """函数 -> 任务队列执行
-    """
-    def __init__(self, func: Callable, timeout: float = 1) -> None:
-        TqsAsync.__init__(self, func, timeout)
-        self.__norm_flow = NormLoop(self.tq_order.queue_wait)
-        pass
-
-    @property
-    def task(self):
-        return self.__norm_flow.task
-
-    async def __aenter__(self):
-        await TqsAsync.__aenter__(self)
-        await self.__norm_flow.__aenter__()
-        return self
-
-    async def __aexit__(self, *args):
-        await self.__norm_flow.__aexit__(*args)
-        return await TqsAsync.__aexit__(self, *args)
     pass

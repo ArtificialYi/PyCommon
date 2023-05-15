@@ -23,7 +23,7 @@ class FlowSendClient(OrderApiSync):
         pass
 
     def __map_del(self, id: int):
-        del self.__future_map[id]
+        self.__future_map.pop(id, None)
 
     @property
     def future_map(self):
@@ -52,15 +52,15 @@ class JsonDeal:
         self.__map = map
         pass
 
-    def deal_json(self, json_obj: dict):
+    async def deal_json(self, json_obj: dict):
         id = json_obj.get('id')
         if id is None:
-            # TODO: 记录日志
+            await LoggerLocal.warning(f'客户端：未接收到id:{json_obj}')
             return
 
-        future = self.__map.get(id)
+        future = self.__map.pop(id, None)
         if future is None:
-            # TODO: 记录日志
+            await LoggerLocal.error(f'客户端：未找到对应的future:{json_obj}')
             return
         # 将data结果写入future（超时限制）
         future.set_result(json_obj.get('data'))
@@ -87,6 +87,6 @@ class FlowRecv(NormLoop):
         for json_obj in self.__json_online.append(str_tmp):
             # 将json数据发送给其他流处理
             await LoggerLocal.info(f'客户端：已接收数据:{json_obj}')
-            self.__json_deal.deal_json(json_obj)
+            await self.__json_deal.deal_json(json_obj)
         pass
     pass

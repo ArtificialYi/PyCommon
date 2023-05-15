@@ -1,7 +1,10 @@
 import asyncio
+from concurrent.futures import ALL_COMPLETED
 from functools import wraps
 import threading
 from typing import Callable
+
+from ...configuration.log import LoggerLocal
 from .base import AsyncBase
 import pytest
 
@@ -71,10 +74,14 @@ class AsyncExecTask:
         return task
 
     async def queue_wait(self):
-        task = await self.__queue.get()
-        res = await task
-        self.__queue.task_done()
-        return res
+        try:
+            task = await self.__queue.get()
+            self.__queue.task_done()
+            await asyncio.wait({task}, return_when=ALL_COMPLETED)
+        except BaseException as e:
+            await LoggerLocal.exception(e, f'任务队列异常:{type(e).__name__}|{e}')
+
+            raise
     pass
 
 
@@ -189,19 +196,4 @@ class FqsSync(FieldSwapSafe):
     @property
     def fq_order(self) -> AsyncExecOrder:
         return self.__fq_order
-    pass
-
-
-class TqsAsync(FieldSwapSafe):
-    """任务队列的基类
-    Task Queue Safe
-    """
-    def __init__(self, func: Callable, timeout: float) -> None:
-        self.__tq_order = AsyncExecTask(func, timeout)
-        super().__init__(self, func.__name__, self.__tq_order.call_async)
-        pass
-
-    @property
-    def tq_order(self) -> AsyncExecTask:
-        return self.__tq_order
     pass
