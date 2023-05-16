@@ -43,11 +43,6 @@ class AsyncExecOrder:
         future = AsyncBase.get_future()
         await self.__queue.put((future, args, kwds))
         return future
-
-    async def call_sync(self, *args, **kwds):
-        # 同步调用，返回一个结果
-        future = await self.call_async(*args, **kwds)
-        return await future
     pass
 
 
@@ -142,21 +137,6 @@ class FqsAsync(FieldSwapSafe):
     def __init__(self, func: Callable) -> None:
         self.__fq_order = AsyncExecOrder(func)
         super().__init__(self, func.__name__, self.__fq_order.call_async)
-        pass
-
-    @property
-    def fq_order(self) -> AsyncExecOrder:
-        return self.__fq_order
-    pass
-
-
-class FqsSync(FieldSwapSafe):
-    """函数队列的基类
-    Func Queue Safe
-    """
-    def __init__(self, func: Callable) -> None:
-        self.__fq_order = AsyncExecOrder(func)
-        super().__init__(self, func.__name__, self.__fq_order.call_sync)
         pass
 
     @property

@@ -4,15 +4,12 @@ from typing import Dict, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
 from ..tool.func_tool import ExceptTool
-
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
-
 from ...configuration.log import LoggerLocal
-
 from ..tool.loop_tool import LoopExecBg
 from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase
-from ..flow.client import JsonDeal, FlowSendClient, FlowRecv
+from ..flow.client import FlowSendClient, FlowRecv
 
 
 class TcpConn:
@@ -68,23 +65,22 @@ class TcpConn:
 
 
 class TcpClient:
-    def __init__(self, host: str, port: int, api_delay: float = 2, conn_delay: float = 1) -> None:
-        self.__conn = TcpConn(host, port, conn_delay)
+    def __init__(self, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
+        self.__conn = TcpConn(host, port, conn_timeout_base)
         self.__loop_bg = LoopExecBg(self.__flow_run)
         self.__loop_bg.run()
-        self.__future: asyncio.Future[FlowSendClient] = AsyncBase.get_future()
+        self.__future: asyncio.Future[Tuple[FlowSendClient, FlowRecv]] = AsyncBase.get_future()
 
         self.__api_delay = api_delay
-        self.__tcp_id = 0
         pass
 
     async def __flow_run(self):
         reader, writer = await self.__conn.conn()
         async with (
-            FlowSendClient(writer, self.__api_delay * 2) as flow_send,
-            FlowRecv(reader, JsonDeal(flow_send.future_map)) as flow_recv,
+            FlowSendClient(writer) as flow_send,
+            FlowRecv(reader) as flow_recv,
         ):
-            self.__future.set_result(flow_send)
+            self.__future.set_result((flow_send, flow_recv))
             tasks_flow = {flow_send.task, flow_recv.task}
             try:
                 done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
@@ -105,20 +101,18 @@ class TcpClient:
         await self.__loop_bg.stop()
         pass
 
-    async def __get_flow_send(self):
-        try:
-            return await asyncio.wait_for(self.__future, 0.1) if not self.__future.done() else await self.__future
-        except asyncio.TimeoutError:
-            raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')
+    async def __get_flow(self) -> Tuple[FlowSendClient, FlowRecv]:
+        if await AsyncBase.wait_done(self.__future, 0.1):
+            return await self.__future
+        raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')
 
-    def __next_id(self):
-        self.__tcp_id += 1
-        return self.__tcp_id
+    async def wait_conn(self):
+        return await asyncio.wait({self.__future})
 
     async def api(self, path: str, *args, **kwds) -> Dict:
-        flow_send = await self.__get_flow_send()
-        tcp_id = self.__next_id()
-        future = await flow_send.send(tcp_id, path, *args, **kwds)
+        flow_send, flow_recv = await self.__get_flow()
+        tcp_id, future = flow_recv.prepare_id_future(self.__api_delay * 2)
+        await flow_send.send(tcp_id, path, *args, **kwds)
         try:
             return await asyncio.wait_for(future, self.__api_delay)
         except asyncio.TimeoutError:
@@ -135,9 +129,9 @@ class TcpClient:
 class TcpClientManage:
     @classmethod
     @MapKey(lambda _, *args: ':'.join((str(arg) for arg in args)))
-    def __get_client(cls, host: str, port: int, api_delay: int, conn_delay: int) -> TcpClient:
-        return TcpClient(host, port, api_delay / 1000, conn_delay / 1000)
+    def __get_client(cls, host: str, port: int, api_delay: int, conn_timeout_base: int) -> TcpClient:
+        return TcpClient(host, port, api_delay / 1000, conn_timeout_base / 1000)
 
-    def __new__(cls, host: str, port: int, api_delay: float = 2, conn_delay: float = 1) -> TcpClient:
-        return cls.__get_client(host, port, int(api_delay * 1000), int(conn_delay * 1000))
+    def __new__(cls, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> TcpClient:
+        return cls.__get_client(host, port, int(api_delay * 1000), int(conn_timeout_base * 1000))
     pass
