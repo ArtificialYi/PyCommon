@@ -2,7 +2,7 @@ from asyncio import Future
 import asyncio
 
 from ...src.tool.func_tool import PytestAsyncTimeout
-from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue, MatchCase
+from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue
 
 
 class TestBaseTool:
@@ -91,49 +91,6 @@ class TestDelayCountQueue:
     pass
 
 
-class TestMatchCase:
-
-    @staticmethod
-    async def custom_err(key):
-        return key
-
-    @staticmethod
-    async def custom_coro():
-        return 123
-
-    @PytestAsyncTimeout(1)
-    async def test_match(self):
-        # 不存在的key，默认会抛出异常
-        match_case_a = MatchCase({})
-        key_input = 'tmp'
-        try:
-            await match_case_a.match(key_input)
-            assert False
-        except Exception:
-            assert True
-            pass
-
-        # 不存在key，执行自定义异步函数
-        match_case_b = MatchCase({}, TestMatchCase.custom_err)
-        res_custom_a = await match_case_b.match(key_input)
-        assert res_custom_a == key_input
-        assert id(res_custom_a) == id(key_input)
-
-        # 存在key，但是目标为None，则返回值为None
-        match_case_c = MatchCase({
-            key_input: None,
-        })
-        assert await match_case_c.match(key_input) is None
-
-        # 存在key，执行对应异步函数
-        match_case_d = MatchCase({
-            key_input: TestMatchCase.custom_coro,
-        })
-        assert await match_case_d.match(key_input) == 123
-        pass
-    pass
-
-
 class TestAsyncBase:
     @PytestAsyncTimeout(1)
     async def test_future_one(self):
@@ -178,15 +135,16 @@ class TestAsyncBase:
         res_a = 123
         future = AsyncBase.get_future()
         # 耗时1秒
-        task = AsyncBase.coro2task_exec(self.afuture_set(future, res_a))
+        task = asyncio.create_task(self.afuture_set(future, res_a))
         res_b = await future
         res_c = await task
         assert res_a == res_b == res_c
         assert id(res_a) == id(res_b) == id(res_c)
         pass
 
-    def future_set(self, future: Future, res):
+    def iter_future_set(self, future: Future, res):
         future.set_result(res)
+        yield
         return res
 
     @PytestAsyncTimeout(1)
@@ -194,7 +152,7 @@ class TestAsyncBase:
         # 同步转异步
         res_a = 123
         future = AsyncBase.get_future()
-        task = AsyncBase.coro2task_exec(asyncio.to_thread(self.future_set, future, res_a))
+        task = asyncio.create_task(self.iter_future_set(future, res_a))
         res_b = await future
         res_c = await task
         assert res_a == res_b == res_c

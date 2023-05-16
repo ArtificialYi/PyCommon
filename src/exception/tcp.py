@@ -16,6 +16,12 @@ class ServiceExistException(Exception):
     pass
 
 
+class ServerAlreadyStartError(Exception):
+    """服务已启动
+    """
+    pass
+
+
 class JsonIdException(Exception):
     """Json数据错误
     """
@@ -24,5 +30,17 @@ class JsonIdException(Exception):
 
 class FutureException(Exception):
     """未找到对应的future
+    """
+    pass
+
+
+class ConnTimeoutError(Exception):
+    """连接超时异常
+    """
+    pass
+
+
+class ServiceTimeoutError(Exception):
+    """服务超时异常
     """
     pass

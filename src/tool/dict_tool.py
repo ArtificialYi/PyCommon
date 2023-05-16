@@ -11,7 +11,7 @@ class DictTool:
         2. 返回False：格式正确-（是字典 and 所有key存在）
         """
         return isinstance(data, dict) and all(
-            data.get(key, None) is not None
+            data.get(key) is not None
             for key in keys
         )
     pass

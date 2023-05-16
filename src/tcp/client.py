@@ -1,100 +1,137 @@
 import asyncio
-from typing import Tuple
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
+from typing import Dict, Optional, Tuple
+from asyncio import StreamReader, StreamWriter
 
-from ..tool.async_tool import AsyncTool
-
-from ..tool.map_tool import LockManage, MapKey
-
+from ..tool.func_tool import ExceptTool
+from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
+from ...configuration.log import LoggerLocal
+from ..tool.loop_tool import LoopExecBg
+from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase
-from ..tool.func_tool import FuncTool, QueueException
-from ..flow.client import JsonDeal, FlowSendClient, FlowRecv
+from ..flow.client import FlowSendClient, FlowRecvClient
 
 
-class TcpApi:
-    """TCP实际开放的API
-    """
-    def __init__(self, host: str, port: int) -> None:
+class TcpConn:
+    def __init__(self, host: str, port: int, base: float = 1) -> None:
         self.__host = host
         self.__port = port
-        self.__task = AsyncBase.get_done_task()
-        self.__lock = LockManage()
+        self.__base = base
         pass
 
-    async def __flow_run(self, future: asyncio.Future):
-        reader, writer = await asyncio.open_connection(self.__host, self.__port)
+    @property
+    def host(self) -> str:
+        return self.__host
+
+    @property
+    def port(self) -> int:
+        return self.__port
+
+    async def __conn_unit(self):
         try:
-            err_queue = QueueException()
-            future_map = dict()
-            deal = JsonDeal(future_map)
-            async with (
-                FlowSendClient(writer, err_queue) as flow_send,
-                FlowRecv(reader, deal, err_queue),
-            ):  # pragma: no cover
-                future.set_result((flow_send, future_map))
-                await err_queue.exception_loop(3)
+            return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
-            # TODO: 此处需记录每次断开连接的原因
-            # print(e)
-            raise e
-        finally:
-            writer.close()
-            await writer.wait_closed()
+            await LoggerLocal.exception(e, f'连接失败原因:{e}')
+            ExceptTool.raise_not_exception(e)
+            return None, None
 
-    def __next_id(self):
-        self.__tcp_id += 1
-        return self.__tcp_id
+    async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
+        # retry重连机制
+        reader, writer = None, None
+        for i in range(6):
+            reader, writer = await self.__conn_unit()
+            if reader is not None and writer is not None:
+                break
+            await asyncio.sleep(2**i * self.__base)
+        return reader, writer
 
-    async def __get_flow_send(self) -> Tuple[FlowSendClient, int, dict, asyncio.Task]:
-        async with self.__lock.get_lock():
-            if self.__task.done():
-                future: asyncio.Future[Tuple[FlowSendClient, dict]] = asyncio.Future()
-                self.__task = AsyncBase.coro2task_exec(self.__flow_run(future))
-                done, _ = await asyncio.wait([
-                    self.__task, future
-                ], return_when=asyncio.FIRST_COMPLETED)
-                self.__flow_send, self.__future_map = done.pop().result()
-                self.__tcp_id = 0
-                pass
-            pass
-        tcp_id = self.__next_id()
-        return self.__flow_send, tcp_id, self.__future_map, self.__task
+    async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
+        # 严重错误告警
+        while True:
+            reader, writer = await self.__conn_unit()
+            if reader is not None and writer is not None:
+                break
+            # TODO: 严重错误告警
+            await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
+            await asyncio.sleep(60 * self.__base)
+        return reader, writer
 
-    async def api(self, path: str, *args, **kwds):
-        flow_send, tcp_id, future_map, task_main = await self.__get_flow_send()
-        # 添加id映射
-        future_map[tcp_id] = asyncio.Future()
-        await flow_send.send(tcp_id, path, *args, **kwds)
-        try:
-            async with AsyncTool.coro_async_gen(asyncio.wait_for(future_map[tcp_id], 2)) as task:
-                done, _ = await asyncio.wait([
-                    task,
-                    task_main,
-                ], return_when=asyncio.FIRST_COMPLETED)
-                return done.pop().result()
-        finally:
-            del future_map[tcp_id]
-
-    async def close(self):
-        task = self.__task
-        task.cancel()
-        await FuncTool.await_no_cancel(task)
-        pass
+    async def conn(self) -> Tuple[StreamReader, StreamWriter]:
+        reader, writer = await self.__conn_warn()
+        if reader is None or writer is None:
+            reader, writer = await self.__conn_error()
+        return reader, writer
     pass
 
 
-class TcpApiManage:
-    @staticmethod
-    @MapKey(lambda host, port: f'{host}:{port}')
-    def __get_tcp(host: str, port: int) -> TcpApi:
-        return TcpApi(host, port)
+class TcpClient:
+    def __init__(self, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
+        self.__conn = TcpConn(host, port, conn_timeout_base)
+        self.__loop_bg = LoopExecBg(self.__flow_run)
+        self.__loop_bg.run()
+        self.__future: asyncio.Future[Tuple[FlowSendClient, FlowRecvClient]] = AsyncBase.get_future()
 
-    @staticmethod
-    async def service(host: str, port: int, path: str, *args, **kwds):
-        tcp: TcpApi = TcpApiManage.__get_tcp(host, port)
-        return await tcp.api(path, *args, **kwds)
+        self.__api_delay = api_delay
+        pass
 
-    @staticmethod
-    async def close(host: str, port: int):
-        tcp: TcpApi = TcpApiManage.__get_tcp(host, port)
-        return await tcp.close()
+    async def __flow_run(self):
+        reader, writer = await self.__conn.conn()
+        async with (
+            FlowSendClient(writer) as flow_send,
+            FlowRecvClient(reader) as flow_recv,
+        ):
+            self.__future.set_result((flow_send, flow_recv))
+            tasks_flow = {flow_send.task, flow_recv.task}
+            try:
+                done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
+                done.pop().result()
+            except BaseException as e:
+                # TODO: 此处需记录断开连接的原因
+                await LoggerLocal.exception(e, f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
+                raise
+            finally:
+                for task_flow in tasks_flow:
+                    task_flow.cancel()
+                self.__future = AsyncBase.get_future()
+                writer.close()
+                task_close = asyncio.create_task(writer.wait_closed())
+                await asyncio.wait({*tasks_flow, task_close}, return_when=ALL_COMPLETED)
+
+    async def close(self):
+        await self.__loop_bg.stop()
+        pass
+
+    async def __get_flow(self) -> Tuple[FlowSendClient, FlowRecvClient]:
+        if await AsyncBase.wait_done(self.__future, 0.1):
+            return await self.__future
+        raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')
+
+    async def wait_conn(self):
+        return await asyncio.wait({self.__future})
+
+    async def api(self, path: str, *args, **kwds) -> Dict:
+        flow_send, flow_recv = await self.__get_flow()
+        tcp_id, future = flow_recv.prepare_id_future(self.__api_delay * 2)
+        await flow_send.send(tcp_id, path, *args, **kwds)
+        try:
+            return await asyncio.wait_for(future, self.__api_delay)
+        except asyncio.TimeoutError:
+            raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        await self.close()
+    pass
+
+
+class TcpClientManage:
+    @classmethod
+    @MapKey(lambda _, *args: ':'.join((str(arg) for arg in args)))
+    def __get_client(cls, host: str, port: int, api_delay: int, conn_timeout_base: int) -> TcpClient:
+        return TcpClient(host, port, api_delay / 1000, conn_timeout_base / 1000)
+
+    def __new__(cls, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> TcpClient:
+        return cls.__get_client(host, port, int(api_delay * 1000), int(conn_timeout_base * 1000))
     pass

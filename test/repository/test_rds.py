@@ -1,6 +1,7 @@
+import pytest
 from ...mock.func import MockException
 from ...src.repository.db import ActionExec, ActionIter
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout
+from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.repository.rds import MysqlManage
 from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
 from pytest_mock import MockerFixture
@@ -35,7 +36,8 @@ class TestMysqlManage:
             pass
 
         # 抛出异常
-        assert await FuncTool.is_await_err(self.__raise_exception(mysql_manage), MockException)
+        with pytest.raises(MockException):
+            await self.__raise_exception(mysql_manage)
         pass
 
     async def __raise_exception(self, manage: MysqlManage):

@@ -1,6 +1,6 @@
 import asyncio
 from collections import deque
-from typing import Any, Callable, Dict, Iterable, Union
+from typing import Awaitable, Iterable
 
 
 class BaseTool:
@@ -65,38 +65,23 @@ class DelayCountQueue:
     pass
 
 
-class MatchCase:
-    def __init__(self, case_dict: Dict[Any, Union[Callable, None]], default: Union[Callable, None] = None) -> None:
-        self.__case_dict = case_dict
-        self.__case_set = set(self.__case_dict.keys())
-        self.__default = default if default is not None else self.__err_default
-        pass
-
-    async def match(self, key, *args, **kwds):
-        if key not in self.__case_set:
-            return await self.__default(key, *args, **kwds)
-        coro = self.__case_dict[key]
-        if coro is None:
-            return
-        return await coro(*args, **kwds)
-
-    async def __err_default(self, key, *args, **kwds):
-        raise Exception(f'{self}未知{key}异常:{args}|{kwds}')
-    pass
-
-
 class AsyncBase:
     @staticmethod
     def get_future():
         return asyncio.get_running_loop().create_future()
 
     @staticmethod
-    def coro2task_exec(coro):
-        return asyncio.get_running_loop().create_task(coro)
-
-    @staticmethod
     def get_done_task() -> asyncio.Task:
-        future = asyncio.get_event_loop().create_future()
+        future = AsyncBase.get_future()
         future.cancel()
         return asyncio.ensure_future(future)
+
+    @staticmethod
+    def call_later(delay, func, *args, **kwds):
+        return asyncio.get_running_loop().call_later(delay, func, *args, **kwds)
+
+    @staticmethod
+    async def wait_done(task: Awaitable, timeout: float):
+        done, _ = await asyncio.wait({task}, timeout=timeout)
+        return task in done
     pass

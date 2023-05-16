@@ -28,11 +28,7 @@ class EnvEnum(Enum):
     pass
 
 
-class ConfigEnv:
-    """基础的配置读取类
-    1. 排除在common自身的单测范围外
-    2. 项目单测调用时需要mock
-    """
+class ProjectEnv:
     @classmethod
     @MapKey()
     async def __config_project(cls) -> ConfigParser:
@@ -46,14 +42,24 @@ class ConfigEnv:
         return await ConfigTool.get_config(path_project_root)
 
     @classmethod
-    async def __env_enum_project(cls) -> EnvEnum:
-        """获取项目环境
-        """
+    async def get_env(cls):
         config_project = await cls.__config_project()
         env_pre = config_project.get('hy_project', 'env_pre', fallback='HY_ENV')
         env_str = os.environ.get(env_pre, EnvEnum.DEV.value)
         return EnvEnum(env_str)
 
+    @classmethod
+    async def get_name(cls):
+        config_project = await cls.__config_project()
+        return config_project.get('hy_project', 'project_name', fallback='HY_PROJECT')
+    pass
+
+
+class ConfigEnv:
+    """基础的配置读取类
+    1. 排除在common自身的单测范围外
+    2. 项目单测调用时需要mock
+    """
     @classmethod
     @MapKey()
     async def config_default(cls):
@@ -67,7 +73,7 @@ class ConfigEnv:
     async def config_env(cls):
         """环境独有的配置文件
         """
-        env_project = await cls.__env_enum_project()
+        env_project = await ProjectEnv.get_env()
         path_env = os.path.join(CONFIG_ROOT, f'{env_project.lower()}.ini')
         return await ConfigTool.get_config(path_env)
     pass

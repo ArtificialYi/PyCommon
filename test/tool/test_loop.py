@@ -1,9 +1,10 @@
 import asyncio
+import pytest
 
+from ...src.tool.base import AsyncBase
 from ...mock.func import MockException
-
-from ...src.exception.tool import AlreadyStopException
-from ...src.tool.func_tool import FuncTool, PytestAsyncTimeout, QueueException
+from ...src.exception.tool import AlreadyRunException
+from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
 
@@ -25,50 +26,34 @@ class TestLoopExecBg:
     @PytestAsyncTimeout(1)
     async def test_norm(self):
         func_tmp = FuncTmp()
-        # 异常捕获器
-        q_err = QueueException()
         bg = LoopExecBg(func_tmp.func)
-        assert not bg.is_running
-        bg.run(q_err)
-        assert bg.is_running
-        # 无法同时启动两个loop
-        assert FuncTool.is_func_err(bg.run)
-
-        # loop同时被两个调用方关闭
-        # TODO: 添加异常类型
-        assert await FuncTool.is_await_err(asyncio.gather(bg.stop(), bg.stop()), AlreadyStopException)
-        assert not bg.is_running
-        # 双检锁
-        assert await FuncTool.is_await_err(bg.stop(), AlreadyStopException)
-
-        # Cancel异常属于常规异常，不会抛出异常
-        await q_err.exception_loop(1)
-
-        # bg也可以不设置异常捕获器，这样子就不会抛出任何异常
-        assert not bg.is_running
+        with pytest.raises(asyncio.CancelledError):
+            await bg.task
         bg.run()
-        assert bg.is_running
+        assert not await AsyncBase.wait_done(bg.task, 0.1)
+        # 无法同时启动两个loop
+        with pytest.raises(AlreadyRunException):
+            bg.run()
+
+        # 关闭可以调用多次
         await bg.stop()
-        assert not bg.is_running
+        await bg.stop()
+        await asyncio.gather(bg.stop(), bg.stop())
         pass
 
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(1)
     async def test_err(self):
         func_tmp = FuncTmp()
-        # 异常捕获器
-        q_err = QueueException()
         bg = LoopExecBg(func_tmp.func_err)
-        assert not bg.is_running
-        bg.run(q_err)
-        assert bg.is_running
-        # 因为异常自动结束了
-        await asyncio.sleep(1)
-        assert not bg.is_running
+        with pytest.raises(asyncio.CancelledError):
+            await bg.task
 
-        # 因为异常结束的，所以调用stop也不会报错
+        bg.run()
+        with pytest.raises(MockException):
+            await bg.task
         await bg.stop()
-        # 异常错误会被捕获
-        assert await FuncTool.is_await_err(q_err.exception_loop(1), MockException)
+        with pytest.raises(MockException):
+            await bg.task
         pass
     pass
 
@@ -77,8 +62,7 @@ class TestNormLoop:
     @PytestAsyncTimeout(2)
     async def test(self):
         func_tmp = FuncTmp()
-        norm = NormLoop(func_tmp.func)
-        async with norm:
+        async with NormLoop(func_tmp.func):
             assert func_tmp.num == 0
             await asyncio.sleep(1)
             assert func_tmp.num > 0

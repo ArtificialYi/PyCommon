@@ -1,5 +1,5 @@
 import json
-from typing import Generator, Union
+from typing import Generator, Optional
 
 
 class JsonOnline:
@@ -17,7 +17,7 @@ class JsonOnline:
             yield json_obj
         pass
 
-    def __step(self) -> Union[dict, None]:
+    def __step(self) -> Optional[dict]:
         pos = self.__cache[self.__idx:].find('\r\n')
         self.__idx = self.__idx + pos + 1 if pos != -1 else len(self.__cache) - 1
         if pos == -1:

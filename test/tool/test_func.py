@@ -1,12 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 import math
 from time import sleep
+import pytest
 
 from ...mock.func import MockException, MockFunc
-from ...src.tool.func_tool import (
-    CallableDecoratorAsync, FieldSwap, FuncTool,
-    LockThread, PytestAsyncTimeout
-)
+from ...src.tool.func_tool import FieldSwap, LockThread, PytestAsyncTimeout
 
 
 def func_custom():
@@ -16,14 +14,18 @@ def func_custom():
 class TestFuncTool:
     @PytestAsyncTimeout(1)
     async def test(self):
-        assert not FuncTool.is_func_err(MockFunc.norm_sync)
-        assert FuncTool.is_func_err(MockFunc.norm_sync_err)
+        assert MockFunc.norm_sync() is None
+        with pytest.raises(MockException):
+            MockFunc.norm_sync_err()
 
-        assert not await FuncTool.is_await_err(MockFunc.norm_async())
-        assert await FuncTool.is_await_err(MockFunc.norm_async_err(), MockException)
+        await MockFunc.norm_async()
+        with pytest.raises(MockException):
+            await MockFunc.norm_async_err()
+            pass
 
-        assert not await FuncTool.is_async_gen_err(MockFunc.norm_async_gen())
-        assert await FuncTool.is_async_gen_err(MockFunc.norm_async_gen_err(), MockException)
+        [_ async for _ in MockFunc.norm_async_gen()]
+        with pytest.raises(MockException):
+            [_ async for _ in MockFunc.norm_async_gen_err()]
         pass
     pass
 
@@ -68,44 +70,6 @@ class TestLockThread:
             pass
         pool.shutdown()
         assert self.__class__.NUM == num * pool_size + num_tmp
-        pass
-    pass
-
-
-class TestCallableDecoratorAsync:
-    async def func_decorator(self, func_async, obj, *args, **kwds):
-        return False
-
-    async def func_tmp(self):
-        return True
-
-    def __init_err(self):
-        flag = False
-        try:
-            CallableDecoratorAsync(MockFunc.norm_sync)
-            assert False
-        except Exception:
-            flag = True
-        assert flag
-
-    @PytestAsyncTimeout(1)
-    async def test(self):
-        # 无法使用同步函数构造
-        self.__init_err()
-
-        decorator = CallableDecoratorAsync(self.func_decorator)
-        # 无法对同步函数封装
-        flag = False
-        try:
-            decorator(MockFunc.norm_sync)
-            assert False
-        except Exception:
-            flag = True
-        assert flag
-
-        # 常规
-        assert await self.func_tmp()
-        assert not await decorator(self.func_tmp)(self)
         pass
     pass
 

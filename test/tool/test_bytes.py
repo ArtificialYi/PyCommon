@@ -1,3 +1,4 @@
+import pytest
 from ...src.tool.bytes_tool import BytesTool
 import torch
 from torch import nn
@@ -30,11 +31,7 @@ class TestBytesTool:
         data_tensor4 = torch.zeros(5).float().requires_grad_(False)
         nn.init.uniform_(data_tensor4)
         data_bytes1 = BytesTool.torch2bytes(data_tensor4)
-        try:
+        with pytest.raises(ValueError):
             BytesTool.bytes2torch(data_bytes1)
-            assert False
-        except Exception:
-            assert True
-            pass
         pass
     pass

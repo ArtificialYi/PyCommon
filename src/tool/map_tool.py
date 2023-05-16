@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from typing import Callable, Union
+from typing import Callable, Optional
 
 
 class LockManage:
@@ -10,7 +10,7 @@ class LockManage:
 
     def get_lock(self) -> asyncio.Lock:
         loop = asyncio.get_event_loop()
-        if self.__map_lock.get(loop, None) is None:
+        if self.__map_lock.get(loop) is None:
             self.__map_lock[loop] = asyncio.Lock()
         return self.__map_lock[loop]
     pass
@@ -18,7 +18,7 @@ class LockManage:
 
 class MapKey:
     class Sync:
-        def __init__(self, func_key: Union[Callable, None] = None) -> None:
+        def __init__(self, func_key: Optional[Callable] = None) -> None:
             self.__map = dict()
             self.__func_key = func_key
             pass
@@ -27,7 +27,7 @@ class MapKey:
             @wraps(func_value)
             def wrapper(*args, **kwds):
                 key = self.__get_key(*args, **kwds)
-                if self.__map.get(key, None) is None:
+                if self.__map.get(key) is None:
                     self.__map[key] = func_value(*args, **kwds)
                 return self.__map[key]
             return wrapper
@@ -39,7 +39,7 @@ class MapKey:
         pass
 
     class AsyncLock:
-        def __init__(self, func_key: Union[Callable, None]) -> None:
+        def __init__(self, func_key: Optional[Callable]) -> None:
             self.__map = dict()
             self.__func_key = func_key
             self.__iscoro = asyncio.iscoroutinefunction(func_key)
@@ -54,11 +54,11 @@ class MapKey:
 
         async def __wrapper(self, func_value: Callable, *args, **kwds):
             key = await self.__get_key(*args, **kwds)
-            if self.__map.get(key, None) is not None:
+            if self.__map.get(key) is not None:
                 return self.__map[key]
 
             async with self.__lock.get_lock():
-                if self.__map.get(key, None) is not None:
+                if self.__map.get(key) is not None:
                     return self.__map[key]
                 self.__map[key] = await func_value(*args, **kwds)
             return self.__map[key]
@@ -70,7 +70,7 @@ class MapKey:
             return await key_res if self.__iscoro else key_res
         pass
 
-    def __init__(self, func_key: Union[Callable, None] = None) -> None:
+    def __init__(self, func_key: Optional[Callable] = None) -> None:
         self.__func_key = func_key
         print(f'MapKey初始化:{func_key.__name__ if func_key is not None else func_key}')
         pass
