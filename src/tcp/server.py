@@ -10,7 +10,7 @@ from ...configuration.log import LoggerLocal
 from ..flow.server import FlowRecv, FlowSendServer
 
 
-class ServerTcp:
+class TcpServer:
     def __init__(self, host: str, port: int) -> None:
         self.__host = host
         self.__port = port
@@ -96,4 +96,10 @@ class ServerTcp:
             await asyncio.wait({self.__task_main}, return_when=ALL_COMPLETED)
             pass
         pass
+
+    async def __aenter__(self):
+        return await self.start()
+
+    async def __aexit__(self, *args):
+        await self.close()
     pass

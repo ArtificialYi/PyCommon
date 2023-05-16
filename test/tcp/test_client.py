@@ -1,6 +1,6 @@
 import pytest
 
-from ...src.tcp.server import ServerTcp
+from ...src.tcp.server import TcpServer
 
 from ...src.exception.tcp import ConnTimeoutError
 from ...src.tcp.client import TcpClientManage
@@ -25,7 +25,7 @@ class TestClient:
     async def test_server_close(self):
         port = 10011
         # 启动服务
-        server = await ServerTcp(LOCAL_HOST, port).start()
+        server = await TcpServer(LOCAL_HOST, port).start()
         async with TcpClientManage(LOCAL_HOST, port) as client:
             await client.api('')
             # 关闭服务

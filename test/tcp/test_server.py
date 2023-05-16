@@ -5,7 +5,7 @@ from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tcp.client import TcpClientManage
 from ...src.tool.server_tool import ServerRegister
-from ...src.tcp.server import ServerTcp
+from ...src.tcp.server import TcpServer
 
 
 LOCAL_HOST = '127.0.0.1'
@@ -18,7 +18,7 @@ class TestServer:
     @PytestAsyncTimeout(1)
     async def test_err(self):
         port = 10000
-        server = ServerTcp(LOCAL_HOST, port)
+        server = TcpServer(LOCAL_HOST, port)
         # 同时启动两个会报错
         with pytest.raises(ServerAlreadyStartError):
             await asyncio.gather(server.start(), server.start(),)
@@ -32,12 +32,13 @@ class TestServer:
     @PytestAsyncTimeout(1)
     async def test_not_exist(self):
         port = 10000
-        server = await ServerTcp(LOCAL_HOST, port).start()
         # # 调用不存在的服务
-        async with TcpClientManage(LOCAL_HOST, port) as client:
+        async with (
+            TcpServer(LOCAL_HOST, port),
+            TcpClientManage(LOCAL_HOST, port) as client,
+        ):
             res = await client.api('')
             assert res.get('type') == 'ServiceNotFoundException'
-        await server.close()
         pass
 
     @staticmethod
@@ -48,12 +49,12 @@ class TestServer:
     @PytestAsyncTimeout(3)
     async def test_service_timeout(self):
         port = 10001
-        server = await ServerTcp(LOCAL_HOST, port).start()
-        # 调用一个超时服务-2秒超时时间
-        with pytest.raises(ServiceTimeoutError):
-            async with TcpClientManage(LOCAL_HOST, port) as client:
+        async with (
+            TcpServer(LOCAL_HOST, port),
+            TcpClientManage(LOCAL_HOST, port) as client
+        ):
+            with pytest.raises(ServiceTimeoutError):
                 await client.api('test/tcp/server/timeout/func_timeout')
-        await server.close()
         pass
 
     @staticmethod
@@ -65,11 +66,11 @@ class TestServer:
     @PytestAsyncTimeout(1)
     async def test_service_norm(self):
         port = 10002
-        server = await ServerTcp(LOCAL_HOST, port).start()
-        async with TcpClientManage(LOCAL_HOST, port) as client:
+        async with (
+            TcpServer(LOCAL_HOST, port),
+            TcpClientManage(LOCAL_HOST, port) as client
+        ):
             assert await client.api('test/tcp/server/norm/func_norm') is True
             assert await client.api('test/tcp/server/norm/func_norm') is True
-        # 关闭tcp套接字
-        await server.close()
         pass
     pass
