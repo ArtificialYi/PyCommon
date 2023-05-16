@@ -46,8 +46,9 @@ class TestServer:
             TcpServer(LOCAL_HOST, port),
             TcpClientManage(LOCAL_HOST, port) as client,
         ):
-            t, _ = await client.api('')
+            t, data = await client.api('')
             assert t == 'ServiceNotFoundException'
+            assert data == '服务不存在:'
         pass
 
     @staticmethod
