@@ -102,6 +102,9 @@ class TcpServer:
         self.__lock = LockManage()
         pass
 
+    def __await__(self):
+        yield from self.__task
+
     async def start(self):
         if not self.__task.done():
             raise ServerAlreadyStartError(f'已经启动了一个服务:{self.__host}:{self.__port}')
