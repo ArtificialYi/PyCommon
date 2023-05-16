@@ -66,13 +66,20 @@ class ServerHandle:
     pass
 
 
-class ServerForever:
-    def __init__(self) -> None:
-        self.__futures = set[asyncio.Future[asyncio.Server]]()
+class TcpServer:
+    """forever和server无法分开
+    """
+    def __init__(self, host: str, port: int) -> None:
+        self.__task = AsyncBase.get_done_task()
+        self.__lock = LockManage()
+        self.__host = host
+        self.__port = port
         pass
 
-    async def forever(self, host: str, port: int, future: asyncio.Future[asyncio.Server]):
-        self.__futures.add(future)
+    def __await__(self):
+        yield from self.__task
+
+    async def __forever(self, host: str, port: int, future: asyncio.Future[asyncio.Server]):
         handle = ServerHandle()
         try:
             server = await asyncio.start_server(handle.handle, host, port)
@@ -85,32 +92,12 @@ class ServerForever:
             await LoggerLocal.warning('服务端：forever-handle全部取消')
             raise
 
-    async def close_all(self):
-        while self.__futures:
-            server = await self.__futures.pop()
-            server.close()
-            await server.wait_closed()
-    pass
-
-
-class TcpServer:
-    def __init__(self, host: str, port: int) -> None:
-        self.__task = AsyncBase.get_done_task()
-        self.__host = host
-        self.__port = port
-        self.__forever = ServerForever()
-        self.__lock = LockManage()
-        pass
-
-    def __await__(self):
-        yield from self.__task
-
     async def start(self):
         if not self.__task.done():
-            raise ServerAlreadyStartError(f'已经启动了一个服务:{self.__host}:{self.__port}')
-        future = AsyncBase.get_future()
-        self.__task = asyncio.create_task(self.__forever.forever(self.__host, self.__port, future))
-        await future
+            raise ServerAlreadyStartError(f'服务已启动:{self.__host}:{self.__port}')
+        self.__future: asyncio.Future[asyncio.Server] = AsyncBase.get_future()
+        self.__task = asyncio.create_task(self.__forever(self.__host, self.__port, self.__future))
+        await self.__future
         return self
 
     async def close(self):
@@ -121,12 +108,12 @@ class TcpServer:
             if self.__task.done():
                 return
 
-            await self.__forever.close_all()
+            server = await self.__future
+            server.close()
             await LoggerLocal.info('服务端：主动关闭服务-开始')
             await asyncio.wait({self.__task}, return_when=ALL_COMPLETED)
             await LoggerLocal.info('服务端：主动关闭服务-结束')
             pass
-        pass
 
     async def __aenter__(self):
         return await self.start()
