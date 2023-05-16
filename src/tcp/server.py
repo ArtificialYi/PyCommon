@@ -59,6 +59,8 @@ class ServerTcp:
         return await asyncio.start_server(self.__handle, self.__host, self.__port,)
 
     async def __handle_await(self):
+        for task_handle in self.__tasks_handle:
+            task_handle.cancel()
         await asyncio.wait(self.__tasks_handle, return_when=ALL_COMPLETED)
 
     async def __start(self):

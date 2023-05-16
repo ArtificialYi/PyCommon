@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
 from ..tool.func_tool import ExceptTool
@@ -67,7 +67,7 @@ class TcpConn:
     pass
 
 
-class TcpSend:
+class TcpClient:
     def __init__(self, host: str, port: int, api_delay: float = 2, conn_delay: float = 1) -> None:
         self.__conn = TcpConn(host, port, conn_delay)
         self.__loop_bg = LoopExecBg(self.__flow_run)
@@ -115,7 +115,7 @@ class TcpSend:
         self.__tcp_id += 1
         return self.__tcp_id
 
-    async def api(self, path: str, *args, **kwds):
+    async def api(self, path: str, *args, **kwds) -> Dict:
         flow_send = await self.__get_flow_send()
         tcp_id = self.__next_id()
         future = await flow_send.send(tcp_id, path, *args, **kwds)
@@ -123,22 +123,21 @@ class TcpSend:
             return await asyncio.wait_for(future, self.__api_delay)
         except asyncio.TimeoutError:
             raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        await self.close()
     pass
 
 
-class TcpApiManage:
-    @staticmethod
-    @MapKey(lambda host, port: f'{host}:{port}')
-    def __get_tcp(host: str, port: int) -> TcpSend:
-        return TcpSend(host, port)
+class TcpClientManage:
+    @classmethod
+    @MapKey(lambda _, *args: ':'.join((str(arg) for arg in args)))
+    def __get_client(cls, host: str, port: int, api_delay: int, conn_delay: int) -> TcpClient:
+        return TcpClient(host, port, api_delay / 1000, conn_delay / 1000)
 
-    @staticmethod
-    async def service(host: str, port: int, path: str, *args, **kwds):
-        tcp: TcpSend = TcpApiManage.__get_tcp(host, port)
-        return await tcp.api(path, *args, **kwds)
-
-    @staticmethod
-    async def close(host: str, port: int):
-        tcp: TcpSend = TcpApiManage.__get_tcp(host, port)
-        return await tcp.close()
+    def __new__(cls, host: str, port: int, api_delay: float = 2, conn_delay: float = 1) -> TcpClient:
+        return cls.__get_client(host, port, int(api_delay * 1000), int(conn_delay * 1000))
     pass
