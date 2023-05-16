@@ -87,7 +87,7 @@ class TcpClient:
                 done.pop().result()
             except BaseException as e:
                 # TODO: 此处需记录断开连接的原因
-                await LoggerLocal.exception(e, f'客户端关闭:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
+                await LoggerLocal.exception(e, f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
                 raise
             finally:
                 for task_flow in tasks_flow:
