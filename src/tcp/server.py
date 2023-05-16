@@ -67,7 +67,8 @@ class ServerHandle:
 
 
 class TcpServer:
-    """forever和server无法分开
+    """基本的TCP服务端
+    1. 服务启动失败异常没有处理
     """
     def __init__(self, host: str, port: int) -> None:
         self.__task = AsyncBase.get_done_task()
@@ -86,7 +87,8 @@ class TcpServer:
             async with server:  # pragma: no cover
                 future.set_result(server)
                 await server.serve_forever()
-        except asyncio.CancelledError:
+        except BaseException as e:
+            await LoggerLocal.exception(e, f'服务端：forever异常：{type(e).__name__}|{e}')
             await LoggerLocal.warning('服务端：forever-handle取消+等待ing')
             await handle.close_all()
             await LoggerLocal.warning('服务端：forever-handle全部取消')
