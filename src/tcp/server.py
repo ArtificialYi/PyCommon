@@ -25,6 +25,8 @@ class TcpServer:
             done.pop().result()
         except BaseException as e:
             await LoggerLocal.exception(e, f'服务端关闭:Connection from {addr} is closing: {type(e).__name__}:{e}')
+            # 此处不抛出异常是因为顶层异常逻辑还是会被捕获，暂时不抛出
+            # TODO: 这个异常是一定要抛出的
         finally:
             for task_flow in tasks_flow:
                 task_flow.cancel()
@@ -49,6 +51,7 @@ class TcpServer:
                 finally:
                     writer.close()
                     await LoggerLocal.info(f'服务端：Closing connection:{addr}')
+                    # 该业务会捕获到__handle抛出的异常，所以__handle不抛出异常
                     await writer.wait_closed()
                     await LoggerLocal.info(f'服务端：Closed the connection:{addr}')
         finally:
@@ -59,6 +62,7 @@ class TcpServer:
         return await asyncio.start_server(self.__handle, self.__host, self.__port,)
 
     async def __handle_await(self):
+        # 主动关闭的起点和终点
         for task_handle in self.__tasks_handle:
             task_handle.cancel()
         await asyncio.wait(self.__tasks_handle, return_when=ALL_COMPLETED)

@@ -135,15 +135,16 @@ class TestAsyncBase:
         res_a = 123
         future = AsyncBase.get_future()
         # 耗时1秒
-        task = AsyncBase.coro2task_exec(self.afuture_set(future, res_a))
+        task = asyncio.create_task(self.afuture_set(future, res_a))
         res_b = await future
         res_c = await task
         assert res_a == res_b == res_c
         assert id(res_a) == id(res_b) == id(res_c)
         pass
 
-    def future_set(self, future: Future, res):
+    def iter_future_set(self, future: Future, res):
         future.set_result(res)
+        yield
         return res
 
     @PytestAsyncTimeout(1)
@@ -151,7 +152,7 @@ class TestAsyncBase:
         # 同步转异步
         res_a = 123
         future = AsyncBase.get_future()
-        task = AsyncBase.coro2task_exec(asyncio.to_thread(self.future_set, future, res_a))
+        task = asyncio.create_task(self.iter_future_set(future, res_a))
         res_b = await future
         res_c = await task
         assert res_a == res_b == res_c

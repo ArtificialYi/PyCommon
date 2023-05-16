@@ -71,10 +71,6 @@ class AsyncBase:
         return asyncio.get_running_loop().create_future()
 
     @staticmethod
-    def coro2task_exec(coro):
-        return asyncio.create_task(coro)
-
-    @staticmethod
     def get_done_task() -> asyncio.Task:
         future = AsyncBase.get_future()
         future.cancel()

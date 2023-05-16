@@ -35,7 +35,7 @@ class LoopExecBg:
     def run(self):
         if not self.__task_main.done():
             raise AlreadyRunException('已有loop在运行中')
-        self.__task_main = AsyncBase.coro2task_exec(self.__exec.loop())
+        self.__task_main = asyncio.create_task(self.__exec.loop())
         return self
 
     async def stop(self):
