@@ -23,9 +23,10 @@ class FlowSendServer(OrderApi):
         OrderApi.__init__(self, self.send)
         pass
 
-    async def send(self, id: Optional[int], data: Any):
+    async def send(self, id: Optional[int], code: int, data: Any):
         str_json = json.dumps({
             'id': id,
+            'type': type(data).__name__,
             'data': data,
         }, cls=HyJsonEncoder)
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
@@ -48,12 +49,12 @@ class JsonDeal:
         args = json_obj.get("args", [])
         kwds = json_obj.get("kwds", {})
         res_service = await ServerRegister.call(service_name, *args, **kwds)
-        await self.__flow_send.send(id, res_service)
+        await self.__flow_send.send(id, 1 if isinstance(res_service, Exception) else 0, res_service)
         pass
     pass
 
 
-class FlowRecv(NormLoop):
+class FlowRecvServer(NormLoop):
     """持续运行的TCP接收流
     只有客户端断开连接时会抛出异常，其他正常情况都不会
     """

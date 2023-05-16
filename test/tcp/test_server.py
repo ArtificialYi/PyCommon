@@ -46,8 +46,8 @@ class TestServer:
             TcpServer(LOCAL_HOST, port),
             TcpClientManage(LOCAL_HOST, port) as client,
         ):
-            res = await client.api('')
-            assert res.get('type') == 'ServiceNotFoundException'
+            t, _ = await client.api('')
+            assert t == 'ServiceNotFoundException'
         pass
 
     @staticmethod
@@ -79,7 +79,11 @@ class TestServer:
             TcpServer(LOCAL_HOST, port),
             TcpClientManage(LOCAL_HOST, port) as client
         ):
-            assert await client.api('test/tcp/server/norm/func_norm') is True
-            assert await client.api('test/tcp/server/norm/func_norm') is True
+            t, data = await client.api('test/tcp/server/norm/func_norm')
+            assert t == 'bool'
+            assert data is True
+            t, data = await client.api('test/tcp/server/norm/func_norm')
+            assert t == 'bool'
+            assert data is True
         pass
     pass

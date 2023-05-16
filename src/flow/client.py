@@ -57,12 +57,12 @@ class JsonDeal:
             await LoggerLocal.error(f'客户端：未找到对应的future:{json_obj}')
             return
         # 将data结果写入future（超时限制）
-        future.set_result(json_obj.get('data'))
+        future.set_result((json_obj.get('type'), json_obj.get('data')))
         pass
     pass
 
 
-class FlowRecv(NormLoop):
+class FlowRecvClient(NormLoop):
     """持续运行的TCP接收流
     """
     def __init__(self, reader: StreamReader) -> None:

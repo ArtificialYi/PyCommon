@@ -9,7 +9,7 @@ from ...configuration.log import LoggerLocal
 from ..tool.loop_tool import LoopExecBg
 from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase
-from ..flow.client import FlowSendClient, FlowRecv
+from ..flow.client import FlowSendClient, FlowRecvClient
 
 
 class TcpConn:
@@ -69,7 +69,7 @@ class TcpClient:
         self.__conn = TcpConn(host, port, conn_timeout_base)
         self.__loop_bg = LoopExecBg(self.__flow_run)
         self.__loop_bg.run()
-        self.__future: asyncio.Future[Tuple[FlowSendClient, FlowRecv]] = AsyncBase.get_future()
+        self.__future: asyncio.Future[Tuple[FlowSendClient, FlowRecvClient]] = AsyncBase.get_future()
 
         self.__api_delay = api_delay
         pass
@@ -78,7 +78,7 @@ class TcpClient:
         reader, writer = await self.__conn.conn()
         async with (
             FlowSendClient(writer) as flow_send,
-            FlowRecv(reader) as flow_recv,
+            FlowRecvClient(reader) as flow_recv,
         ):
             self.__future.set_result((flow_send, flow_recv))
             tasks_flow = {flow_send.task, flow_recv.task}
@@ -101,7 +101,7 @@ class TcpClient:
         await self.__loop_bg.stop()
         pass
 
-    async def __get_flow(self) -> Tuple[FlowSendClient, FlowRecv]:
+    async def __get_flow(self) -> Tuple[FlowSendClient, FlowRecvClient]:
         if await AsyncBase.wait_done(self.__future, 0.1):
             return await self.__future
         raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')

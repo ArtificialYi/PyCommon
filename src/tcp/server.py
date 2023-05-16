@@ -6,7 +6,7 @@ from ..exception.tcp import ServerAlreadyStartError
 from ..tool.base import AsyncBase
 from ..tool.map_tool import LockManage
 from ...configuration.log import LoggerLocal
-from ..flow.server import FlowRecv, FlowSendServer
+from ..flow.server import FlowRecvServer, FlowSendServer
 
 
 class ServerFlow:
@@ -21,7 +21,7 @@ class ServerFlow:
 
         async with (
             FlowSendServer(self.__writer) as flow_send,
-            FlowRecv(self.__reader, flow_send) as flow_recv,
+            FlowRecvServer(self.__reader, flow_send) as flow_recv,
         ):
             tasks_flow = {flow_send.task, flow_recv.task}
             try:
