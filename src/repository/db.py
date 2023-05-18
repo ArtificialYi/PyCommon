@@ -7,8 +7,6 @@ from ...configuration.tool import ConfigTool
 from ..exception.db import UnsupportedSqlTypesError
 from .sqlite import SqliteManage
 from .rds import MysqlManage, RDSConfigData
-from ..tool.base import BaseTool
-from ..tool.map_tool import MapKey
 
 
 async def get_value_by_tag_and_field(tag: str, field: str):
@@ -18,7 +16,6 @@ async def get_value_by_tag_and_field(tag: str, field: str):
 
 class SqlManage:
     @staticmethod
-    @MapKey(BaseTool.return_self)
     async def get_instance_by_tag(tag: str):
         sql_type = await get_value_by_tag_and_field(tag, 'sql_type')
         if sql_type == 'mysql':

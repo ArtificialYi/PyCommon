@@ -16,7 +16,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     1. close
     """
     @staticmethod
-    def create(mocker: MockerFixture):
+    def mock_init(mocker: MockerFixture):
         cursor = MockCursor()
 
         async def tmp(*args):

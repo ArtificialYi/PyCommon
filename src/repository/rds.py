@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from ..tool.base import BaseTool
 from ..tool.map_tool import MapKey
 from .base import ConnExecutor
 from ...configuration.log import LoggerLocal
@@ -54,6 +53,9 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
 class RDSConfigData:
     FIELDS = ('host', 'port', 'user', 'password', 'db')
 
+    def to_key(self):  # pragma: no cover
+        return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}'
+
     def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
@@ -64,7 +66,7 @@ class RDSConfigData:
     pass
 
 
-@MapKey(BaseTool.return_self)
+@MapKey(RDSConfigData.to_key)
 async def get_pool(data: RDSConfigData):  # pragma: no cover
     return await aiomysql.create_pool(**{
         'host': data.host,
