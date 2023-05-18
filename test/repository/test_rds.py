@@ -1,7 +1,7 @@
 import pytest
 
+from ...mock.db.base import RDS_MOCK_PATCH
 from ...src.repository.sql.base import ActionExec, ActionIter
-
 from ...src.repository.sql.rds import MysqlManage, RDSConfigData
 from ...mock.func import MockException
 from ...src.tool.func_tool import PytestAsyncTimeout
@@ -17,7 +17,7 @@ class TestMysqlManage:
 
         async def tmp(*args):
             return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch('PyCommon.src.repository.sql.rds.get_pool', new=tmp)
+        mocker.patch(RDS_MOCK_PATCH, new=tmp)
         mysql_manage = MysqlManage(RDSConfigData('127.0.0.1', '12345', 'test', 'test', 'test'))
 
         # 无事务+iter
