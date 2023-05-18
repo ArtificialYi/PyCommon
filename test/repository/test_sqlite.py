@@ -1,21 +1,18 @@
 import pytest
 from pytest_mock import MockerFixture
 
+from ...src.repository.db import SqlManage
 from ...src.repository.base import ActionExec, ActionIter
-from ...src.repository.sqlite import SqliteManage
 from ...mock.func import MockException
 from ...src.tool.func_tool import PytestAsyncTimeout
-from ...mock.db.sqlite import MockConnection, MockCursor
+from ...mock.db.sqlite import MockCursor
 
 
 class TestSqliteManage:
     @PytestAsyncTimeout(1)
     async def test(self, mocker: MockerFixture):
-        cursor = MockCursor()
-        conn = MockConnection().mock_set_cursor(cursor)
-        mocker.patch('aiosqlite.connect', return_value=conn)
-
-        sqlite_manage = SqliteManage('test_local.db')
+        cursor = MockCursor.create(mocker)
+        sqlite_manage = await SqlManage.get_instance_by_tag('sqlite_test')
 
         # 无事务+iter
         async with sqlite_manage() as exec:
@@ -38,7 +35,7 @@ class TestSqliteManage:
             await self.__raise_exception(sqlite_manage)
         pass
 
-    async def __raise_exception(self, sqlite_manage: SqliteManage):
+    async def __raise_exception(self, sqlite_manage):
         async with sqlite_manage(True):
             raise MockException('异常测试')
     pass

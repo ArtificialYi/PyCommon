@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 import aiomysql
 from pytest_mock import MockerFixture
 
+from ...src.repository import db
 from ..base import MockDelay
 from ...src.repository import rds
 
@@ -14,6 +15,21 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     with调用
     1. close
     """
+    @staticmethod
+    def create(mocker: MockerFixture):
+        cursor = MockCursor()
+
+        async def tmp(*args):
+            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch(f'{rds.__name__}.get_pool', new=tmp)
+
+        async def mock_get_by(tag: str, field: str):
+            return {
+                'sql_type': 'mysql',
+            }.get(field, '0')
+        mocker.patch(f'{db.__name__}.get_value_by_tag_and_field', new=mock_get_by)
+        return cursor
+
     def __init__(self, *args):
         MockDelay.__init__(self)
         self.__exec_res = None
@@ -110,15 +126,6 @@ class MockConnection(MockDelay, aiomysql.Connection):
 
 
 class MockDBPool(MockDelay, aiomysql.Pool):
-    @staticmethod
-    def mocker(mocker: MockerFixture) -> MockCursor:
-        cursor = MockCursor()
-
-        async def tmp(*args):
-            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch(f'{rds.__name__}.get_pool', new=tmp)
-        return cursor
-
     """模拟DBPool
     外部调用
     1. get_conn
