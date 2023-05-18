@@ -1,8 +1,10 @@
 import pytest
+
+from ...src.repository.sql.base import ActionExec, ActionIter
+
+from ...src.repository.sql.rds import MysqlManage, RDSConfigData
 from ...mock.func import MockException
-from ...src.repository.db import ActionExec, ActionIter
 from ...src.tool.func_tool import PytestAsyncTimeout
-from ...src.repository.rds import MysqlManage
 from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
 from pytest_mock import MockerFixture
 
@@ -13,10 +15,10 @@ class TestMysqlManage:
         # 获取一个mysql管理器
         cursor = MockCursor()
 
-        async def tmp(flag: str):
-            return MockDBPool(flag).mock_set_conn(MockConnection().mock_set_cursor(cursor))
-        mocker.patch('PyCommon.src.repository.rds.pool_manage', new=tmp)
-        mysql_manage = MysqlManage('test')
+        async def tmp(*args):
+            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch('PyCommon.src.repository.sql.rds.get_pool', new=tmp)
+        mysql_manage = MysqlManage(RDSConfigData('127.0.0.1', '12345', 'test', 'test', 'test'))
 
         # 无事务+iter
         async with mysql_manage() as exec:

@@ -1,9 +1,8 @@
-from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Union
 import aiomysql
 import aiosqlite
 
-from ..tool.sql_tool import Mysql2Other
+from ...tool.sql_tool import Mysql2Other
 
 
 class ActionExec:
@@ -50,13 +49,5 @@ class ConnExecutor:
                 yield row
                 pass
             pass
-        pass
-    pass
-
-
-class SqlManage:
-    @asynccontextmanager
-    async def __call__(self, *args, **kwds) -> AsyncGenerator[ConnExecutor, None]:
-        yield ConnExecutor(None)  # type: ignore
         pass
     pass
