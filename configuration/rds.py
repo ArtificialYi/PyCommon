@@ -1,12 +1,14 @@
 from ..src.tool.base import BaseTool
 from ..src.tool.map_tool import MapKey
 from .tool import ConfigTool
-from .env import ConfigEnv
+from .env import ConfigEnv, ConfigFetcher
 import aiomysql
 from aiomysql import SSDictCursor
 
 
-class DTConfig:
+class RDSConfigData:
+    FIELDS = ('host', 'port', 'user', 'password', 'db')
+
     def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
@@ -15,6 +17,10 @@ class DTConfig:
         self.db = db
         pass
     pass
+
+
+async def get_sql_type(tag: str):
+    await ConfigFetcher.get_value_by_tag_and_field(tag, 'sql_type')
 
 
 @MapKey(BaseTool.return_self)
@@ -28,7 +34,7 @@ async def config_manage(flag: str):
         ConfigTool.get_value(flag, 'password', config_default, config_env),
         ConfigTool.get_value(flag, 'db', config_default, config_env),
     )
-    return DTConfig(*args)
+    return RDSConfigData(*args)
 
 
 @MapKey(BaseTool.return_self)
