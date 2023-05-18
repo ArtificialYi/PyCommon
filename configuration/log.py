@@ -6,7 +6,6 @@ from aiologger import Logger
 from aiologger.handlers.files import AsyncTimedRotatingFileHandler, RolloverInterval
 from aiologger.formatters.base import Formatter
 
-from ..src.tool.base import BaseTool
 from ..src.tool.map_tool import MapKey
 from .env import PROJECT_ROOT, ProjectEnv
 
@@ -16,11 +15,13 @@ LOG_NAME = os.path.join(LOG_ROOT, 'local.log')
 
 
 class LoggerLocal:
+    LEVEL = LogLevel.INFO
+
     @staticmethod
-    @MapKey(BaseTool.return_self)
-    async def get_logger(level: LogLevel = LogLevel.INFO) -> Logger:
+    @MapKey()
+    async def get_logger() -> Logger:
         project_name = await ProjectEnv.get_name()
-        logger = Logger(name=project_name, level=level)
+        logger = Logger(name=project_name, level=LoggerLocal.LEVEL)
         handler_file = AsyncTimedRotatingFileHandler(
             filename=LOG_NAME, backup_count=4,
             when=RolloverInterval.SATURDAYS, interval=1, at_time=time(hour=5),
