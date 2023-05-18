@@ -12,7 +12,7 @@ class TestMysqlManage:
     @PytestAsyncTimeout(1)
     async def test(self, mocker: MockerFixture):
         # 获取一个mysql管理器
-        cursor = MockCursor.create(mocker)
+        cursor = MockCursor.mock_init(mocker)
         mysql_manage = await SqlManage.get_instance_by_tag('test')
 
         # 无事务+iter

@@ -7,7 +7,7 @@ from ..base import MockDelay
 
 class MockCursor(MockDelay, aiosqlite.Cursor):
     @staticmethod
-    def create(mocker: MockerFixture):
+    def mock_init(mocker: MockerFixture):
         cursor = MockCursor()
         conn = MockConnection().mock_set_cursor(cursor)
         mocker.patch('aiosqlite.connect', return_value=conn)
