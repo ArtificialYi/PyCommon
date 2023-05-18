@@ -80,9 +80,6 @@ class ConfigEnv:
     pass
 
 
-class ConfigFetcher:
-    @staticmethod
-    async def get_value_by_tag_and_field(tag: str, field: str):
-        config_env, config_default = await asyncio.gather(ConfigEnv.config_env(), ConfigEnv.config_default())
-        return ConfigTool.get_value(tag, field, config_default, config_env)
-    pass
+async def get_value_by_tag_and_field(tag: str, field: str):
+    config_env, config_default = await asyncio.gather(ConfigEnv.config_env(), ConfigEnv.config_default())
+    return ConfigTool.get_value(tag, field, config_default, config_env)

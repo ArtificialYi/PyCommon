@@ -1,9 +1,24 @@
 import aiosqlite
+from pytest_mock import MockerFixture
 
+from ...src.repository import db
 from ..base import MockDelay
 
 
 class MockCursor(MockDelay, aiosqlite.Cursor):
+    @staticmethod
+    def create(mocker: MockerFixture):
+        cursor = MockCursor()
+        conn = MockConnection().mock_set_cursor(cursor)
+        mocker.patch('aiosqlite.connect', return_value=conn)
+
+        async def mock_get_by(tag: str, field: str):
+            return {
+                'sql_type': 'sqlite',
+            }.get(field, '0')
+        mocker.patch(f'{db.__name__}.get_value_by_tag_and_field', new=mock_get_by)
+        return cursor
+
     def __init__(self):
         MockDelay.__init__(self)
         self.__fetch_all_res: list = None  # type: ignore
