@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 import aiomysql
+from pytest_mock import MockerFixture
+
 from ..base import MockDelay
+from ...src.repository import rds
 
 
 class MockCursor(MockDelay, aiomysql.SSDictCursor):
@@ -107,6 +110,15 @@ class MockConnection(MockDelay, aiomysql.Connection):
 
 
 class MockDBPool(MockDelay, aiomysql.Pool):
+    @staticmethod
+    def mocker(mocker: MockerFixture) -> MockCursor:
+        cursor = MockCursor()
+
+        async def tmp(*args):
+            return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
+        mocker.patch(f'{rds.__name__}.get_pool', new=tmp)
+        return cursor
+
     """模拟DBPool
     外部调用
     1. get_conn
