@@ -12,7 +12,7 @@ class TestSqliteManage:
     @PytestAsyncTimeout(1)
     async def test(self, mocker: MockerFixture):
         cursor = MockCursor.create(mocker)
-        sqlite_manage = await SqlManage.get_instance_by_tag('sqlite_test')
+        sqlite_manage = await SqlManage.get_instance_by_tag('test')
 
         # 无事务+iter
         async with sqlite_manage() as exec:

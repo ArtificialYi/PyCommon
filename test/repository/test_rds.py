@@ -13,7 +13,7 @@ class TestMysqlManage:
     async def test(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor.create(mocker)
-        mysql_manage = await SqlManage.get_instance_by_tag('mysql_test')
+        mysql_manage = await SqlManage.get_instance_by_tag('test')
 
         # 无事务+iter
         async with mysql_manage() as exec:
