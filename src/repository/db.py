@@ -1,11 +1,11 @@
 import asyncio
 
-from ...exception.db import UnsupportedSqlTypesError
+from ..exception.db import UnsupportedSqlTypesError
 from .sqlite import SqliteManage
 from .rds import MysqlManage, RDSConfigData
-from ....configuration.env import ConfigFetcher
-from ...tool.base import BaseTool
-from ...tool.map_tool import MapKey
+from ...configuration.env import ConfigFetcher
+from ..tool.base import BaseTool
+from ..tool.map_tool import MapKey
 
 
 class SqlManage:

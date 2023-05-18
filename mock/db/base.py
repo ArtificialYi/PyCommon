@@ -1,1 +1,1 @@
-RDS_MOCK_PATCH = 'PyCommon.src.repository.sql.rds.get_pool'
+RDS_MOCK_PATCH = 'PyCommon.src.repository.rds.get_pool'

@@ -2,13 +2,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from ...tool.base import BaseTool
-
-from ...tool.map_tool import MapKey
-
+from ..tool.base import BaseTool
+from ..tool.map_tool import MapKey
 from .base import ConnExecutor
-
-from ....configuration.log import LoggerLocal
+from ...configuration.log import LoggerLocal
 
 
 # async def __rollback_unit(conn: aiomysql.Connection):

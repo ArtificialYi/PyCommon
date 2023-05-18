@@ -2,7 +2,7 @@ from typing import AsyncGenerator, Union
 import aiomysql
 import aiosqlite
 
-from ...tool.sql_tool import Mysql2Other
+from ..tool.sql_tool import Mysql2Other
 
 
 class ActionExec:

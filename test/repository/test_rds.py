@@ -1,8 +1,8 @@
 import pytest
 
 from ...mock.db.base import RDS_MOCK_PATCH
-from ...src.repository.sql.base import ActionExec, ActionIter
-from ...src.repository.sql.rds import MysqlManage, RDSConfigData
+from ...src.repository.base import ActionExec, ActionIter
+from ...src.repository.rds import MysqlManage, RDSConfigData
 from ...mock.func import MockException
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...mock.db.rds import MockConnection, MockCursor, MockDBPool
