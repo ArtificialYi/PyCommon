@@ -1,3 +1,4 @@
+import asyncio
 from configparser import ConfigParser
 from enum import Enum
 import os
@@ -76,4 +77,12 @@ class ConfigEnv:
         env_project = await ProjectEnv.get_env()
         path_env = os.path.join(CONFIG_ROOT, f'{env_project.lower()}.ini')
         return await ConfigTool.get_config(path_env)
+    pass
+
+
+class ConfigFetcher:
+    @staticmethod
+    async def get_value_by_tag_and_field(tag: str, field: str):
+        config_env, config_default = await asyncio.gather(ConfigEnv.config_env(), ConfigEnv.config_default())
+        return ConfigTool.get_value(tag, field, config_default, config_env)
     pass

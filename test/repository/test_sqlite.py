@@ -1,15 +1,11 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ...mock.func import MockException
-
-from ...src.repository.db import ActionExec, ActionIter
-
-from ...src.tool.func_tool import PytestAsyncTimeout
-
-from ...mock.db.sqlite import MockConnection, MockCursor
-
+from ...src.repository.base import ActionExec, ActionIter
 from ...src.repository.sqlite import SqliteManage
+from ...mock.func import MockException
+from ...src.tool.func_tool import PytestAsyncTimeout
+from ...mock.db.sqlite import MockConnection, MockCursor
 
 
 class TestSqliteManage:

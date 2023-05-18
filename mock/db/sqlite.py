@@ -1,6 +1,6 @@
 import aiosqlite
 
-from .base import MockDelay
+from ..base import MockDelay
 
 
 class MockCursor(MockDelay, aiosqlite.Cursor):

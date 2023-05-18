@@ -1,62 +1,24 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Union
-import aiomysql
-import aiosqlite
+import asyncio
 
-from ..tool.sql_tool import Mysql2Other
-
-
-class ActionExec:
-    def __init__(self, sql: str, *args) -> None:
-        self.__sql = sql
-        self.__args = args
-        pass
-
-    async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> int:
-        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
-        await cursor.execute(sql, self.__args)
-        return cursor.rowcount
-    pass
-
-
-class ActionIter:
-    def __init__(self, sql: str, *args) -> None:
-        self.__sql = sql
-        self.__args = args
-        pass
-
-    async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> AsyncGenerator[dict, None]:
-        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
-        await cursor.execute(sql, self.__args)
-        while (row := await cursor.fetchone()) is not None:
-            yield dict(row)
-            pass
-        pass
-    pass
-
-
-class ConnExecutor:
-    def __init__(self, conn: Union[aiomysql.Connection, aiosqlite.Connection]) -> None:
-        self.__conn = conn
-        pass
-
-    async def exec(self, coro: ActionExec) -> int:
-        async with self.__conn.cursor() as cursor:
-            return await coro(cursor)
-
-    async def iter(self, gen: ActionIter) -> AsyncGenerator[dict, None]:
-        async with self.__conn.cursor() as cursor:
-            async for row in gen(cursor):
-                yield row
-                pass
-            pass
-        pass
-    pass
+from ..exception.db import UnsupportedSqlTypesError
+from .sqlite import SqliteManage
+from .rds import MysqlManage, RDSConfigData
+from ...configuration.env import ConfigFetcher
+from ..tool.base import BaseTool
+from ..tool.map_tool import MapKey
 
 
 class SqlManage:
-    @asynccontextmanager
-    async def __call__(self, *args, **kwds) -> AsyncGenerator[ConnExecutor, None]:
-        yield ConnExecutor(None)  # type: ignore
-        pass
+    @staticmethod
+    @MapKey(BaseTool.return_self)
+    async def get_instance_by_tag(tag: str):
+        sql_type = await ConfigFetcher.get_value_by_tag_and_field(tag, 'sql_type')
+        if sql_type == 'mysql':
+            return MysqlManage(RDSConfigData(*await asyncio.gather(*(
+                ConfigFetcher.get_value_by_tag_and_field(tag, field)
+                for field in RDSConfigData.FIELDS
+            ))))
+        elif sql_type == 'sqlite':
+            return SqliteManage(await ConfigFetcher.get_value_by_tag_and_field(tag, 'db'))
+        raise UnsupportedSqlTypesError(f'不支持的sql_type:{sql_type}')
     pass

@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
+from .base import ConnExecutor
 from ...configuration.log import LoggerLocal
-from .db import ConnExecutor, SqlManage
 
 
 # async def __rollback_unit(conn: aiosqlite.Connection):
@@ -50,7 +50,7 @@ async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerato
     pass
 
 
-class SqliteManage(SqlManage):
+class SqliteManage:
     def __init__(self, db_name: str) -> None:
         self.__db_name = db_name
         pass

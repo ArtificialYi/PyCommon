@@ -2,9 +2,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
+from ..tool.base import BaseTool
+from ..tool.map_tool import MapKey
+from .base import ConnExecutor
 from ...configuration.log import LoggerLocal
-from .db import ConnExecutor, SqlManage
-from ...configuration.rds import pool_manage
 
 
 # async def __rollback_unit(conn: aiomysql.Connection):
@@ -50,22 +51,39 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
     pass
 
 
-class MysqlManage(SqlManage):
-    def __init__(self, flag: str):
-        self.__flag = flag
-        self.__pool = None
-        pass
+class RDSConfigData:
+    FIELDS = ('host', 'port', 'user', 'password', 'db')
 
-    async def __get_pool(self):
-        if self.__pool is not None:
-            return self.__pool
-        # TODO: 这里的pool应该从全局获取
-        self.__pool = await pool_manage(self.__flag)
-        return self.__pool
+    def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
+        self.host = host
+        self.port = int(port) if len(port) > 0 else 0
+        self.user = user
+        self.password = password
+        self.db = db
+        pass
+    pass
+
+
+@MapKey(BaseTool.return_self)
+async def get_pool(data: RDSConfigData):  # pragma: no cover
+    return await aiomysql.create_pool(**{
+        'host': data.host,
+        'port': data.port,
+        'user': data.user,
+        'password': data.password,
+        'db': data.db,
+        'cursorclass': aiomysql.SSDictCursor,
+    })
+
+
+class MysqlManage:
+    def __init__(self, data: RDSConfigData) -> None:
+        self.__data = data
+        pass
 
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
-        async with get_conn(await self.__get_pool(), use_transaction) as conn:
+        async with get_conn(await get_pool(self.__data), use_transaction) as conn:
             yield ConnExecutor(conn)
         pass
     pass

@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 import aiomysql
-from .base import MockDelay
+from ..base import MockDelay
 
 
 class MockCursor(MockDelay, aiomysql.SSDictCursor):
