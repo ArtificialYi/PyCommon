@@ -1,6 +1,6 @@
 import asyncio
 from functools import wraps
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar
 
 
 class LockManage:
@@ -14,6 +14,9 @@ class LockManage:
             self.__map_lock[loop] = asyncio.Lock()
         return self.__map_lock[loop]
     pass
+
+
+R = TypeVar('R')
 
 
 class MapKey:
@@ -75,7 +78,7 @@ class MapKey:
         print(f'MapKey初始化:{func_key.__name__ if func_key is not None else func_key}')
         pass
 
-    def __call__(self, func_value: Callable) -> Callable:
+    def __call__(self, func_value: Callable[..., R]) -> Callable[..., R]:
         print(f'MapKey调用:{func_value.__name__}')
         return (
             MapKey.AsyncLock(self.__func_key)(func_value)

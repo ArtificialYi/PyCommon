@@ -1,3 +1,4 @@
+from typing import Optional
 import aiosqlite
 from pytest_mock import MockerFixture
 
@@ -21,7 +22,7 @@ class MockCursor(MockDelay, aiosqlite.Cursor):
 
     def __init__(self):
         MockDelay.__init__(self)
-        self.__fetch_all_res: list = None  # type: ignore
+        self.__fetch_all_res: Optional[list] = None
         self.__rowcount = 1
         pass
 
