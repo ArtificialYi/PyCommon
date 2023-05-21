@@ -1,19 +1,10 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import Callable
-
-from .base import AsyncBase
+from typing import Callable, Tuple
 import pytest
 
-
-# class RaiseLoopErr:
-#     @staticmethod
-#     def raise_err(re: RuntimeError):
-#         if re.args[0] != 'Event loop is closed':
-#             raise re
-#         pass
-#     pass
+from .base import AsyncBase
 
 
 class AsyncExecOrder:
@@ -22,7 +13,7 @@ class AsyncExecOrder:
     3. 如果loop被close，则当前对象常规使用会抛出异常
     """
     def __init__(self, func: Callable) -> None:
-        self.__queue = asyncio.Queue()
+        self.__queue = asyncio.Queue[Tuple[asyncio.Future, tuple, dict]]()
         self.__func = func
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass

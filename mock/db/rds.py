@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Optional
 import aiomysql
 from pytest_mock import MockerFixture
 
@@ -33,7 +34,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     def __init__(self, *args):
         MockDelay.__init__(self)
         self.__exec_res = None
-        self.__fetch_all_res: list = None  # type: ignore
+        self.__fetch_all_res: Optional[list] = None
         self.__fetch_idx = 0
         self.__rowcount = 1
         pass
