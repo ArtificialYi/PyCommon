@@ -32,7 +32,7 @@ class TestSqlTool:
 
     def test_to_sql_fields(self):
         assert SQLTool.to_sql_fields(["name", "age"]) == "`name`,`age`"
-        assert SQLTool.to_sql_fields([]) == "``"
+        assert SQLTool.to_sql_fields([]) == ""
         assert SQLTool.to_sql_fields(["one_field"]) == "`one_field`"
         pass
 

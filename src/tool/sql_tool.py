@@ -30,9 +30,9 @@ class SQLTool:
 
     @staticmethod
     def to_sql_fields(fields: List[str]):
-        return f'`{"`,`".join(fields)}`'
+        return ','.join(f'`{field}`' for field in fields)
 
     @staticmethod
     def to_sql_format(fields: List[str]):
-        return ','.join([f'%({field})s' for field in fields])
+        return ','.join(f'%({field})s' for field in fields)
     pass

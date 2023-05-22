@@ -1,17 +1,13 @@
+from typing import Any, Dict
 
 
-from typing import Dict, List
+class KeyNotExistError(Exception):
+    pass
 
 
 class DictTool:
     @staticmethod
-    def keys_exists(data: Dict, keys: List):
-        """
-        1. 返回True: 存在错误-（不是字典 or 字典错误）
-        2. 返回False：格式正确-（是字典 and 所有key存在）
-        """
-        return isinstance(data, dict) and all(
-            data.get(key) is not None
-            for key in keys
-        )
+    def key_exist_raise(data: Dict, key: Any):
+        if data.get(key) is None:
+            raise KeyNotExistError(f'data: {data} key: {key} not exist')
     pass
