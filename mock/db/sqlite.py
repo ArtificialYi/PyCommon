@@ -1,7 +1,7 @@
 import aiosqlite
 from pytest_mock import MockerFixture
 
-from ...src.repository import db
+from ...src.dependency import db
 from ..base import MockDelay
 
 

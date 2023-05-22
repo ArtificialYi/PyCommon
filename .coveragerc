@@ -1,6 +1,6 @@
 [run]
 branch = True
-omit = src/repository/db.py
+omit = src/dependency/db.py
 
 [report]
 # 设置报告精度
