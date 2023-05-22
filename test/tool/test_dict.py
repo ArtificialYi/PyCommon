@@ -4,9 +4,11 @@ from ...src.tool.dict_tool import DictTool, KeyNotExistError
 
 class TestDictTool:
     def test_err(self):
-        assert DictTool.key_exist_raise({'': 0}, '') is None
+        assert DictTool.assert_keys_exist({}, []) is None
+        assert DictTool.assert_keys_exist({'tmp': ''}, ['tmp']) is None
+        assert DictTool.assert_keys_exist({'a': 0, 'b': 1}, 'ab') is None
         with pytest.raises(KeyNotExistError):
-            DictTool.key_exist_raise({}, 'tmp')
+            DictTool.assert_keys_exist({}, ['tmp'])
             pass
         pass
     pass
