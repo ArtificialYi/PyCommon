@@ -10,21 +10,24 @@ from .func_tool import FqsAsync
 class LoopExec:
     """无限循环执行函数
     """
-    def __init__(self, func: Callable) -> None:
+    def __init__(self, func: Callable, delay: float = 0) -> None:
         self.__func = func
+        self.__delay = delay
         pass
 
     async def loop(self, *args, **kwds):
         while True:
             await self.__func(*args, **kwds)
+            if self.__delay > 0:
+                await asyncio.sleep(self.__delay)
     pass
 
 
 class LoopExecBg:
     """后台无限执行函数
     """
-    def __init__(self, func: Callable) -> None:
-        self.__exec = LoopExec(func)
+    def __init__(self, func: Callable, delay: float = 0) -> None:
+        self.__exec = LoopExec(func, delay)
         self.__task_main = AsyncBase.get_done_task()
         pass
 
@@ -48,8 +51,8 @@ class LoopExecBg:
 class NormLoop:
     """在代码块的后台无限执行函数
     """
-    def __init__(self, func: Callable) -> None:
-        self.__exec_bg = LoopExecBg(func)
+    def __init__(self, func: Callable, delay: float = 0) -> None:
+        self.__exec_bg = LoopExecBg(func, delay)
         pass
 
     @property
