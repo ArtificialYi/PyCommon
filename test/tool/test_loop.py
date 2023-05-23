@@ -59,13 +59,19 @@ class TestLoopExecBg:
 
 
 class TestNormLoop:
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(3)
     async def test(self):
         func_tmp = FuncTmp()
         async with NormLoop(func_tmp.func):
             assert func_tmp.num == 0
             await asyncio.sleep(1)
             assert func_tmp.num > 0
+            pass
+        tmp = func_tmp.num
+        async with NormLoop(func_tmp.func, 2):
+            assert func_tmp.num == tmp
+            await asyncio.sleep(1)
+            assert func_tmp.num == tmp + 1
             pass
         pass
     pass
