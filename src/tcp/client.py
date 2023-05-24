@@ -3,6 +3,8 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from typing import Dict, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
+from ...configuration.env import get_value_by_tag_and_field
+
 from ..tool.func_tool import ExceptTool
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 from ...configuration.log import LoggerLocal
@@ -31,7 +33,7 @@ class TcpConn:
         try:
             return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
-            await LoggerLocal.exception(e, f'连接失败原因:{e}')
+            await LoggerLocal.exception(e, f'连接失败原因:{type(e).__name__}|{e}')
             ExceptTool.raise_not_exception(e)
             return None, None
 
@@ -134,4 +136,12 @@ class TcpClientManage:
 
     def __new__(cls, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> TcpClient:
         return cls.__get_client(host, port, int(api_delay * 1000), int(conn_timeout_base * 1000))
+
+    @staticmethod
+    async def create(tag: str, api_delay: float = 2, conn_timeout_base: float = 1) -> TcpClient:  # pragma: no cover
+        host, port = await asyncio.gather(
+            get_value_by_tag_and_field(tag, 'host'),
+            get_value_by_tag_and_field(tag, 'port'),
+        )
+        return TcpClientManage(host, int(port), api_delay, conn_timeout_base)
     pass
