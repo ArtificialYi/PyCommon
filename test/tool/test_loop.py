@@ -92,15 +92,20 @@ class TestOrderApi:
     @PytestAsyncTimeout(1)
     async def test(self):
         order = TestOrderApi.Tmp()
+        assert order.fq_order.qsize == 0
         assert order.num == 0
         await order.func()
         assert order.num == 1
+        assert order.fq_order.qsize == 0
         async with order:
             assert order.num == 1
+            assert order.fq_order.qsize == 0
             future: asyncio.Future = await order.func()  # type: ignore
+            assert order.fq_order.qsize == 1
             assert order.num == 1
             await future
             assert order.num == 2
+            assert order.fq_order.qsize == 0
             pass
         pass
     pass

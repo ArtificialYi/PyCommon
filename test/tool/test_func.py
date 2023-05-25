@@ -4,7 +4,7 @@ from time import sleep
 import pytest
 
 from ...mock.func import MockException, MockFunc
-from ...src.tool.func_tool import FieldSwap, LockThread, PytestAsyncTimeout
+from ...src.tool.func_tool import FieldSwap, PytestAsyncTimeout, lock_thread
 
 
 def func_custom():
@@ -43,7 +43,7 @@ class TestLockThread:
         return cls
 
     @classmethod
-    @LockThread
+    @lock_thread
     def func_lock(cls, num):
         return cls.func_unlock(num)
 
