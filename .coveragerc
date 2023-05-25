@@ -1,6 +1,8 @@
 [run]
 branch = True
-omit = src/dependency/db.py
+omit =
+    src/configuration/*
+    src/dependency/mail.py
 
 [report]
 # 设置报告精度

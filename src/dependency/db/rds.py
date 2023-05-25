@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiomysql
 
-from ..tool.map_tool import MapKey
+from ...tool.map_tool import MapKey
 from .base import ConnExecutor
 from ...configuration.log import LoggerLocal
 

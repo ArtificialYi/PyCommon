@@ -3,7 +3,7 @@ import asyncio
 import json
 from typing import Any, Optional
 
-from ...configuration.log import LoggerLocal
+from ..configuration.log import LoggerLocal
 
 from ..tool.json_tool import HyJsonEncoder
 

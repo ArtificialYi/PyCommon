@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 import aiomysql
 from pytest_mock import MockerFixture
 
-from ...src.dependency import db
+from ...src.dependency.db import manage
 from ..base import MockDelay
-from ...src.dependency import rds
+from ...src.dependency.db import rds
 
 
 class MockCursor(MockDelay, aiomysql.SSDictCursor):
@@ -27,7 +27,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
             return {
                 'sql_type': 'mysql',
             }.get(field, '0')
-        mocker.patch(f'{db.__name__}.get_value_by_tag_and_field', new=mock_get_by)
+        mocker.patch(f'{manage.__name__}.get_value_by_tag_and_field', new=mock_get_by)
         return cursor
 
     def __init__(self, *args):

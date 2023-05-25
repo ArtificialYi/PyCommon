@@ -3,11 +3,11 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from typing import Dict, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
-from ...configuration.env import get_value_by_tag_and_field
+from ..configuration.env import get_value_by_tag_and_field
 
 from ..tool.func_tool import ExceptTool
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
-from ...configuration.log import LoggerLocal
+from ..configuration.log import LoggerLocal
 from ..tool.loop_tool import LoopExecBg
 from ..tool.map_tool import MapKey
 from ..tool.base import AsyncBase

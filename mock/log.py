@@ -1,6 +1,6 @@
 from pytest_mock import MockerFixture
 
-from ..configuration import log
+from ..src.configuration import log
 from ..src.tool.map_tool import MapKey
 
 

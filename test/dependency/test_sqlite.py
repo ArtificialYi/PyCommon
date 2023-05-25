@@ -1,8 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ...src.dependency.db import SqlManage
-from ...src.dependency.base import ActionExec, ActionIter
+from ...src.dependency.db.manage import SqlManage
+from ...src.dependency.db.base import ActionExec, ActionIter
 from ...mock.func import MockException
 from ...src.tool.func_tool import PytestAsyncTimeout
 from ...mock.db.sqlite import MockCursor
