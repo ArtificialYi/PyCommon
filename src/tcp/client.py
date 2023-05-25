@@ -102,6 +102,10 @@ class TcpClient:
         pass
 
     async def __get_flow(self) -> Tuple[FlowSendClient, FlowRecvClient]:
+        if self.__loop_bg.task.done():
+            self.__loop_bg.run()
+            pass
+
         if await AsyncBase.wait_done(self.__future, 0.1):
             return await self.__future
         raise ConnTimeoutError(f'连接服务端超时:{self.__conn.host}:{self.__conn.port}')
