@@ -4,7 +4,7 @@ from typing import Any
 
 from ..tool.base import AsyncBase
 
-from ...configuration.log import LoggerLocal
+from ..configuration.log import LoggerLocal
 
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline

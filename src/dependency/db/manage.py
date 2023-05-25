@@ -1,6 +1,6 @@
 import asyncio
 
-from ....configuration.env import get_value_by_tag_and_field
+from ...configuration.env import get_value_by_tag_and_field
 from ...exception.db import UnsupportedSqlTypesError
 from .sqlite import SqliteManage
 from .rds import MysqlManage, RDSConfigData

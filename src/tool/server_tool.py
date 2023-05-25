@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 
 from .func_tool import ExceptTool
 
-from ...configuration.log import LoggerLocal
+from ..configuration.log import LoggerLocal
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
 
