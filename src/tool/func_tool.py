@@ -1,7 +1,7 @@
 import asyncio
 from functools import wraps
 import threading
-from typing import Callable, Tuple
+from typing import Callable, Tuple, TypeVar
 import pytest
 
 from .base import AsyncBase
@@ -17,6 +17,10 @@ class AsyncExecOrder:
         self.__func = func
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
+
+    @property
+    def qsize(self):
+        return self.__queue.qsize()
 
     async def __queue_func(self, *args, **kwds):
         res0 = self.__func(*args, **kwds)
@@ -45,16 +49,17 @@ class ExceptTool:
     pass
 
 
-class LockThread:
-    def __new__(cls, func: Callable) -> Callable:
-        lock = threading.Lock()
+R = TypeVar('R')
 
-        @wraps(func)
-        def func_lock(*args, **kwds):
-            with lock:
-                return func(*args, **kwds)
-        return func_lock
-    pass
+
+def lock_thread(func: Callable[..., R]) -> Callable[..., R]:
+    lock = threading.Lock()
+
+    @wraps(func)
+    def func_lock(*args, **kwds):
+        with lock:
+            return func(*args, **kwds)
+    return func_lock
 
 
 class PytestAsyncTimeout:
