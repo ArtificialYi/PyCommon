@@ -10,20 +10,25 @@ from ..tool.map_tool import MapKey
 
 class Mail:
     def __init__(self, smtp_server: str, port: int, sender_email: str, password: str) -> None:
-        self.__server = smtplib.SMTP(smtp_server, port)
-        self.__server.starttls()
-        self.__server.login(sender_email, password)
+        self.__smtp_server = smtp_server
+        self.__port = port
         self.__sender_email = sender_email
         self.__password = password
         pass
 
     def __send_opt(self, receiver_email: str, text: str):
         try:
-            self.__server.sendmail(self.__sender_email, receiver_email, text)
+            server = smtplib.SMTP(self.__smtp_server, self.__port)
+            server.starttls()
+            server.login(self.__sender_email, self.__password)
+            server.sendmail(self.__sender_email, receiver_email, text)
+            server.quit()
         except SMTPServerDisconnected:
-            self.__server.starttls()
-            self.__server.login(self.__sender_email, self.__password)
-            self.__server.sendmail(self.__sender_email, receiver_email, text)
+            server = smtplib.SMTP(self.__smtp_server, self.__port)
+            server.starttls()
+            server.login(self.__sender_email, self.__password)
+            server.sendmail(self.__sender_email, receiver_email, text)
+            server.quit()
             pass
         pass
 
@@ -36,10 +41,6 @@ class Mail:
         text = message.as_string()
 
         self.__send_opt(receiver_email, text)
-        pass
-
-    def __del__(self):
-        self.__server.quit()
         pass
     pass
 
