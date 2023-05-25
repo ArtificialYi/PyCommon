@@ -53,7 +53,6 @@ class TcpConn:
             reader, writer = await self.__conn_unit()
             if reader is not None and writer is not None:
                 break
-            # TODO: 严重错误告警
             await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60 * self.__base)
         return reader, writer
@@ -88,7 +87,6 @@ class TcpClient:
                 done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
                 done.pop().result()
             except BaseException as e:
-                # TODO: 此处需记录断开连接的原因
                 await LoggerLocal.exception(e, f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
                 raise
             finally:
