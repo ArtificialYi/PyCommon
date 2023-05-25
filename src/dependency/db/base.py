@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Union
+from typing import Any, AsyncGenerator, Iterable, Optional, Union
 import aiomysql
 import aiosqlite
 
@@ -6,9 +6,9 @@ from ...tool.sql_tool import Mysql2Other
 
 
 class ActionExec:
-    def __init__(self, sql: str, args = None) -> None:
+    def __init__(self, sql: str, args: Optional[Iterable[Any]] = None) -> None:
         self.__sql = sql
-        self.__args = args
+        self.__args = args if args is not None else []
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> int:
@@ -19,9 +19,9 @@ class ActionExec:
 
 
 class ActionIter:
-    def __init__(self, sql: str, args = None) -> None:
+    def __init__(self, sql: str, args: Optional[Iterable[Any]] = None) -> None:
         self.__sql = sql
-        self.__args = args
+        self.__args = args if args is not None else []
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> AsyncGenerator[dict, None]:
