@@ -24,13 +24,15 @@ class FlowSendServer(OrderApi):
         pass
 
     async def send(self, id: Optional[int], code: int, data: Any):
+        name_type = type(data).__name__
         str_json = json.dumps({
             'id': id,
-            'type': type(data).__name__,
+            'type': name_type,
             'data': data,
         }, cls=HyJsonEncoder)
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
         await self.__writer.drain()
+        await LoggerLocal.info(f'服务端:发送响应|{id}|{name_type}')
         pass
     pass
 
@@ -48,6 +50,7 @@ class JsonDeal:
         service_name = json_obj.get('service')
         args = json_obj.get("args", [])
         kwds = json_obj.get("kwds", {})
+        await LoggerLocal.info(f'服务端:收到请求|{id}|{service_name}')
         res_service = await ServerRegister.call(service_name, *args, **kwds)
         await self.__flow_send.send(id, 1 if isinstance(res_service, Exception) else 0, res_service)
         pass
@@ -77,7 +80,6 @@ class FlowRecvServer(NormLoop):
 
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):
-            await LoggerLocal.info(f'服务端：已接收数据:{json_obj}')
             # 将json数据 异步处理
             asyncio.create_task(asyncio.wait_for(self.__json_deal.deal_json(json_obj), self.__timeout))
         pass
