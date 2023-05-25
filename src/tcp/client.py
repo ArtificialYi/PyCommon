@@ -88,7 +88,7 @@ class TcpClient:
                 done.pop().result()
             except BaseException as e:
                 await LoggerLocal.exception(e, f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
-                raise
+                ExceptTool.raise_not_exception(e)
             finally:
                 for task_flow in tasks_flow:
                     task_flow.cancel()
