@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 import aiosqlite
 
 from .base import ConnExecutor
-from ...configuration.log import LoggerLocal
+from ....configuration.log import LoggerLocal
 
 
 # async def __rollback_unit(conn: aiosqlite.Connection):

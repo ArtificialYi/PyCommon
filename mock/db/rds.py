@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 import aiomysql
 from pytest_mock import MockerFixture
 
-from ...src.dependency import db
+from ...src.dependency.db import db
 from ..base import MockDelay
-from ...src.dependency import rds
+from ...src.dependency.db import rds
 
 
 class MockCursor(MockDelay, aiomysql.SSDictCursor):
