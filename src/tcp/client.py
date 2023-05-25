@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
-from typing import Dict, Optional, Tuple
+from typing import Any, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 
 from ..configuration.env import get_value_by_tag_and_field
@@ -109,7 +109,7 @@ class TcpClient:
     async def wait_conn(self):
         return await asyncio.wait({self.__future})
 
-    async def api(self, path: str, *args, **kwds) -> Dict:
+    async def api(self, path: str, *args, **kwds) -> Tuple[str, Any]:
         flow_send, flow_recv = await self.__get_flow()
         tcp_id, future = flow_recv.prepare_id_future(self.__api_delay * 2)
         await flow_send.send(tcp_id, path, *args, **kwds)
@@ -117,6 +117,15 @@ class TcpClient:
             return await asyncio.wait_for(future, self.__api_delay)
         except asyncio.TimeoutError:
             raise ServiceTimeoutError(f'服务调用超时:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+
+    async def api_no_raise(self, path: str, *args, **kwds) -> Tuple[str, Any]:
+        try:
+            return await self.api(path, *args, **kwds)
+        except BaseException as e:
+            await LoggerLocal.exception(e, f'服务调用异常:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+            ExceptTool.raise_not_exception(e)
+            return type(e).__name__, e
+        pass
 
     async def __aenter__(self):
         return self

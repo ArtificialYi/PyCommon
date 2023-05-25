@@ -16,9 +16,8 @@ class TestClient:
     async def test_no_server(self):
         port = 10010
         async with TcpClientManage(LOCAL_HOST, port) as client:
-            with pytest.raises(ConnTimeoutError):
-                await client.api('')
-                pass
+            t, _ = await client.api_no_raise('')
+            assert t == 'ConnTimeoutError'
             pass
         pass
 
