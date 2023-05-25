@@ -32,7 +32,6 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
 
     def __init__(self, *args):
         MockDelay.__init__(self)
-        self.__exec_res = None
         self.__fetch_all_res: list = []
         self.__fetch_idx = 0
         self.__rowcount = 1
@@ -41,10 +40,6 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     @property
     def rowcount(self):
         return self.__rowcount
-
-    def mock_set_exec(self, exec_res: int):
-        self.__exec_res = exec_res
-        return self
 
     def mock_set_rowcount(self, rowcount: int):
         self.__rowcount = rowcount
@@ -57,7 +52,7 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
 
     async def execute(self, query, args=None):
         self.mock_sleep()
-        return self.__exec_res
+        return self
 
     async def fetchone(self):
         await self.mock_asleep()
