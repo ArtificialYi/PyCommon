@@ -30,6 +30,7 @@ class FlowSendClient(OrderApi):
         })
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
         await self.__writer.drain()
+        await LoggerLocal.info(f'客户端：发送请求|{id}|{service}')
         pass
     pass
 
@@ -58,6 +59,7 @@ class JsonDeal:
             return
         # 将data结果写入future（超时限制）
         future.set_result((json_obj.get('type'), json_obj.get('data')))
+        await LoggerLocal.info(f'客户端：收到响应|{id}|{json_obj.get("type")}')
         pass
     pass
 
@@ -87,7 +89,6 @@ class FlowRecvClient(NormLoop):
         str_tmp = data.decode(CODING)
         for json_obj in self.__json_online.append(str_tmp):
             # 将json数据发送给其他流处理
-            await LoggerLocal.info(f'客户端：已接收数据:{json_obj}')
             await self.__json_deal.deal_json(json_obj)
         pass
     pass
