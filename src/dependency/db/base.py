@@ -6,7 +6,7 @@ from ...tool.sql_tool import Mysql2Other
 
 
 class ActionExec:
-    def __init__(self, sql: str, *args) -> None:
+    def __init__(self, sql: str, args = None) -> None:
         self.__sql = sql
         self.__args = args
         pass
@@ -19,7 +19,7 @@ class ActionExec:
 
 
 class ActionIter:
-    def __init__(self, sql: str, *args) -> None:
+    def __init__(self, sql: str, args = None) -> None:
         self.__sql = sql
         self.__args = args
         pass
