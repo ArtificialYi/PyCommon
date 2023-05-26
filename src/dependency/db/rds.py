@@ -67,7 +67,7 @@ class RDSConfigData:
 
 
 @MapKey(RDSConfigData.to_key)
-async def get_pool(data: RDSConfigData):  # pragma: no cover
+async def get_pool(data: RDSConfigData) -> aiomysql.Pool:  # pragma: no cover
     return await aiomysql.create_pool(**{
         'host': data.host,
         'port': data.port,
@@ -83,9 +83,12 @@ class MysqlManage:
         self.__data = data
         pass
 
+    async def pool(self):
+        return await get_pool(self.__data)
+
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
-        async with get_conn(await get_pool(self.__data), use_transaction) as conn:
+        async with get_conn(await self.pool(), use_transaction) as conn:
             yield ConnExecutor(conn)
         pass
     pass
