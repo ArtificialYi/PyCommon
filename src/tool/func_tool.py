@@ -2,7 +2,6 @@ import asyncio
 from functools import wraps
 import threading
 from typing import Callable, Tuple, TypeVar
-import pytest
 
 from .base import AsyncBase
 
@@ -60,22 +59,6 @@ def lock_thread(func: Callable[..., R]) -> Callable[..., R]:
         with lock:
             return func(*args, **kwds)
     return func_lock
-
-
-class PytestAsyncTimeout:
-    def __init__(self, t: int) -> None:
-        self.__time = t
-        # self.__delay = 0
-        pass
-
-    def __call__(self, func: Callable):
-        @pytest.mark.timeout(self.__time)
-        @pytest.mark.asyncio
-        @wraps(func)
-        async def func_pytest(*args, **kwds):
-            return await func(*args, **kwds)
-        return func_pytest
-    pass
 
 
 class FieldSwap(object):

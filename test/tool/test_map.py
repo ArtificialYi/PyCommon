@@ -1,5 +1,6 @@
 import asyncio
-from ...src.tool.func_tool import PytestAsyncTimeout
+
+from ..timeout import PytestAsyncTimeout
 from ...src.tool.map_tool import MapKey
 
 

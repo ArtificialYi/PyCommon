@@ -1,7 +1,7 @@
 from asyncio import Future
 import asyncio
 
-from ...src.tool.func_tool import PytestAsyncTimeout
+from ..timeout import PytestAsyncTimeout
 from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue
 
 

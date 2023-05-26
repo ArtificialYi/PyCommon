@@ -1,11 +1,10 @@
 import asyncio
 import pytest
 
+from ..timeout import PytestAsyncTimeout
 from ...src.tcp.server import TcpServer
-
 from ...src.exception.tcp import ConnTimeoutError, ServiceTimeoutError
 from ...src.tcp.client import TcpClientManage
-from ...src.tool.func_tool import PytestAsyncTimeout
 
 
 LOCAL_HOST = '127.0.0.1'

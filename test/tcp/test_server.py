@@ -1,10 +1,9 @@
 import asyncio
 import pytest
 
+from ..timeout import PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
-
 from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
-from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tcp.client import TcpClientManage
 from ...src.tool.server_tool import ServerRegister
 from ...src.tcp.server import TcpServer
@@ -26,7 +25,7 @@ class TestServer:
             await asyncio.gather(server.start(), server.start(),)
 
         # 启动中的server不会主动结束
-        assert not await AsyncBase.wait_done(server, 0.1)
+        assert not await AsyncBase.wait_done(server.task, 0.1)
 
         # 同时关闭两个没有影响
         await asyncio.gather(server.close(), server.close(),)
@@ -35,7 +34,7 @@ class TestServer:
 
         # 已经关闭的服务
         with pytest.raises(asyncio.CancelledError):
-            await server
+            await server.task
         pass
 
     @PytestAsyncTimeout(1)
