@@ -1,10 +1,11 @@
 import asyncio
 import pytest
 
+from ..timeout import PytestAsyncTimeout
+
 from ...src.tool.base import AsyncBase
 from ...mock.func import MockException
 from ...src.exception.tool import AlreadyRunException
-from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tool.loop_tool import LoopExecBg, NormLoop, OrderApi
 
 

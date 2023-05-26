@@ -3,8 +3,9 @@ import math
 from time import sleep
 import pytest
 
+from ..timeout import PytestAsyncTimeout
 from ...mock.func import MockException, MockFunc
-from ...src.tool.func_tool import FieldSwap, PytestAsyncTimeout, lock_thread
+from ...src.tool.func_tool import FieldSwap, lock_thread
 
 
 def func_custom():

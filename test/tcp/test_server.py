@@ -1,10 +1,9 @@
 import asyncio
 import pytest
 
+from ..timeout import PytestAsyncTimeout
 from ...src.tool.base import AsyncBase
-
 from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
-from ...src.tool.func_tool import PytestAsyncTimeout
 from ...src.tcp.client import TcpClientManage
 from ...src.tool.server_tool import ServerRegister
 from ...src.tcp.server import TcpServer
