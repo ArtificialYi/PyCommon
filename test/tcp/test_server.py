@@ -16,7 +16,7 @@ class TestServer:
     """测试端口范围: 10000-10009
     """
 
-    # @PytestAsyncTimeout(1)
+    @PytestAsyncTimeout(1)
     async def test_err(self):
         port = 10000
         server = TcpServer(LOCAL_HOST, port)
