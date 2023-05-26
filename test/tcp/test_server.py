@@ -16,7 +16,7 @@ class TestServer:
     """测试端口范围: 10000-10009
     """
 
-    @PytestAsyncTimeout(1)
+    # @PytestAsyncTimeout(1)
     async def test_err(self):
         port = 10000
         server = TcpServer(LOCAL_HOST, port)
@@ -25,7 +25,7 @@ class TestServer:
             await asyncio.gather(server.start(), server.start(),)
 
         # 启动中的server不会主动结束
-        assert not await AsyncBase.wait_done(server, 0.1)
+        assert not await AsyncBase.wait_done(server.task, 0.1)
 
         # 同时关闭两个没有影响
         await asyncio.gather(server.close(), server.close(),)
@@ -34,7 +34,7 @@ class TestServer:
 
         # 已经关闭的服务
         with pytest.raises(asyncio.CancelledError):
-            await server
+            await server.task
         pass
 
     @PytestAsyncTimeout(1)

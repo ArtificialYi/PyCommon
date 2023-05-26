@@ -77,8 +77,9 @@ class TcpServer:
         self.__port = port
         pass
 
-    def __await__(self):
-        yield from self.__task
+    @property
+    def task(self):
+        return self.__task
 
     async def __forever(self, host: str, port: int, future: asyncio.Future[asyncio.Server]):
         handle = ServerHandle()
