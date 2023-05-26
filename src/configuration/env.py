@@ -20,7 +20,7 @@ CONFIG_ROOT = os.path.join(PROJECT_ROOT, 'configuration')
 class EnvEnum(Enum):
     TEST = 'TEST'
     DEV = 'DEV'
-    PRE = 'PRE'
+    PROD = 'PROD'
 
     def lower(self) -> str:
         str_tmp: str = self.value
