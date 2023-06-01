@@ -15,9 +15,8 @@ test-local:
 clean: clean-pytest clean-python
 	@echo 'clean done.'
 clean-pytest:
-	rm -rf .coverage.*
-	# rm -rf coverage.xml
-	find . -name '.pytest_cache' | xargs rm -r
-	find . -name '.coverage' | xargs rm -r
+	find . -name .coverage.* -exec rm -rf {} +
+	find . -name .pytest_cache -exec rm -r {} +
+	find . -name .coverage -exec rm -r {} +
 clean-python:
-	find . -name '__pycache__' | xargs rm -r
+	find . -name __pycache__ -exec rm -r {} +

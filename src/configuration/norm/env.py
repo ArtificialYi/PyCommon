@@ -3,12 +3,12 @@ from configparser import ConfigParser
 from enum import Enum
 import os
 
-from ..tool.map_tool import MapKey
+from ...tool.map_tool import MapKey
 from .tool import ConfigTool
 
-
-COMMON_CONFIGURATION_DIR = os.path.dirname(__file__)
-COMMON_SRC_ROOT = os.path.dirname(COMMON_CONFIGURATION_DIR)
+COMMON_CONFIG_NORM_DIR = os.path.dirname(__file__)
+COMMON_CONFIG_DIR = os.path.dirname(COMMON_CONFIG_NORM_DIR)
+COMMON_SRC_ROOT = os.path.dirname(COMMON_CONFIG_DIR)
 COMMON_ROOT = os.path.dirname(COMMON_SRC_ROOT)
 
 MODULES_ROOT = os.path.dirname(COMMON_ROOT)
