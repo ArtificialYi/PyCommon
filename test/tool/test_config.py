@@ -1,6 +1,6 @@
 import os
 
-from ...src.configuration.norm.env import COMMON_ROOT
+from ...src.configuration import COMMON_ROOT
 from ...src.tool.config_tool import ConfigBase
 
 
