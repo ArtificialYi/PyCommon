@@ -1,16 +1,13 @@
 from configparser import ConfigParser
 import os
-import aiofiles
 
 
 class ConfigTool:
     @staticmethod
-    async def get_config(path: str):
+    def get_config(path: str):
         config = ConfigParser()
         if os.path.exists(path):
-            async with aiofiles.open(path, 'r') as config_file:
-                str_config = await config_file.read()
-                config.read_string(str_config)
+            config.read(path)
             pass
         return config
 
