@@ -1,7 +1,7 @@
 from pymysql import Connection
 from pytest_mock import MockerFixture
 from pymysql.cursors import SSDictCursor
-from dbutils.pooled_db import PooledDB
+from pymysqlpool import ConnectionPool
 
 from ...src.dependency.db_sync import manage, rds
 from ..base import MockDelay
@@ -106,15 +106,17 @@ class MockConnection(MockDelay, Connection):
         self.mock_sleep()
         pass
 
-    def ensure_closed(self):
-        self.mock_sleep()
-        pass
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        return self.close()
 
     __del__ = close
     pass
 
 
-class MockDBPool(MockDelay, PooledDB):
+class MockDBPool(MockDelay, ConnectionPool):
     """模拟DBPool
     外部调用
     1. get_conn
@@ -133,6 +135,6 @@ class MockDBPool(MockDelay, PooledDB):
         self.__conn = conn
         return self
 
-    def connection(self, *args, **kwds):
+    def get_connection(self, *args, **kwds):
         return self.__conn
     pass

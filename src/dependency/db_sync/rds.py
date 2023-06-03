@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Generator
 import pymysql
-from dbutils.pooled_db import PooledDB
+from pymysqlpool import ConnectionPool
 from pymysql.cursors import SSDictCursor
 
 from ...tool.map_tool import MapKey
@@ -26,8 +26,8 @@ def __transaction(conn: pymysql.Connection):
 
 
 @contextmanager
-def get_conn(pool: PooledDB, use_transaction: bool = False):
-    with pool.connection(False) as conn:
+def get_conn(pool: ConnectionPool, use_transaction: bool = False):
+    with pool.get_connection(pre_ping=True) as conn:
         if not use_transaction:
             yield conn
             return
@@ -56,13 +56,11 @@ class RDSConfigData:
 
 
 @MapKey(RDSConfigData.to_key)
-def get_pool(data: RDSConfigData) -> PooledDB:  # pragma: no cover
-    return PooledDB(
-        creator=pymysql,
-        mincached=1,
-        maxconnections=2,
-        blocking=True,
-        ping=1,
+def get_pool(data: RDSConfigData) -> ConnectionPool:  # pragma: no cover
+    return ConnectionPool(
+        size=1,
+        maxsize=2,
+        pre_create_num=1,
         host=data.host,
         port=data.port,
         user=data.user,
