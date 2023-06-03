@@ -51,17 +51,18 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
 
 
 class RDSConfigData:
-    FIELDS = ('host', 'port', 'user', 'password', 'db')
+    FIELDS = ('host', 'port', 'user', 'password', 'db', 'max_conn')
 
     def to_key(self):  # pragma: no cover
         return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}'
 
-    def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
+    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: str) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
         self.user = user
         self.password = password
         self.db = db
+        self.max_conn = int(max_conn)
         pass
     pass
 
@@ -69,6 +70,7 @@ class RDSConfigData:
 @MapKey(RDSConfigData.to_key)
 async def get_pool(data: RDSConfigData) -> aiomysql.Pool:  # pragma: no cover
     return await aiomysql.create_pool(**{
+        'maxsize': data.max_conn,
         'host': data.host,
         'port': data.port,
         'user': data.user,
