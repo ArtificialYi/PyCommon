@@ -57,7 +57,6 @@ class RDSConfigData:
 
 @MapKey(RDSConfigData.to_key)
 def get_pool(data: RDSConfigData) -> PooledDB:  # pragma: no cover
-    pymysql.Connection
     return PooledDB(
         creator=pymysql,
         mincached=1,
@@ -73,7 +72,7 @@ def get_pool(data: RDSConfigData) -> PooledDB:  # pragma: no cover
     )
 
 
-class MysqlManage:
+class MysqlManageSync:
     def __init__(self, data: RDSConfigData) -> None:
         self.__data = data
         pass
