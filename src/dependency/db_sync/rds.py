@@ -5,7 +5,7 @@ from dbutils.pooled_db import PooledDB
 from pymysql.cursors import SSDictCursor
 
 from ...tool.map_tool import MapKey
-from .base import ConnExecutor
+from .base import ConnExecutorSync
 from ...configuration.sync.log import LoggerLocal
 
 
@@ -81,8 +81,8 @@ class MysqlManageSync:
         return get_pool(self.__data)
 
     @contextmanager
-    def __call__(self, use_transaction: bool = False) -> Generator[ConnExecutor, bool, None]:
+    def __call__(self, use_transaction: bool = False) -> Generator[ConnExecutorSync, bool, None]:
         with get_conn(self.pool(), use_transaction) as conn:
-            yield ConnExecutor(conn)
+            yield ConnExecutorSync(conn)
         pass
     pass

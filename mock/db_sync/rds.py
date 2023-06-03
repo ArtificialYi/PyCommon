@@ -1,12 +1,13 @@
-from contextlib import asynccontextmanager
-import aiomysql
+from pymysql import Connection
 from pytest_mock import MockerFixture
+from pymysql.cursors import SSDictCursor
+from dbutils.pooled_db import PooledDB
 
-from ...src.dependency.db import manage, rds
+from ...src.dependency.db_sync import manage, rds
 from ..base import MockDelay
 
 
-class MockCursor(MockDelay, aiomysql.SSDictCursor):
+class MockCursorSync(MockDelay, SSDictCursor):
     """模拟cursor
     外部调用
     1. execute
@@ -16,13 +17,13 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     """
     @staticmethod
     def mock_init(mocker: MockerFixture):
-        cursor = MockCursor()
+        cursor = MockCursorSync()
 
-        async def tmp(*args):
+        def tmp(*args):
             return MockDBPool('test').mock_set_conn(MockConnection().mock_set_cursor(cursor))
         mocker.patch(f'{rds.__name__}.get_pool', new=tmp)
 
-        async def mock_get_by(tag: str, field: str):
+        def mock_get_by(tag: str, field: str):
             return {
                 'sql_type': 'mysql',
             }.get(field, '0')
@@ -49,12 +50,12 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
         self.__fetch_idx = 0
         return self
 
-    async def execute(self, query, args=None):
+    def execute(self, query, args=None):
         self.mock_sleep()
         return self
 
-    async def fetchone(self):
-        await self.mock_asleep()
+    def fetchone(self):
+        self.mock_sleep()
         if self.__fetch_idx < len(self.__fetch_all_res):
             res = self.__fetch_all_res[self.__fetch_idx]
             self.__fetch_idx += 1
@@ -65,17 +66,11 @@ class MockCursor(MockDelay, aiomysql.SSDictCursor):
     def close(self):
         pass
 
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
-
     __del__ = close
     pass
 
 
-class MockConnection(MockDelay, aiomysql.Connection):
+class MockConnection(MockDelay, Connection):
     """模拟conn
     外部调用
     1. begin
@@ -88,19 +83,19 @@ class MockConnection(MockDelay, aiomysql.Connection):
     """
     def __init__(self, *args, **kwds):
         MockDelay.__init__(self)
-        self.__cursor = MockCursor(self)
+        self.__cursor = MockCursorSync(self)
         pass
 
-    async def begin(self):
-        await self.mock_asleep()
+    def begin(self):
+        self.mock_sleep()
 
-    async def rollback(self):
-        await self.mock_asleep()
+    def rollback(self):
+        self.mock_sleep()
 
-    async def commit(self):
-        await self.mock_asleep()
+    def commit(self):
+        self.mock_sleep()
 
-    def mock_set_cursor(self, cursor: MockCursor):
+    def mock_set_cursor(self, cursor: MockCursorSync):
         self.__cursor = cursor
         return self
 
@@ -111,15 +106,15 @@ class MockConnection(MockDelay, aiomysql.Connection):
         self.mock_sleep()
         pass
 
-    async def ensure_closed(self):
-        await self.mock_asleep()
+    def ensure_closed(self):
+        self.mock_sleep()
         pass
 
     __del__ = close
     pass
 
 
-class MockDBPool(MockDelay, aiomysql.Pool):
+class MockDBPool(MockDelay, PooledDB):
     """模拟DBPool
     外部调用
     1. get_conn
@@ -130,9 +125,6 @@ class MockDBPool(MockDelay, aiomysql.Pool):
         self.__conn = MockConnection()
         pass
 
-    async def __await__(self):
-        yield self
-
     @property
     def db_name(self):
         return self.__db_name
@@ -141,10 +133,6 @@ class MockDBPool(MockDelay, aiomysql.Pool):
         self.__conn = conn
         return self
 
-    @asynccontextmanager
-    async def acquire(self):
-        await self.mock_asleep()
-        yield self.__conn
-        await self.mock_asleep()
-        pass
+    def connection(self, *args, **kwds):
+        return self.__conn
     pass

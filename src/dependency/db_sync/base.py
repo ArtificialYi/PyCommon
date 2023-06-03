@@ -6,7 +6,7 @@ import sqlite3
 from ...tool.sql_tool import Mysql2Other
 
 
-class ActionExec:
+class ActionExecSync:
     def __init__(self, sql: str, args: Optional[tuple | dict] = None) -> None:
         self.__sql = sql
         self.__args = args if args is not None else []
@@ -19,7 +19,7 @@ class ActionExec:
     pass
 
 
-class ActionIter:
+class ActionIterSync:
     def __init__(self, sql: str, args: Optional[tuple | dict] = None) -> None:
         self.__sql = sql
         self.__args = args if args is not None else []
@@ -37,18 +37,18 @@ class ActionIter:
     pass
 
 
-class ConnExecutor:
+class ConnExecutorSync:
     def __init__(self, conn: pymysql.Connection | sqlite3.Connection) -> None:
         self.__conn = conn
         pass
 
-    def exec(self, coro: ActionExec) -> int:
+    def exec(self, coro: ActionExecSync) -> int:
         cursor = self.__conn.cursor()
         res = coro(cursor)
         cursor.close()
         return res
 
-    def iter(self, gen: ActionIter) -> Generator[dict, ActionIter, None]:
+    def iter(self, gen: ActionIterSync) -> Generator[dict, ActionIterSync, None]:
         cursor = self.__conn.cursor()
         for row in gen(cursor):
             yield row
