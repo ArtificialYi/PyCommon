@@ -51,7 +51,7 @@ class RDSConfigData:
         self.user = user
         self.password = password
         self.db = db
-        self.max_conn = max_conn
+        self.max_conn = int(max_conn)
         pass
     pass
 
