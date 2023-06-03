@@ -40,17 +40,18 @@ def get_conn(pool: ConnectionPool, use_transaction: bool = False):
 
 
 class RDSConfigData:
-    FIELDS = ('host', 'port', 'user', 'password', 'db')
+    FIELDS = ('host', 'port', 'user', 'password', 'db', 'max_conn')
 
     def to_key(self):  # pragma: no cover
-        return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}'
+        return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}:{self.max_conn}'
 
-    def __init__(self, host: str, port: str, user: str, password: str, db: str) -> None:
+    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: int) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
         self.user = user
         self.password = password
         self.db = db
+        self.max_conn = max_conn
         pass
     pass
 
@@ -59,8 +60,8 @@ class RDSConfigData:
 def get_pool(data: RDSConfigData) -> ConnectionPool:  # pragma: no cover
     return ConnectionPool(
         size=1,
-        maxsize=2,
         pre_create_num=1,
+        maxsize=data.max_conn,
         host=data.host,
         port=data.port,
         user=data.user,

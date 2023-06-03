@@ -42,9 +42,9 @@ class ConnExecutorSync:
         self.__conn = conn
         pass
 
-    def exec(self, coro: ActionExecSync) -> int:
+    def exec(self, func: ActionExecSync) -> int:
         cursor = self.__conn.cursor()
-        res = coro(cursor)
+        res = func(cursor)
         cursor.close()
         return res
 
