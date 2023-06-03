@@ -5,7 +5,7 @@ from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 from ..exception.tcp import ServerAlreadyStartError
 from ..tool.base import AsyncBase
 from ..tool.map_tool import LockManage
-from ..configuration.log import LoggerLocal
+from ..configuration.norm.log import LoggerLocal
 from ..flow.server import FlowRecvServer, FlowSendServer
 
 

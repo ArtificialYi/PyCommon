@@ -4,7 +4,7 @@ import aiomysql
 
 from ...tool.map_tool import MapKey
 from .base import ConnExecutor
-from ...configuration.log import LoggerLocal
+from ...configuration.norm.log import LoggerLocal
 
 
 # async def __rollback_unit(conn: aiomysql.Connection):

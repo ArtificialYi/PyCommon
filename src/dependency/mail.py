@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 import smtplib
 from smtplib import SMTPServerDisconnected
 
-from ..configuration.env import get_value_by_tag_and_field
+from ..configuration.norm.env import get_value_by_tag_and_field
 from ..tool.map_tool import MapKey
 
 
