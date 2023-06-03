@@ -45,7 +45,7 @@ class RDSConfigData:
     def to_key(self):  # pragma: no cover
         return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}:{self.max_conn}'
 
-    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: int) -> None:
+    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: str) -> None:
         self.host = host
         self.port = int(port) if len(port) > 0 else 0
         self.user = user
