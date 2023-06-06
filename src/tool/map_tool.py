@@ -75,11 +75,9 @@ class MapKey:
 
     def __init__(self, func_key: Optional[Callable] = None) -> None:
         self.__func_key = func_key
-        print(f'MapKey初始化:{func_key.__name__ if func_key is not None else func_key}')
         pass
 
     def __call__(self, func_value: Callable[..., R]) -> Callable[..., R]:
-        print(f'MapKey调用:{func_value.__name__}')
         return (
             MapKey.AsyncLock(self.__func_key)(func_value)
             if asyncio.iscoroutinefunction(func_value)
