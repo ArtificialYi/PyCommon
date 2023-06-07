@@ -16,12 +16,12 @@ class ServerFlow:
         self.__addr = writer.get_extra_info('peername')
         pass
 
-    async def flow(self):
+    async def flow(self, timeout: float = 1):
         await LoggerLocal.info(f'服务端：Connection from {self.__addr}')
 
         async with (
             FlowSendServer(self.__writer) as flow_send,
-            FlowRecvServer(self.__reader, flow_send) as flow_recv,
+            FlowRecvServer(self.__reader, flow_send, timeout) as flow_recv,
         ):
             tasks_flow = {flow_send.task, flow_recv.task}
             try:
@@ -43,8 +43,9 @@ class ServerFlow:
 
 
 class ServerHandle:
-    def __init__(self) -> None:
+    def __init__(self, timeout: float = 1) -> None:
         self.__tasks = set[asyncio.Task]()
+        self.__timeout = timeout
         pass
 
     async def handle(self, reader: StreamReader, writer: StreamWriter):
@@ -53,7 +54,7 @@ class ServerHandle:
         task: asyncio.Task = asyncio.current_task()  # type: ignore
         self.__tasks.add(task)
         try:
-            await ServerFlow(reader, writer).flow()
+            await ServerFlow(reader, writer).flow(self.__timeout)
         finally:
             self.__tasks.remove(task)
         pass
@@ -70,18 +71,19 @@ class TcpServer:
     """基本的TCP服务端
     1. 服务启动失败异常没有处理
     """
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, timeout: float = 1) -> None:
         self.__task = AsyncBase.get_done_task()
         self.__lock = LockManage()
         self.__host = host
         self.__port = port
+        self.__timeout = timeout
         pass
 
     @property
     def task(self):
         return self.__task
 
-    async def __forever(self, host: str, port: int, future: asyncio.Future[asyncio.Server]):
+    async def __forever(self, host: str, port: int, timeout: float, future: asyncio.Future[asyncio.Server]):
         handle = ServerHandle()
         try:
             server = await asyncio.start_server(handle.handle, host, port)
@@ -99,7 +101,7 @@ class TcpServer:
         if not self.__task.done():
             raise ServerAlreadyStartError(f'服务已启动:{self.__host}:{self.__port}')
         self.__future: asyncio.Future[asyncio.Server] = AsyncBase.get_future()
-        self.__task = asyncio.create_task(self.__forever(self.__host, self.__port, self.__future))
+        self.__task = asyncio.create_task(self.__forever(self.__host, self.__port, self.__timeout, self.__future))
         await self.__future
         return self
 
