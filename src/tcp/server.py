@@ -84,7 +84,7 @@ class TcpServer:
         return self.__task
 
     async def __forever(self, host: str, port: int, timeout: float, future: asyncio.Future[asyncio.Server]):
-        handle = ServerHandle()
+        handle = ServerHandle(timeout)
         try:
             server = await asyncio.start_server(handle.handle, host, port)
             async with server:  # pragma: no cover
