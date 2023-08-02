@@ -80,7 +80,8 @@ class TrainUnit:
             return []
 
         return [
-            TrainUnit(al, self.speed_now, self.loss_now) for al in [
+            TrainUnit(al, self.speed_now, self.loss_now)
+            for al in [
                 self.al.next_length(length_max),
                 self.al.next_layer(layer_max),
                 self.al.next_hidden(hidden_max),
@@ -90,8 +91,8 @@ class TrainUnit:
 
 
 class Route:
-    def __init__(self):
-        key_tmp = ArgsLatitude(1, 1, 1)
+    def __init__(self, length_max: int = 1, layer_max: int = 8):
+        key_tmp = ArgsLatitude(1, 1, 2)
         value_tmp = TrainUnit(key_tmp, float('inf'), float('inf'))
 
         # 待训练堆(以速度排序)
@@ -100,8 +101,8 @@ class Route:
         self.__dict = {
             key_tmp: value_tmp
         }
-        self.__length_max = 1
-        self.__layer_max = 8
+        self.__length_max = length_max
+        self.__layer_max = layer_max
         self.__hidden_max = 2 ** self.__layer_max
         pass
 
@@ -142,5 +143,7 @@ class Route:
         # 速度 > 长度 > 层数
         if len(self.__heap) == 0:
             return None
-        return heapq.heappop(self.__heap)
+        res = heapq.heappop(self.__heap)
+        del self.__dict[res.al]
+        return res
     pass
