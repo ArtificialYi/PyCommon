@@ -1,6 +1,6 @@
 import heapq
 import math
-from typing import List
+from typing import Dict, List
 
 
 class ArgsLatitude:
@@ -23,41 +23,59 @@ class ArgsLatitude:
     def __hash__(self) -> int:
         return hash(self.hidden)
 
-    def next_length(self, length_max: int):
+    def __next_length(self, length_max: int):
         length_next = self.length * 2
         if length_next > length_max:
             return None
         return ArgsLatitude(length_next, self.layer, self.hidden)
 
-    def pre_length(self, length_min: int):
+    def __pre_length(self, length_min: int):
         length_pre = self.length // 2
         if length_pre < length_min:
             return None
         return ArgsLatitude(length_pre, self.layer, self.hidden)
 
-    def next_layer(self, layer_max: int):
+    def __next_layer(self, layer_max: int):
         layer_next = self.layer + 1
         if layer_next > layer_max or 2 ** layer_next > self.hidden:
             return None
         return ArgsLatitude(self.length, layer_next, self.hidden)
 
-    def pre_layer(self, layer_min: int):
+    def __pre_layer(self, layer_min: int):
         layer_pre = self.layer - 1
         if layer_pre < layer_min:
             return None
         return ArgsLatitude(self.length, layer_pre, self.hidden)
 
-    def next_hidden(self, hidden_max: int):
+    def __next_hidden(self, hidden_max: int):
         hidden_next = self.hidden * 2
         if hidden_next > hidden_max:
             return None
         return ArgsLatitude(self.length, self.layer, hidden_next)
 
-    def pre_hidden(self, hidden_min: int):
+    def __pre_hidden(self, hidden_min: int):
         hidden_pre = self.hidden // 2
         if hidden_pre < hidden_min:
             return None
         return ArgsLatitude(self.length, self.layer, hidden_pre)
+
+    def next(self, length_max: int, layer_max: int, hidden_max: int):
+        return [
+            al for al in [
+                self.__next_length(length_max),
+                self.__next_layer(layer_max),
+                self.__next_hidden(hidden_max),
+            ] if al is not None
+        ]
+
+    def pre(self, length_min: int, layer_min: int, hidden_min: int):
+        return [
+            al for al in [
+                self.__pre_length(length_min),
+                self.__pre_layer(layer_min),
+                self.__pre_hidden(hidden_min),
+            ] if al is not None
+        ]
     pass
 
 
@@ -93,31 +111,6 @@ class TrainUnit:
         self.speed_now = speed
         self.loss_now = loss
         return True
-
-    def next(self, length_max: int, layer_max: int, hidden_max: int):
-        if not self.is_ok:
-            return []
-
-        return [
-            TrainUnit(al, self.speed_now, self.loss_now)
-            for al in [
-                self.al.next_length(length_max),
-                self.al.next_layer(layer_max),
-                self.al.next_hidden(hidden_max),
-            ] if al is not None
-        ]
-
-    def pre(self, length_min: int, layer_min: int, hidden_min: int) -> List[ArgsLatitude]:
-        if not self.is_ok:
-            return []
-
-        return [
-            al for al in [
-                self.al.pre_length(length_min),
-                self.al.pre_layer(layer_min),
-                self.al.pre_hidden(hidden_min),
-            ] if al is not None
-        ]
     pass
 
 
@@ -128,12 +121,8 @@ class Route:
 
         # 待训练堆(以速度排序)
         self.__heap = [value_tmp]
-        # 待训练字典
-        self.__dict_wait = {
-            key_tmp: value_tmp
-        }
         # 已训练集合
-        self.__set_trained = set()
+        self.__dict_trained: Dict[ArgsLatitude, TrainUnit] = dict()
 
         self.__length_max = length_max
         self.__layer_max = layer_max
@@ -141,35 +130,52 @@ class Route:
         pass
 
     def add_node(self, al: ArgsLatitude, speed_now: float, loss_now: float):
-        # 1. 条件过滤
-        #     1. 当前节点为next节点
-        #     2. 当前loss更优
-        # 2. 添加当前节点为已训练节点
-        # 3. 生成多个有效的新节点
         tmp_next = self.get_next()
         res_node = tmp_next is None or tmp_next.al != al
         if res_node or math.isclose(tmp_next.loss_pre, loss_now, rel_tol=1e-4, abs_tol=1e-4) or tmp_next.loss_pre < loss_now:
             return False
+        self.__next2trained(speed_now, loss_now)
         return True
 
-    def __add(self, train_unit: TrainUnit):
-        heap_unit = self.__dict_wait.get(train_unit.al)
-        if heap_unit is None:
-            self.__dict_wait[train_unit.al] = train_unit
-            heapq.heappush(self.__heap, train_unit)
-            pass
-        return heap_unit
+    def __next2trained(self, speed_now: float, loss_now: float):
+        node_next = heapq.heappop(self.__heap)
+        node_next.speed_now = min(speed_now, node_next.speed_pre)
+        node_next.loss_now = loss_now
+        self.__dict_trained[node_next.al] = node_next
 
-    def __replace(self, train_unit: TrainUnit):
-        for heap_unit in self.__heap:
-            if heap_unit.al == train_unit.al:
-                heap_unit.loss_pre = train_unit.loss_pre
-                heap_unit.speed_pre = train_unit.speed_pre
-                break
-        else:
-            raise Exception(f'heap中不存在该节点: {train_unit.al.__dict__}')
-        heapq.heapify(self.__heap)
+        for al_valid in self.__iter_valid(node_next.al):
+            speed_tmp, loss_tmp = self.__get_pre(al_valid)
+            heapq.heappush(self.__heap, TrainUnit(al_valid, speed_tmp, loss_tmp))
+            pass
         pass
+
+    def __get_pre(self, al: ArgsLatitude):
+        speed_tmp = float('inf')
+        loss_tmp = float('inf')
+        for al_pre in al.pre(1, 1, 2):
+            node_trained = self.__dict_trained.get(al_pre)
+            if node_trained.loss_now < loss_tmp:
+                loss_tmp = node_trained.loss_now
+                speed_tmp = node_trained.speed_now
+                pass
+            pass
+        return speed_tmp, loss_tmp
+
+    def __iter_valid(self, al_next: ArgsLatitude):
+        for al_new in al_next.next(self.__length_max, self.__layer_max, self.__hidden_max):
+            if self.__is_valid(al_new):
+                yield al_new
+                pass
+            pass
+        pass
+
+    def __is_valid(self, al_new: ArgsLatitude):
+        for al in al_new.pre(1, 1, 2):
+            node_trained = self.__dict_trained.get(al)
+            if node_trained is None:
+                return False
+            pass
+        return True
 
     def get_next(self) -> TrainUnit:
         # 速度 > 长度 > 层数
