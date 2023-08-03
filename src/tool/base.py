@@ -18,15 +18,15 @@ class BaseTool:
 
     @staticmethod
     def isint(obj):
-        return type(obj) == int
+        return type(obj) is int
 
     @staticmethod
     def istrue(obj):
-        return type(obj) == bool and obj
+        return type(obj) is bool and obj
 
     @staticmethod
     def to_str(obj):
-        if type(obj) == str:
+        if type(obj) is str:
             return obj
         return str(obj)
 

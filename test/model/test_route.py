@@ -46,7 +46,7 @@ class TestRoute:
         node_tmp = route.get_next()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(2, 1, 2)
 
-        # 刷新2，1，2节点，下一个节点为1，1，4
+        # 刷新2，1，2节点，下一个节点为1，1，4（用以测试length字段，不会再出现）
         assert route.refresh_node(50, 0.3)
         node_tmp = route.get_next()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 4)
