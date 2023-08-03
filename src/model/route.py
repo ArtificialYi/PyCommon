@@ -1,6 +1,6 @@
 import heapq
 import math
-from typing import Dict, List
+from typing import Dict, Tuple
 
 
 class ArgsLatitude:
@@ -115,7 +115,7 @@ class TrainUnit:
 
 
 class Route:
-    def __init__(self, length_max: int = 1, layer_max: int = 1):
+    def __init__(self, length_max: int = 1, layer_max: int = 1, length_min: int = 1, layer_min: int = 1):
         key_tmp = ArgsLatitude(1, 1, 2)
         value_tmp = TrainUnit(key_tmp, float('inf'), float('inf'))
 
@@ -124,9 +124,13 @@ class Route:
         # 已训练集合
         self.__dict_trained: Dict[ArgsLatitude, TrainUnit] = dict()
 
-        self.__length_max = length_max
-        self.__layer_max = layer_max
+        self.__length_max = 2 ** length_max
+        self.__layer_max = 2 ** layer_max
         self.__hidden_max = 2 ** self.__layer_max
+
+        self.__length_min = 2 ** length_min
+        self.__layer_min = 2 ** layer_min
+        self.__hidden_min = 2 ** self.__layer_min
         pass
 
     def add_node(self, al: ArgsLatitude, speed_now: float, loss_now: float):
@@ -152,7 +156,7 @@ class Route:
     def __get_pre(self, al: ArgsLatitude):
         speed_tmp = float('inf')
         loss_tmp = float('inf')
-        for al_pre in al.pre(1, 1, 2):
+        for al_pre in al.pre(self.__length_min, self.__layer_min, self.__hidden_min):
             node_trained = self.__dict_trained.get(al_pre)
             if node_trained.loss_now < loss_tmp:
                 loss_tmp = node_trained.loss_now
@@ -170,7 +174,7 @@ class Route:
         pass
 
     def __is_valid(self, al_new: ArgsLatitude):
-        for al in al_new.pre(1, 1, 2):
+        for al in al_new.pre(self.__length_min, self.__layer_min, self.__hidden_min):
             node_trained = self.__dict_trained.get(al)
             if node_trained is None:
                 return False
