@@ -1,4 +1,4 @@
-from ...src.model.route import ArgsLatitude, Route
+from ...src.model.route import Route
 
 
 class TestRoute:
@@ -20,14 +20,20 @@ class TestRoute:
         pass
 
     def test_add_fail_norm(self):
-        # 无法添加next以外的节点
+        # 无法添加loss差不多的节点
         route = Route()
         node_next = route.get_next()
-        node_not_next = ArgsLatitude(1, 2, 2)
-        assert node_next is not None and node_next.al != node_not_next
-        assert not route.add_node(node_not_next, None, None)
+        assert not route.add_node(node_next.speed_pre, node_next.loss_pre)
+        pass
 
-        # 无法添加loss差不多的节点
-        assert not route.add_node(node_next.al, node_next.speed_pre, node_next.loss_pre)
+    def test_add_last(self):
+        route = Route()
+        assert route.get_next() is not None
+        # 添加最后一个节点后，next节点为空
+        assert route.add_node(1, 1)
+        assert route.get_next() is None
+
+        # 空节点时无法添加新节点
+        assert not route.add_node(1, 0.5)
         pass
     pass

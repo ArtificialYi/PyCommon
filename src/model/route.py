@@ -1,6 +1,6 @@
 import heapq
 import math
-from typing import Dict, Tuple
+from typing import Dict
 
 
 class ArgsLatitude:
@@ -124,26 +124,26 @@ class Route:
         # 已训练集合
         self.__dict_trained: Dict[ArgsLatitude, TrainUnit] = dict()
 
-        self.__length_max = 2 ** length_max
-        self.__layer_max = 2 ** layer_max
+        self.__length_max = length_max
+        self.__layer_max = layer_max
         self.__hidden_max = 2 ** self.__layer_max
 
-        self.__length_min = 2 ** length_min
-        self.__layer_min = 2 ** layer_min
+        self.__length_min = length_min
+        self.__layer_min = layer_min
         self.__hidden_min = 2 ** self.__layer_min
         pass
 
-    def add_node(self, al: ArgsLatitude, speed_now: float, loss_now: float):
+    def add_node(self, speed_now: float, loss_now: float):
         tmp_next = self.get_next()
-        res_node = tmp_next is None or tmp_next.al != al
-        if res_node or math.isclose(tmp_next.loss_pre, loss_now, rel_tol=1e-4, abs_tol=1e-4) or tmp_next.loss_pre < loss_now:
+        eq_res = tmp_next is None or math.isclose(tmp_next.loss_pre, loss_now, rel_tol=1e-4, abs_tol=1e-4)
+        if eq_res or tmp_next.loss_pre < loss_now:
             return False
         self.__next2trained(speed_now, loss_now)
         return True
 
     def __next2trained(self, speed_now: float, loss_now: float):
         node_next = heapq.heappop(self.__heap)
-        node_next.speed_now = min(speed_now, node_next.speed_pre)
+        node_next.speed_now = speed_now
         node_next.loss_now = loss_now
         self.__dict_trained[node_next.al] = node_next
 
