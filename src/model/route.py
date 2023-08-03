@@ -140,19 +140,17 @@ class Route:
         self.__hidden_max = 2 ** self.__layer_max
         pass
 
-    def add_note(self, train_res: TrainUnit):
-        # 生成新节点
-        for train_unit in train_res.next(self.__length_max, self.__layer_max, self.__hidden_max):
-            heap_unit = self.__add(train_unit)
-
-            # 旧节点更优
-            if heap_unit is None or heap_unit.loss_pre < train_res.loss_now:
-                continue
-
-            # 替换
-            self.__replace(train_unit)
-            pass
-        pass
+    def add_node(self, al: ArgsLatitude, speed_now: float, loss_now: float):
+        # 1. 条件过滤
+        #     1. 当前节点为next节点
+        #     2. 当前loss更优
+        # 2. 添加当前节点为已训练节点
+        # 3. 生成多个有效的新节点
+        tmp_next = self.get_next()
+        res_node = tmp_next is None or tmp_next.al != al
+        if res_node or math.isclose(tmp_next.loss_pre, loss_now, rel_tol=1e-4, abs_tol=1e-4) or tmp_next.loss_pre < loss_now:
+            return False
+        return True
 
     def __add(self, train_unit: TrainUnit):
         heap_unit = self.__dict_wait.get(train_unit.al)
