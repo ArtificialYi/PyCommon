@@ -1,5 +1,6 @@
 import heapq
 import math
+from typing import List
 
 
 class ArgsLatitude:
@@ -28,17 +29,35 @@ class ArgsLatitude:
             return None
         return ArgsLatitude(length_next, self.layer, self.hidden)
 
+    def pre_length(self, length_min: int):
+        length_pre = self.length // 2
+        if length_pre < length_min:
+            return None
+        return ArgsLatitude(length_pre, self.layer, self.hidden)
+
     def next_layer(self, layer_max: int):
         layer_next = self.layer + 1
         if layer_next > layer_max or 2 ** layer_next > self.hidden:
             return None
         return ArgsLatitude(self.length, layer_next, self.hidden)
 
+    def pre_layer(self, layer_min: int):
+        layer_pre = self.layer - 1
+        if layer_pre < layer_min:
+            return None
+        return ArgsLatitude(self.length, layer_pre, self.hidden)
+
     def next_hidden(self, hidden_max: int):
         hidden_next = self.hidden * 2
         if hidden_next > hidden_max:
             return None
         return ArgsLatitude(self.length, self.layer, hidden_next)
+
+    def pre_hidden(self, hidden_min: int):
+        hidden_pre = self.hidden // 2
+        if hidden_pre < hidden_min:
+            return None
+        return ArgsLatitude(self.length, self.layer, hidden_pre)
     pass
 
 
@@ -87,20 +106,35 @@ class TrainUnit:
                 self.al.next_hidden(hidden_max),
             ] if al is not None
         ]
+
+    def pre(self, length_min: int, layer_min: int, hidden_min: int) -> List[ArgsLatitude]:
+        if not self.is_ok:
+            return []
+
+        return [
+            al for al in [
+                self.al.pre_length(length_min),
+                self.al.pre_layer(layer_min),
+                self.al.pre_hidden(hidden_min),
+            ] if al is not None
+        ]
     pass
 
 
 class Route:
-    def __init__(self, length_max: int = 1, layer_max: int = 8):
+    def __init__(self, length_max: int = 1, layer_max: int = 1):
         key_tmp = ArgsLatitude(1, 1, 2)
         value_tmp = TrainUnit(key_tmp, float('inf'), float('inf'))
 
         # 待训练堆(以速度排序)
         self.__heap = [value_tmp]
         # 待训练字典
-        self.__dict = {
+        self.__dict_wait = {
             key_tmp: value_tmp
         }
+        # 已训练集合
+        self.__set_trained = set()
+
         self.__length_max = length_max
         self.__layer_max = layer_max
         self.__hidden_max = 2 ** self.__layer_max
@@ -121,9 +155,9 @@ class Route:
         pass
 
     def __add(self, train_unit: TrainUnit):
-        heap_unit = self.__dict.get(train_unit.al)
+        heap_unit = self.__dict_wait.get(train_unit.al)
         if heap_unit is None:
-            self.__dict[train_unit.al] = train_unit
+            self.__dict_wait[train_unit.al] = train_unit
             heapq.heappush(self.__heap, train_unit)
             pass
         return heap_unit
@@ -143,7 +177,5 @@ class Route:
         # 速度 > 长度 > 层数
         if len(self.__heap) == 0:
             return None
-        res = heapq.heappop(self.__heap)
-        del self.__dict[res.al]
-        return res
+        return self.__heap[0]
     pass

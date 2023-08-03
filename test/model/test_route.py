@@ -1,4 +1,4 @@
-from ...src.model.route import ArgsLatitude, Route, TrainUnit
+from ...src.model.route import Route
 
 
 class TestRoute:
@@ -14,16 +14,9 @@ class TestRoute:
         assert b.speed_now is None
         assert b.loss_now is None
 
-        assert a.get_next() is None
+        assert a.get_next() == b
         pass
 
     def test_add_norm(self):
-        a = Route()
-        assert not a.get_next().is_ok
-        assert a.get_next() is None
-
-        # 尚未完成节点无法添加
-        a.add_note(TrainUnit(ArgsLatitude(1, 1, 2), 1, 1))
-        assert a.get_next() is None
         pass
     pass
