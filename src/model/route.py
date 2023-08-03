@@ -11,12 +11,12 @@ class ArgsLatitude:
         pass
 
     def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):
+        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
             raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
         return (self.length, self.layer) == (__value.length, __value.layer)
 
     def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):
+        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
             raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
         return (self.length, self.layer) < (__value.length, __value.layer)
 
@@ -55,7 +55,7 @@ class ArgsLatitude:
 
     def __pre_hidden(self, hidden_min: int):
         hidden_pre = self.hidden // 2
-        if hidden_pre < hidden_min:
+        if hidden_pre < hidden_min or hidden_pre < 2 ** self.layer:
             return None
         return ArgsLatitude(self.length, self.layer, hidden_pre)
 
@@ -89,28 +89,17 @@ class TrainUnit:
         self.loss_now = None
         pass
 
-    @property
-    def is_ok(self):
-        return self.loss_now is not None
-
     def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, TrainUnit):
+        if not isinstance(__value, TrainUnit):  # pragma: no cover
             raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
         return math.isclose(self.speed_pre, __value.speed_pre, rel_tol=1e-4, abs_tol=1e-4) and self.al == __value.al
 
     def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, TrainUnit):
+        if not isinstance(__value, TrainUnit):  # pragma: no cover
             raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
         if math.isclose(self.speed_pre, __value.speed_pre, rel_tol=1e-4, abs_tol=1e-4):
-            return self.al < __value.al
+            return self.al > __value.al
         return self.speed_pre > __value.speed_pre
-
-    def set_loss(self, speed: float, loss: float):
-        if math.isclose(loss, self.loss_pre, rel_tol=1e-4, abs_tol=1e-4) or loss > self.loss_pre:
-            return False
-        self.speed_now = speed
-        self.loss_now = loss
-        return True
     pass
 
 
@@ -133,7 +122,7 @@ class Route:
         self.__hidden_min = 2 ** self.__layer_min
         pass
 
-    def add_node(self, speed_now: float, loss_now: float):
+    def refresh_node(self, speed_now: float, loss_now: float):
         tmp_next = self.get_next()
         eq_res = tmp_next is None or math.isclose(tmp_next.loss_pre, loss_now, rel_tol=1e-4, abs_tol=1e-4)
         if eq_res or tmp_next.loss_pre < loss_now:
