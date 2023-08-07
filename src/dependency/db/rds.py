@@ -58,11 +58,11 @@ class RDSConfigData:
 
     def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: str) -> None:
         self.host = host
-        self.port = int(port) if len(port) > 0 else 0
+        self.port = int(port) if len(port) > 0 else 3306
         self.user = user
         self.password = password
         self.db = db
-        self.max_conn = int(max_conn)
+        self.max_conn = int(max_conn) if len(max_conn) > 0 else 10
         pass
     pass
 
