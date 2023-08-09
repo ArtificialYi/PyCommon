@@ -20,6 +20,9 @@ class ArgsLatitude:
             raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
         return (self.length, self.layer, self.hidden) < (__value.length, __value.layer, __value.hidden)
 
+    def __le__(self, __value: object) -> bool:
+        return self == __value or self < __value
+
     def __hash__(self) -> int:
         return hash((self.length, self.layer, self.hidden))
 
@@ -172,13 +175,16 @@ class RouteHeap:
         if len(self.__heap) == 0:
             return None
         return heapq.heappop(self.__heap)
+
+    def get(self, al: ArgsLatitude) -> Optional[float]:
+        return self.__route_dict.get(al)
     pass
 
 
 class RouteUnit:
-    def __init__(self, heap_now: RouteHeap, dict_pre: RouteDict) -> None:
+    def __init__(self, heap_now: RouteHeap, heap_pre: RouteHeap) -> None:
         self.__heap_now = heap_now
-        self.__dict_pre = dict_pre
+        self.__heap_pre = heap_pre
         pass
 
     def push(self, al: ArgsLatitude, loss: Optional[float]) -> bool:
@@ -188,7 +194,7 @@ class RouteUnit:
 
     def pop(self):
         node_now = self.__heap_now.pop()
-        while node_now is not None and self.push(node_now.al, self.__dict_pre.get(node_now.al)):
+        while node_now is not None and self.push(node_now.al, self.__heap_pre.get(node_now.al)):
             node_now = self.__heap_now.pop()
             pass
         return node_now
