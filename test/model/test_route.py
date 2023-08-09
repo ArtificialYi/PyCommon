@@ -1,10 +1,10 @@
-from ...src.model.route import ArgsLatitude, Route
+from ...src.model.route import ArgsLatitude, UnitRoute
 
 
 class TestRoute:
     def test_init(self):
         # 初始化route
-        route = Route()
+        route = UnitRoute()
         node_next = route.get_next()
         assert node_next.al.length == 1
         assert node_next.al.layer == 1
@@ -20,13 +20,13 @@ class TestRoute:
 
     def test_add_fail_norm(self):
         # 无法刷新loss差不多的节点
-        route = Route()
+        route = UnitRoute()
         node_next = route.get_next()
         assert not route.refresh_node(node_next.speed_pre, node_next.loss_pre)
         pass
 
     def test_add_last(self):
-        route = Route()
+        route = UnitRoute()
         assert route.get_next() is not None
         # 刷新最后一个节点后，next节点为空
         assert route.refresh_node(1, 1)
@@ -37,7 +37,7 @@ class TestRoute:
         pass
 
     def test_add_norm(self):
-        route = Route(length_max=2, layer_max=4)
+        route = UnitRoute(length_max=2, layer_max=4)
         node_tmp = route.get_next()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 2)
 

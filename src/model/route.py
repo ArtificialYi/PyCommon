@@ -1,6 +1,6 @@
 import heapq
 import math
-from typing import Dict
+from typing import Dict, Optional
 
 
 class ArgsLatitude:
@@ -13,15 +13,15 @@ class ArgsLatitude:
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, ArgsLatitude):  # pragma: no cover
             raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer) == (__value.length, __value.layer)
+        return (self.length, self.layer, self.hidden) == (__value.length, __value.layer, __value.hidden)
 
     def __lt__(self, __value: object) -> bool:
         if not isinstance(__value, ArgsLatitude):  # pragma: no cover
             raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer) < (__value.length, __value.layer)
+        return (self.length, self.layer, self.hidden) < (__value.length, __value.layer, __value.hidden)
 
     def __hash__(self) -> int:
-        return hash(self.hidden)
+        return hash((self.length, self.layer, self.hidden))
 
     def __next_length(self, length_max: int):
         length_next = self.length * 2
@@ -80,30 +80,79 @@ class ArgsLatitude:
 
 
 class TrainUnit:
-    def __init__(self, al: ArgsLatitude, speed_pre: float, loss_pre: float) -> None:
+    def __init__(self, al: ArgsLatitude, loss_pre: float) -> None:
         self.al = al
-        self.speed_pre = speed_pre
-        self.loss_pre = loss_pre
 
-        self.speed_now = None
+        self.loss_pre = loss_pre
         self.loss_now = None
         pass
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, TrainUnit):  # pragma: no cover
             raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
-        return math.isclose(self.speed_pre, __value.speed_pre, rel_tol=1e-4, abs_tol=1e-4) and self.al == __value.al
+        return math.isclose(self.loss_pre, __value.loss_pre, rel_tol=1e-4, abs_tol=1e-4) and self.al == __value.al
 
     def __lt__(self, __value: object) -> bool:
         if not isinstance(__value, TrainUnit):  # pragma: no cover
             raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
-        if math.isclose(self.speed_pre, __value.speed_pre, rel_tol=1e-4, abs_tol=1e-4):
+        if math.isclose(self.loss_pre, __value.loss_pre, rel_tol=1e-4, abs_tol=1e-4):
             return self.al > __value.al
-        return self.speed_pre > __value.speed_pre
+        return self.loss_pre > __value.loss_pre
     pass
 
 
-class Route:
+class AlRoute:
+    def __init__(self, length_max: int = 1, layer_max: int = 1, length_min: int = 1, layer_min: int = 1) -> None:
+        # 待训练堆
+        self.__heap = [TrainUnit(ArgsLatitude(1, 1, 2), float('inf'))]
+
+        # 已训练字典
+        self.__dict_trained = dict()
+
+        # 参数范围
+        self.__al_min = ArgsLatitude(length_min, layer_min, 2 ** layer_min)
+        self.__al_max = ArgsLatitude(length_max, layer_max, 2 ** layer_max)
+        pass
+
+    def __pre_is_all_trained(self, al: ArgsLatitude) -> bool:
+        for al_pre in al.pre(self.__al_min.length, self.__al_min.layer, self.__al_min.hidden):
+            if self.__dict_trained.get(al_pre) is None:
+                return False
+            pass
+        return True
+
+    def can_push(self, al: ArgsLatitude) -> bool:
+        # 节点在范围内 and 当前未训练 and (前置已训练 or 初始节点)
+        return self.__al_min <= al <= self.__al_max and self.__dict_trained.get(al) is None and self.__pre_is_all_trained(al)
+
+    def __iter_next(self, al: ArgsLatitude):
+        for al_next in al.next(self.__al_max.length, self.__al_max.layer, self.__al_max.hidden):
+            if self.__pre_is_all_trained(al_next):
+                yield al_next
+            pass
+        pass
+
+    def push(self, al: ArgsLatitude, loss: float) -> bool:
+        # 过滤al
+        if not self.can_push(al):
+            return False
+
+        # 已训练字典更新
+        self.__dict_trained[al] = loss
+        # 生成全新节点
+        for al_next in self.__iter_next(al):
+            heapq.heappush(self.__heap, TrainUnit(al_next, loss))
+            pass
+        return True
+
+    def pop(self) -> Optional[TrainUnit]:
+        if len(self.__heap) == 0:
+            return None
+        return heapq.heappop(self.__heap)
+    pass
+
+
+class UnitRoute:
     def __init__(self, length_max: int = 1, layer_max: int = 1, length_min: int = 1, layer_min: int = 1):
         key_tmp = ArgsLatitude(1, 1, 2)
         value_tmp = TrainUnit(key_tmp, float('inf'), float('inf'))
@@ -175,4 +224,7 @@ class Route:
         if len(self.__heap) == 0:
             return None
         return self.__heap[0]
+
+    def pop(self) -> TrainUnit:
+        return heapq.heappop(self.__heap)
     pass
