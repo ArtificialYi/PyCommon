@@ -1,8 +1,7 @@
 from contextlib import contextmanager
 from typing import Generator
 import pymysql
-from pymysqlpool import ConnectionPool
-from pymysql.cursors import SSDictCursor
+from dbutils.pooled_db import PooledDB
 
 from ...tool.map_tool import MapKey
 from .base import ConnExecutorSync
@@ -26,15 +25,27 @@ def __transaction(conn: pymysql.Connection):
 
 
 @contextmanager
-def get_conn(pool: ConnectionPool, use_transaction: bool = False):
-    with pool.get_connection(pre_ping=True) as conn:
+def __pool2conn(pool: PooledDB):
+    """连接池获取连接与释放
+    """
+    conn = pool.connection(False)
+    try:
+        yield conn
+    finally:
+        conn.close()
+        pass
+    pass
+
+
+@contextmanager
+def get_conn(pool: PooledDB, use_transaction: bool = False):
+    with __pool2conn(pool) as conn:
         if not use_transaction:
             yield conn
             return
 
         with __transaction(conn):
             yield conn
-            pass
         pass
     pass
 
@@ -57,17 +68,16 @@ class RDSConfigData:
 
 
 @MapKey(RDSConfigData.to_key)
-def get_pool(data: RDSConfigData) -> ConnectionPool:  # pragma: no cover
-    return ConnectionPool(
-        size=1,
-        pre_create_num=1,
-        maxsize=data.max_conn,
+def get_pool(data: RDSConfigData) -> PooledDB:  # pragma: no cover
+    return PooledDB(
+        creator=pymysql,
+        maxconnections=data.max_conn,
         host=data.host,
         port=data.port,
+        db=data.db,
         user=data.user,
         password=data.password,
-        database=data.db,
-        cursorclass=SSDictCursor,
+        blocking=True,
     )
 
 
@@ -76,7 +86,7 @@ class MysqlManageSync:
         self.__data = data
         pass
 
-    def pool(self):
+    def pool(self) -> PooledDB:
         return get_pool(self.__data)
 
     @contextmanager

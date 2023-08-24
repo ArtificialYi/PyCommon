@@ -49,7 +49,7 @@ class ConnExecutorSync:
         return res
 
     def iter(self, gen: ActionIterSync) -> Generator[dict, ActionIterSync, None]:
-        cursor = self.__conn.cursor()
+        cursor = self.__conn.cursor(SSDictCursor)
         for row in gen(cursor):
             yield row
             pass
