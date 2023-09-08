@@ -1,14 +1,14 @@
 import heapq
 import math
 from typing import Dict, List, Optional
+from attr import dataclass
 
 
+@dataclass
 class ArgsLatitude:
-    def __init__(self, length: int, layer: int, hidden: int):
-        self.length = length
-        self.layer = layer
-        self.hidden = hidden
-        pass
+    length: int
+    layer: int
+    hidden: int
 
     def __eq__(self, __value: object) -> bool:
         if not isinstance(__value, ArgsLatitude):  # pragma: no cover
