@@ -1,9 +1,10 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 import aiomysql
+from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 
-from ...tool.map_tool import MapKey
 from .base import ConnExecutor
+from ..data.rds import RDSConfigData
+from ...tool.map_tool import MapKey
 from ...configuration.norm.log import LoggerLocal
 
 
@@ -46,23 +47,6 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
         async with __transaction(conn):
             yield conn
             pass
-        pass
-    pass
-
-
-class RDSConfigData:
-    FIELDS = ('host', 'port', 'user', 'password', 'db', 'max_conn')
-
-    def to_key(self):  # pragma: no cover
-        return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}'
-
-    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: str) -> None:
-        self.host = host
-        self.port = int(port) if len(port) > 0 else 3306
-        self.user = user
-        self.password = password
-        self.db = db
-        self.max_conn = int(max_conn) if len(max_conn) > 0 else 10
         pass
     pass
 

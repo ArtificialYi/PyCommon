@@ -1,11 +1,12 @@
-from contextlib import contextmanager
-from typing import Generator
 import pymysql
+from typing import Generator
+from contextlib import contextmanager
 from pymysqlpool import ConnectionPool
 from pymysql.cursors import SSDictCursor
 
-from ...tool.map_tool import MapKey
 from .base import ConnExecutorSync
+from ..data.rds import RDSConfigData
+from ...tool.map_tool import MapKey
 from ...configuration.sync.log import LoggerLocal
 
 
@@ -35,23 +36,6 @@ def get_conn(pool: ConnectionPool, use_transaction: bool = False):
         with __transaction(conn):
             yield conn
             pass
-        pass
-    pass
-
-
-class RDSConfigData:
-    FIELDS = ('host', 'port', 'user', 'password', 'db', 'max_conn')
-
-    def to_key(self):  # pragma: no cover
-        return f'{self.host}:{self.port}:{self.user}:{self.password}:{self.db}:{self.max_conn}'
-
-    def __init__(self, host: str, port: str, user: str, password: str, db: str, max_conn: str) -> None:
-        self.host = host
-        self.port = int(port) if len(port) > 0 else 0
-        self.user = user
-        self.password = password
-        self.db = db
-        self.max_conn = int(max_conn)
         pass
     pass
 

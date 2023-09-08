@@ -1,30 +1,14 @@
 import heapq
 import math
 from typing import Dict, List, Optional
+from attr import dataclass
 
 
+@dataclass(frozen=True)
 class ArgsLatitude:
-    def __init__(self, length: int, layer: int, hidden: int):
-        self.length = length
-        self.layer = layer
-        self.hidden = hidden
-        pass
-
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer, self.hidden) == (__value.length, __value.layer, __value.hidden)
-
-    def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer, self.hidden) < (__value.length, __value.layer, __value.hidden)
-
-    def __le__(self, __value: object) -> bool:
-        return self == __value or self < __value
-
-    def __hash__(self) -> int:
-        return hash((self.length, self.layer, self.hidden))
+    length: int
+    layer: int
+    hidden: int
 
     def __next_length(self, length_max: int):
         length_next = self.length * 2

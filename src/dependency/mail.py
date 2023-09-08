@@ -1,40 +1,42 @@
 import asyncio
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import smtplib
+
+from attr import dataclass, fields, ib
 from smtplib import SMTPServerDisconnected
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-from ..configuration.norm.env import get_value_by_tag_and_field
+from ..tool.base import BaseTool
 from ..tool.map_tool import MapKey
+from ..configuration.norm.env import get_value_by_tag_and_field
 
 
+@dataclass
 class Mail:
-    def __init__(self, smtp_server: str, port: int, sender_email: str, password: str) -> None:
-        self.__smtp_server = smtp_server
-        self.__port = port
-        self.__sender_email = sender_email
-        self.__password = password
-        pass
+    smtp: str
+    port: int = ib(converter=int)
+    sender: str
+    password: str = ib(repr=False)
 
     def __send_opt(self, receiver_email: str, text: str):
         try:
-            server = smtplib.SMTP(self.__smtp_server, self.__port)
+            server = smtplib.SMTP(self.smtp, self.port)
             server.starttls()
-            server.login(self.__sender_email, self.__password)
-            server.sendmail(self.__sender_email, receiver_email, text)
+            server.login(self.sender, self.password)
+            server.sendmail(self.sender, receiver_email, text)
             server.quit()
         except SMTPServerDisconnected:
-            server = smtplib.SMTP(self.__smtp_server, self.__port)
+            server = smtplib.SMTP(self.smtp, self.port)
             server.starttls()
-            server.login(self.__sender_email, self.__password)
-            server.sendmail(self.__sender_email, receiver_email, text)
+            server.login(self.sender, self.password)
+            server.sendmail(self.sender, receiver_email, text)
             server.quit()
             pass
         pass
 
     def send(self, receiver_email: str, title: str, content: str):
         message = MIMEMultipart()
-        message["From"] = self.__sender_email
+        message["From"] = self.sender
         message["To"] = receiver_email
         message["Subject"] = title
         message.attach(MIMEText(content))
@@ -46,21 +48,14 @@ class Mail:
 
 
 class MailManage:
-    @classmethod
-    @MapKey(lambda _, *args: ':'.join(str(arg) for arg in args))
-    def __get_mail(cls, smtp_server: str, port: int, sender_email: str, password: str):
-        return Mail(smtp_server, port, sender_email, password)
-
-    def __new__(cls, smtp_server: str, port: int, sender_email: str, password: str):
-        return cls.__get_mail(smtp_server, port, sender_email, password)
-
     @staticmethod
-    async def create(tag: str):  # pragma: no cover
-        smtp_server, port, sender_email, password = await asyncio.gather(
-            get_value_by_tag_and_field(tag, 'smtp'),
-            get_value_by_tag_and_field(tag, 'port'),
-            get_value_by_tag_and_field(tag, 'sender'),
-            get_value_by_tag_and_field(tag, 'password'),
-        )
-        return MailManage(smtp_server, int(port), sender_email, password)
+    @MapKey(BaseTool.return_self)
+    async def __get_mail(tag: str):
+        return Mail(*(await asyncio.gather(
+            get_value_by_tag_and_field(tag, attr.name)
+            for attr in fields(Mail)
+        )))
+
+    def __new__(cls, tag: str):
+        return cls.__get_mail(tag)
     pass
