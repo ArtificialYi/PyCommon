@@ -4,27 +4,11 @@ from typing import Dict, List, Optional
 from attr import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class ArgsLatitude:
     length: int
     layer: int
     hidden: int
-
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer, self.hidden) == (__value.length, __value.layer, __value.hidden)
-
-    def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("LayerHiddenLength 只可以与 LayerHiddenLength进行比较")
-        return (self.length, self.layer, self.hidden) < (__value.length, __value.layer, __value.hidden)
-
-    def __le__(self, __value: object) -> bool:
-        return self == __value or self < __value
-
-    def __hash__(self) -> int:
-        return hash((self.length, self.layer, self.hidden))
 
     def __next_length(self, length_max: int):
         length_next = self.length * 2
