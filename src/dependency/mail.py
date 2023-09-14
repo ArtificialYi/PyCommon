@@ -50,12 +50,9 @@ class Mail:
 class MailManage:
     @staticmethod
     @MapKey(BaseTool.return_self)
-    async def __get_mail(tag: str):
+    async def create(tag: str):
         return Mail(*(await asyncio.gather(
             get_value_by_tag_and_field(tag, attr.name)
             for attr in fields(Mail)
         )))
-
-    def __new__(cls, tag: str):
-        return cls.__get_mail(tag)
     pass
