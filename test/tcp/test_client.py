@@ -39,8 +39,31 @@ class TestClient:
             pass
         pass
 
+    @PytestAsyncTimeout(1)
+    async def test_no_server_shorter(self):
+        """短期失败后重连成功
+        """
+        port = 10012
+        async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
+            # 连接失败
+            with pytest.raises(ConnTimeoutError):
+                await client.api('')
+                pass
+            # 经过短时间等待
+            await asyncio.sleep(0.05)
+
+            # 启动服务端(短期失败后重连成功)
+            async with TcpServer(LOCAL_HOST, port):
+                await client.wait_conn()
+                await client.api('')
+                pass
+            pass
+        pass
+
     @PytestAsyncTimeout(2)
     async def test_no_server_longer(self):
+        """长期失败后重连成功
+        """
         port = 10012
         async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
             # 连接失败
@@ -50,7 +73,7 @@ class TestClient:
             # 经过长时间等待
             await asyncio.sleep(1)
 
-            # 启动服务端
+            # 启动服务端(长期失败后重连成功)
             async with TcpServer(LOCAL_HOST, port):
                 await client.wait_conn()
                 await client.api('')

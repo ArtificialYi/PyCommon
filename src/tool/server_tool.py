@@ -1,10 +1,13 @@
 import asyncio
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from .func_tool import ExceptTool
 
 from ..configuration.norm.log import LoggerLocal
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
+
+
+C = TypeVar('C', bound=Callable)
 
 
 class ServerRegister:
@@ -14,7 +17,7 @@ class ServerRegister:
         self.__path = path
         pass
 
-    def __call__(self, func: Callable):
+    def __call__(self, func: C) -> C:
         path = f'{ "" if self.__path is None else self.__path}/{func.__name__}'
         if self.__class__.__TABLE.get(path) is not None:  # pragma: no cover
             raise ServiceExistException(f'服务已存在，无法注册:{path}')
