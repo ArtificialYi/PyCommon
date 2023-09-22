@@ -29,39 +29,43 @@ class TcpConn:
     def port(self) -> int:
         return self.__port
 
-    async def __conn_unit(self):
+    async def __conn_unit(self) -> Optional[Tuple[StreamReader, StreamWriter]]:
         try:
             return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
             await LoggerLocal.exception(e, f'连接失败原因:{type(e).__name__}|{e}')
             ExceptTool.raise_not_exception(e)
-            return None, None
+            return None
 
-    async def __conn_warn(self) -> Tuple[Optional[StreamReader], Optional[StreamWriter]]:
+    async def __conn_warn(self) -> Optional[Tuple[StreamReader, StreamWriter]]:
+        rw = None
         # retry重连机制
-        reader, writer = None, None
         for i in range(6):
-            reader, writer = await self.__conn_unit()
-            if reader is not None and writer is not None:
+            rw = await self.__conn_unit()
+            if rw is not None:
+                # 短暂失败后重连成功
                 break
             await asyncio.sleep(2**i * self.__base)
-        return reader, writer
+        return rw
 
     async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
         # 严重错误告警
+        rw = None
         while True:
-            reader, writer = await self.__conn_unit()
-            if reader is not None and writer is not None:
+            rw = await self.__conn_unit()
+            if rw is not None:
+                # 长期失败后重连成功
                 break
+
             await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60 * self.__base)
-        return reader, writer
+        return rw
 
     async def conn(self) -> Tuple[StreamReader, StreamWriter]:
-        reader, writer = await self.__conn_warn()
-        if reader is None or writer is None:
-            reader, writer = await self.__conn_error()
-        return reader, writer
+        rw = await self.__conn_warn()
+        if rw is None:
+            rw = await self.__conn_error()
+        return rw
     pass
 
 
