@@ -12,7 +12,7 @@ class AsyncExecOrder:
     3. 如果loop被close，则当前对象常规使用会抛出异常
     """
     def __init__(self, func: Callable) -> None:
-        self.__queue = asyncio.Queue[Tuple[asyncio.Future, tuple, dict]]()
+        self.__queue: asyncio.Queue[Tuple[asyncio.Future, tuple, dict]] = asyncio.Queue()
         self.__func = func
         self.__is_coro = asyncio.iscoroutinefunction(func)
         pass
