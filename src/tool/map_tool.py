@@ -77,7 +77,7 @@ class MapKey:
         self.__func_key = func_key
         pass
 
-    def __call__(self, func_value: Callable[..., R]) -> Callable[..., R]:
+    def __call__(self, func_value: R) -> R:
         return (
             MapKey.AsyncLock(self.__func_key)(func_value)
             if asyncio.iscoroutinefunction(func_value)
