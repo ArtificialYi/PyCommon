@@ -3,6 +3,9 @@ from typing import AsyncGenerator
 import aiosqlite
 
 from .base import ConnExecutor
+
+from ..sqlite import dict_factory
+
 from ...configuration.norm.log import LoggerLocal
 
 
@@ -31,14 +34,10 @@ async def __transaction(conn: aiosqlite.Connection):
         raise e
 
 
-def __dict_factory(cursor, row):  # pragma: no cover
-    return {col[0]: row[idx] for idx, col in enumerate(cursor.description)}
-
-
 @asynccontextmanager
 async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerator[aiosqlite.Connection, None]:
     async with aiosqlite.connect(db_name) as conn:
-        conn.row_factory = __dict_factory
+        conn.row_factory = dict_factory
         if not use_transaction:
             yield conn
             return
