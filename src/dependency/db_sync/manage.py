@@ -1,6 +1,8 @@
 from attr import fields
 
 from .rds import MysqlManageSync, RDSConfigData
+from .sqlite import SqliteManageSync
+
 from ...tool.base import BaseTool
 from ...exception.db import UnsupportedSqlTypesError
 from ...tool.map_tool import MapKey
@@ -17,5 +19,8 @@ class SqlManageSync:
                 get_value_by_tag_and_field(tag, attr.name)
                 for attr in fields(RDSConfigData)
             )))
+        elif sql_type == 'sqlite':
+            return SqliteManageSync(get_value_by_tag_and_field(tag, 'db'))
+
         raise UnsupportedSqlTypesError(f'不支持的sql_type:{sql_type}')  # pragma: no cover
     pass
