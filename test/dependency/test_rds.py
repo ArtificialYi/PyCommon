@@ -74,6 +74,7 @@ class TestMysqlManage:
             cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
             with pytest.raises(MultipleResultsFound):
                 await exec.row_one(ActionIter('sql'))
+                pass
             pass
         pass
 
@@ -87,13 +88,6 @@ class TestMysqlManageSync:
     def test_iter(self, mocker: MockerFixture):
         cursor = MockCursorSync.mock_init(mocker)
         mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
-
-        # # 无事务+row_one
-        # cursor.mock_set_fetch_all([{'id': 1}])
-        # with mysql_manage_sync() as exec:
-        #     row = exec.row_one(ActionIterSync('sql'))
-        #     assert row['id'] == 1
-        #     pass
 
         # 无事务+iter
         with mysql_manage_sync() as exec:
@@ -124,6 +118,30 @@ class TestMysqlManageSync:
         with mysql_manage_sync(True) as exec:
             # 正常提交事务
             assert exec.exec(ActionExecSync('sql')) == 1
+            pass
+        pass
+
+    def test_one(self, mocker: MockerFixture):
+        cursor = MockCursorSync.mock_init(mocker)
+        mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
+
+        # 无事务+row_one
+        with mysql_manage_sync() as exec:
+            # 一行数据
+            cursor.mock_set_fetch_all([{'id': 1}])
+            row = exec.row_one(ActionIterSync('sql'))
+            assert row['id'] == 1
+
+            # 无数据
+            cursor.mock_set_fetch_all([])
+            row = exec.row_one(ActionIterSync('sql'))
+            assert row is None
+
+            # 多行数据
+            cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
+            with pytest.raises(MultipleResultsFound):
+                exec.row_one(ActionIterSync('sql'))
+                pass
             pass
         pass
     pass
