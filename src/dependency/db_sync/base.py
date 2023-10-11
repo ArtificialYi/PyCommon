@@ -3,6 +3,8 @@ import pymysql
 from pymysql.cursors import SSDictCursor
 import sqlite3
 
+from ...exception.db import MultipleResultsFound
+
 from ...tool.sql_tool import Mysql2Other
 
 
@@ -55,4 +57,16 @@ class ConnExecutorSync:
             pass
         cursor.close()
         pass
+
+    def row_one(self, gen: ActionIterSync) -> Optional[dict]:
+        res_row = None
+        i = 0
+        cursor = self.__conn.cursor()
+        for row in gen(cursor):
+            i += 1
+            if i > 1:
+                raise MultipleResultsFound('期望一行，却返回多行数据')
+            res_row = row
+            pass
+        return res_row
     pass

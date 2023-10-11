@@ -17,7 +17,7 @@ from ..timeout import PytestAsyncTimeout
 
 class TestMysqlManage:
     @PytestAsyncTimeout(1)
-    async def test(self, mocker: MockerFixture):
+    async def test_iter(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor.mock_init(mocker)
         mysql_manage = await SqlManage.get_instance_by_tag('test')
@@ -34,15 +34,22 @@ class TestMysqlManage:
             assert i == len(sql_res)
             pass
 
+        # 抛出异常
+        with pytest.raises(MockException):
+            await self.__raise_exception(mysql_manage)
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_exec(self, mocker: MockerFixture):
+        # 获取一个mysql管理器
+        MockCursor.mock_init(mocker)
+        mysql_manage = await SqlManage.get_instance_by_tag('test')
+
         # 事务开启+exec
         async with mysql_manage(True) as exec:
             # 正常提交事务
             assert await exec.exec(ActionExec('sql')) == 1
             pass
-
-        # 抛出异常
-        with pytest.raises(MockException):
-            await self.__raise_exception(mysql_manage)
         pass
 
     @PytestAsyncTimeout(1)
@@ -77,9 +84,16 @@ class TestMysqlManage:
 
 
 class TestMysqlManageSync:
-    def test(self, mocker: MockerFixture):
+    def test_iter(self, mocker: MockerFixture):
         cursor = MockCursorSync.mock_init(mocker)
         mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
+
+        # # 无事务+row_one
+        # cursor.mock_set_fetch_all([{'id': 1}])
+        # with mysql_manage_sync() as exec:
+        #     row = exec.row_one(ActionIterSync('sql'))
+        #     assert row['id'] == 1
+        #     pass
 
         # 无事务+iter
         with mysql_manage_sync() as exec:
@@ -93,12 +107,6 @@ class TestMysqlManageSync:
             assert i == len(sql_res)
             pass
 
-        # 事务开启+exec
-        with mysql_manage_sync(True) as exec:
-            # 正常提交事务
-            assert exec.exec(ActionExecSync('sql')) == 1
-            pass
-
         # 抛出异常
         with pytest.raises(MockException):
             self.__raise_exception(mysql_manage_sync)
@@ -107,4 +115,15 @@ class TestMysqlManageSync:
     def __raise_exception(self, manage: MysqlManageSync):
         with manage(True):
             raise MockException('异常测试')
+
+    def test_exec(self, mocker: MockerFixture):
+        MockCursorSync.mock_init(mocker)
+        mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
+
+        # 事务开启+exec
+        with mysql_manage_sync(True) as exec:
+            # 正常提交事务
+            assert exec.exec(ActionExecSync('sql')) == 1
+            pass
+        pass
     pass

@@ -55,6 +55,7 @@ class TcpConn:
             rw = await self.__conn_unit()
             if rw is not None:
                 # 长期失败后重连成功
+                await LoggerLocal.info(f'TCP服务连接成功:{self.__host}:{self.__port}')
                 break
 
             await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
