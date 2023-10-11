@@ -1,36 +1,37 @@
 import pytest
 
+
 from ..timeout import PytestAsyncTimeout
 
 from ...mock.func import MockException
 from ...mock.db.rds import MockCursor
 from ...mock.db_sync.rds import MockCursorSync
 from ...src.exception.db import MultipleResultsFound
+from ...src.dependency.db.rds import MysqlManage
 from ...src.dependency.db.base import ActionExec, ActionIter
-from ...src.dependency.db.manage import SqlManage
 from ...src.dependency.db_sync.base import ActionExecSync, ActionIterSync
 from ...src.dependency.db_sync.manage import SqlManageSync
 
 
 class TestMysqlManage:
     @PytestAsyncTimeout(1)
-    async def test_err(self, mysql_init_cursor: MockCursor):
-        mysql_manage = await SqlManage.get_instance_by_tag('test')
+    async def test_err(self, mysql_cursor: tuple[MockCursor, MysqlManage]):
+        _, sql_manage = mysql_cursor
 
         # 抛出异常
         with pytest.raises(MockException):
-            async with mysql_manage(True):
+            async with sql_manage(True):
                 raise MockException('异常测试')
         pass
 
     @PytestAsyncTimeout(1)
-    async def test_iter(self, mysql_init_cursor: MockCursor):
+    async def test_iter(self, mysql_cursor: tuple[MockCursor, MysqlManage]):
         # 获取一个mysql管理器
-        mysql_manage = await SqlManage.get_instance_by_tag('test')
+        cursor, sql_manage = mysql_cursor
 
         # 无事务+iter
-        async with mysql_manage() as exec:
-            mysql_init_cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}, {'id': 3}])
+        async with sql_manage() as exec:
+            cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}, {'id': 3}])
             sql_res = [1, 2, 3]
             i = 0
             async for row in exec.iter(ActionIter('sql')):
@@ -42,36 +43,36 @@ class TestMysqlManage:
         pass
 
     @PytestAsyncTimeout(1)
-    async def test_exec(self, mysql_init_cursor: MockCursor):
+    async def test_exec(self, mysql_cursor: tuple[MockCursor, MysqlManage]):
         # 获取一个mysql管理器
-        mysql_manage = await SqlManage.get_instance_by_tag('test')
+        _, sql_manage = mysql_cursor
 
         # 事务开启+exec
-        async with mysql_manage(True) as exec:
+        async with sql_manage(True) as exec:
             # 正常提交事务
             assert await exec.exec(ActionExec('sql')) == 1
             pass
         pass
 
     @PytestAsyncTimeout(1)
-    async def test_one(self, mysql_init_cursor: MockCursor):
+    async def test_one(self, mysql_cursor: tuple[MockCursor, MysqlManage]):
         # 获取一个mysql管理器
-        mysql_manage = await SqlManage.get_instance_by_tag('test')
+        cursor, sql_manage = mysql_cursor
 
         # 无事务+iter
-        async with mysql_manage() as exec:
+        async with sql_manage() as exec:
             # 一行数据
-            mysql_init_cursor.mock_set_fetch_all([{'id': 1}])
+            cursor.mock_set_fetch_all([{'id': 1}])
             row = await exec.row_one(ActionIter('sql'))
             assert row['id'] == 1
 
             # 无数据
-            mysql_init_cursor.mock_set_fetch_all([])
+            cursor.mock_set_fetch_all([])
             row = await exec.row_one(ActionIter('sql'))
             assert row is None
 
             # 多行数据
-            mysql_init_cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
+            cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
             with pytest.raises(MultipleResultsFound):
                 await exec.row_one(ActionIter('sql'))
                 pass
