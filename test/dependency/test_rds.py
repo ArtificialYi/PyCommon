@@ -17,6 +17,17 @@ from ..timeout import PytestAsyncTimeout
 
 class TestMysqlManage:
     @PytestAsyncTimeout(1)
+    async def test_err(self, mocker: MockerFixture):
+        MockCursor.mock_init(mocker)
+        mysql_manage = await SqlManage.get_instance_by_tag('test')
+
+        # 抛出异常
+        with pytest.raises(MockException):
+            async with mysql_manage(True):
+                raise MockException('异常测试')
+        pass
+
+    @PytestAsyncTimeout(1)
     async def test_iter(self, mocker: MockerFixture):
         # 获取一个mysql管理器
         cursor = MockCursor.mock_init(mocker)
@@ -33,10 +44,6 @@ class TestMysqlManage:
                 pass
             assert i == len(sql_res)
             pass
-
-        # 抛出异常
-        with pytest.raises(MockException):
-            await self.__raise_exception(mysql_manage)
         pass
 
     @PytestAsyncTimeout(1)
@@ -77,14 +84,23 @@ class TestMysqlManage:
                 pass
             pass
         pass
-
-    async def __raise_exception(self, manage):
-        async with manage(True):
-            raise MockException('异常测试')
     pass
 
 
 class TestMysqlManageSync:
+    def test_err(self, mocker: MockerFixture):
+        MockCursorSync.mock_init(mocker)
+        mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
+
+        # 抛出异常
+        with (
+            pytest.raises(MockException),
+            mysql_manage_sync(True)
+        ):
+            raise MockException('异常测试')
+
+        pass
+
     def test_iter(self, mocker: MockerFixture):
         cursor = MockCursorSync.mock_init(mocker)
         mysql_manage_sync = SqlManageSync.get_instance_by_tag('test')
@@ -100,15 +116,7 @@ class TestMysqlManageSync:
                 pass
             assert i == len(sql_res)
             pass
-
-        # 抛出异常
-        with pytest.raises(MockException):
-            self.__raise_exception(mysql_manage_sync)
         pass
-
-    def __raise_exception(self, manage: MysqlManageSync):
-        with manage(True):
-            raise MockException('异常测试')
 
     def test_exec(self, mocker: MockerFixture):
         MockCursorSync.mock_init(mocker)

@@ -10,7 +10,18 @@ from ...mock.db.sqlite import MockCursor
 
 class TestSqliteManage:
     @PytestAsyncTimeout(1)
-    async def test(self, mocker: MockerFixture):
+    async def test_err(self, mocker: MockerFixture):
+        MockCursor.mock_init(mocker)
+        sqlite_manage = await SqlManage.get_instance_by_tag('test')
+
+        # 抛出异常
+        with pytest.raises(MockException):
+            async with sqlite_manage(True):
+                raise MockException('异常测试')
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_iter(self, mocker: MockerFixture):
         cursor = MockCursor.mock_init(mocker)
         sqlite_manage = await SqlManage.get_instance_by_tag('test')
 
@@ -29,13 +40,5 @@ class TestSqliteManage:
             # 正常提交事务
             assert await exec.exec(ActionExec('sql')) == 1
             pass
-
-        # 抛出异常
-        with pytest.raises(MockException):
-            await self.__raise_exception(sqlite_manage)
         pass
-
-    async def __raise_exception(self, sqlite_manage):
-        async with sqlite_manage(True):
-            raise MockException('异常测试')
     pass
