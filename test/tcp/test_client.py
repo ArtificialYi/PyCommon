@@ -64,7 +64,7 @@ class TestClient:
     async def test_no_server_longer(self):
         """长期失败后重连成功
         """
-        port = 10012
+        port = 10013
         async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
             # 连接失败
             with pytest.raises(ConnTimeoutError):
@@ -83,7 +83,7 @@ class TestClient:
 
     @PytestAsyncTimeout(2)
     async def test_map_future_del_ok(self):
-        port = 10013
+        port = 10014
         async with (
             TcpServer(LOCAL_HOST, port),
             TcpClientManage(LOCAL_HOST, port, api_delay=0.5) as client,
@@ -94,7 +94,7 @@ class TestClient:
 
     @PytestAsyncTimeout(1)
     async def test_map_future_del_early(self):
-        port = 10013
+        port = 10015
         async with (
             TcpServer(LOCAL_HOST, port),
             TcpClientManage(LOCAL_HOST, port, api_delay=0) as client,
