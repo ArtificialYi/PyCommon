@@ -1,6 +1,8 @@
 import pytest
 from pytest_mock import MockerFixture
 
+from ..src.dependency.db.sqlite import SqliteManage
+
 from ..mock.log import MockLogger, MockLoggerSync
 from ..mock.db.rds import MockCursor as MockCursorRDS
 from ..mock.db.sqlite import MockCursor as MockCursorSqlite
@@ -33,5 +35,7 @@ def mysql_cursor_sync(mocker: MockerFixture) -> tuple[MockCursorRDSSync, MysqlMa
 
 
 @pytest.fixture(scope='function')
-def sqlite_init_cursor(mocker: MockerFixture) -> MockCursorSqlite:
-    return MockCursorSqlite.mock_init(mocker)
+async def sqlite_cursor(mocker: MockerFixture) -> tuple[MockCursorSqlite, SqliteManage]:
+    cursor = MockCursorSqlite.mock_init(mocker)
+    sql_manage = await SqlManage.get_instance_by_tag('test')
+    return cursor, sql_manage
