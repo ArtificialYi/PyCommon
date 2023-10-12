@@ -97,7 +97,7 @@ class MockConnectionSync(MockDelay, Connection):
         self.mock_sleep()
         return self
 
-    def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.mock_sleep()
         pass
 
