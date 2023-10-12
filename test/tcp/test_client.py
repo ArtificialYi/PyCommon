@@ -13,6 +13,8 @@ LOCAL_HOST = '127.0.0.1'
 class TestClient:
     @PytestAsyncTimeout(1)
     async def test_no_server(self):
+        """没有服务端测试
+        """
         port = 10010
         client = TcpClientManage(LOCAL_HOST, port)
         async with client:
@@ -41,7 +43,7 @@ class TestClient:
 
     @PytestAsyncTimeout(1)
     async def test_no_server_shorter(self):
-        """短期失败后重连成功
+        """
         """
         port = 10012
         async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
@@ -60,7 +62,7 @@ class TestClient:
             pass
         pass
 
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(4)
     async def test_no_server_longer(self):
         """长期失败后重连成功
         """

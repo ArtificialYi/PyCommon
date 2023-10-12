@@ -37,32 +37,31 @@ class TcpConn:
             ExceptTool.raise_not_exception(e)
             return None
 
-    async def __conn_warn(self) -> Optional[Tuple[StreamReader, StreamWriter]]:
+    async def __retry_limited(self, retry: int) -> Optional[Tuple[StreamReader, StreamWriter]]:
+        # 有限重试
         rw = None
-        # retry重连机制
-        for i in range(6):
+        for i in range(retry):
             rw = await self.__conn_unit()
             if rw is not None:
-                # 短暂失败后重连成功
-                await LoggerLocal.info(f'TCP服务重连接成功:{self.__host}:{self.__port}')
                 break
-            await asyncio.sleep(2**i * self.__base)
+            await asyncio.sleep((2**i) * self.__base)
+            pass
         return rw
 
-    async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
-        # 严重错误告警
+    async def __retry_forever(self) -> Tuple[StreamReader, StreamWriter]:
+        # 无限重试
         rw = None
         while (rw := await self.__conn_unit()) is None:
-            await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
+            await LoggerLocal.error(f'TCP服务重连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60 * self.__base)
             pass
         await LoggerLocal.info(f'TCP服务重连接成功:{self.__host}:{self.__port}')
         return rw
 
     async def conn(self) -> Tuple[StreamReader, StreamWriter]:
-        rw = await self.__conn_warn()
+        rw = await self.__retry_limited(6)
         if rw is None:
-            rw = await self.__conn_error()
+            rw = await self.__retry_forever()
         return rw
     pass
 
