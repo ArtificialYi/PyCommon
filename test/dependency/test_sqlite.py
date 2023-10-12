@@ -1,10 +1,13 @@
 import pytest
 
+from ...src.dependency.db_sync.sqlite import SqliteManageSync
+
 from ..timeout import PytestAsyncTimeout
 
 from ...mock.func import MockException
 from ...mock.db.sqlite import MockCursor
 from ...src.exception.db import MultipleResultsFound
+from ...mock.db_sync.sqlite import MockCursorSync
 from ...src.dependency.db.base import ActionExec, ActionIter
 from ...src.dependency.db.sqlite import SqliteManage
 
@@ -69,4 +72,17 @@ class TestSqliteManage:
                 pass
             pass
         pass
+    pass
+
+
+class TestSqliteManageSync:
+    def test_err(self, sqlite_cursor_sync: tuple[MockCursorSync, SqliteManageSync]):
+        _, sql_mange = sqlite_cursor_sync
+
+        # 抛出异常
+        with pytest.raises(MockException):
+            with sql_mange(True):
+                raise MockException('异常测试')
+        pass
+
     pass
