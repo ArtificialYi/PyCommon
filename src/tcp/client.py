@@ -44,6 +44,7 @@ class TcpConn:
             rw = await self.__conn_unit()
             if rw is not None:
                 # 短暂失败后重连成功
+                await LoggerLocal.info(f'TCP服务重连接成功:{self.__host}:{self.__port}')
                 break
             await asyncio.sleep(2**i * self.__base)
         return rw
@@ -51,15 +52,11 @@ class TcpConn:
     async def __conn_error(self) -> Tuple[StreamReader, StreamWriter]:
         # 严重错误告警
         rw = None
-        while True:
-            rw = await self.__conn_unit()
-            if rw is not None:
-                # 长期失败后重连成功
-                await LoggerLocal.info(f'TCP服务连接成功:{self.__host}:{self.__port}')
-                break
-
+        while (rw := await self.__conn_unit()) is None:
             await LoggerLocal.error(f'TCP服务连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60 * self.__base)
+            pass
+        await LoggerLocal.info(f'TCP服务重连接成功:{self.__host}:{self.__port}')
         return rw
 
     async def conn(self) -> Tuple[StreamReader, StreamWriter]:

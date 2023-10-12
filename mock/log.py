@@ -29,6 +29,8 @@ class MockLoggerSync:
         def get_mock_logger():
             return MockLoggerSync()
         mocker.patch(f'{sync_log.__name__}.LoggerLocal.get_logger', new=get_mock_logger)
+        # mocker.patch(f'{sync_log.__name__}.LoggerLocal.get_logger')
+        # mocker.return_value = MockLoggerSync()
         pass
 
     def debug(self, *args, **kwds):
