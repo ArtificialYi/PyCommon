@@ -93,10 +93,11 @@ class TcpClient:
             finally:
                 for task_flow in tasks_flow:
                     task_flow.cancel()
-                self.__future = AsyncBase.get_future()
                 writer.close()
                 task_close = asyncio.create_task(writer.wait_closed())
                 await asyncio.wait({*tasks_flow, task_close}, return_when=ALL_COMPLETED)
+                self.__future = AsyncBase.get_future()
+                pass
 
     async def close(self):
         await self.__loop_bg.stop()
