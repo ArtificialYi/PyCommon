@@ -11,7 +11,7 @@ from ...configuration.sync.log import LoggerLocal
 
 
 @contextmanager
-async def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
+def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
     try:
         conn.execute('BEGIN')
         yield
