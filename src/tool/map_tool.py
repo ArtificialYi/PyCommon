@@ -85,6 +85,7 @@ class MapKeyGlobal:
                 if key in self.__map:
                     return self.__map[key]
                 self.__map[key] = await func_obj(*args, **kwds)
+                pass
             return self.__map[key]
         pass
 
@@ -114,7 +115,7 @@ class MapKeySelf:
                 key = MapKeyBase.get_key_sync(self.__func_key, obj, *args, **kwds)
                 map_now = DictTool.get_value_dict(self.__map_key, obj)
                 if key not in map_now:
-                    map_now[key] = func_obj(*args, **kwds)
+                    map_now[key] = func_obj(obj, *args, **kwds)
                 return map_now[key]
             return wrapper
         pass
@@ -141,7 +142,7 @@ class MapKeySelf:
             async with LockManage.get_for_map(self.__map_lock, obj).get_lock():
                 if key in map_now:
                     return map_now[key]
-                map_now[key] = await func_obj(*args, **kwds)
+                map_now[key] = await func_obj(obj, *args, **kwds)
                 pass
 
             return map_now[key]
