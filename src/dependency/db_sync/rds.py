@@ -6,7 +6,7 @@ from pymysql.cursors import SSDictCursor
 
 from .base import ConnExecutorSync
 from ..data.rds import RDSConfigData
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from ...configuration.sync.log import LoggerLocal
 
 
@@ -40,7 +40,7 @@ def get_conn(pool: ConnectionPool, use_transaction: bool = False):
     pass
 
 
-@MapKey(RDSConfigData.to_key)
+@MapKeyGlobal(RDSConfigData.to_key)
 def get_pool(data: RDSConfigData) -> ConnectionPool:  # pragma: no cover
     return ConnectionPool(
         size=1,

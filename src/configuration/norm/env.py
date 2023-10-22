@@ -4,7 +4,7 @@ from enum import Enum
 import os
 
 from .. import CONFIG_ROOT, PROJECT_ROOT
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from .tool import ConfigTool
 
 
@@ -21,7 +21,7 @@ class EnvEnum(Enum):
 
 class ProjectEnv:
     @classmethod
-    @MapKey()
+    @MapKeyGlobal()
     async def __config_project(cls) -> ConfigParser:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
@@ -52,7 +52,7 @@ class ConfigEnv:
     2. 项目单测调用时需要mock
     """
     @classmethod
-    @MapKey()
+    @MapKeyGlobal()
     async def config_default(cls):
         """默认的项目配置文件
         """
@@ -60,7 +60,7 @@ class ConfigEnv:
         return await ConfigTool.get_config(path_default)
 
     @classmethod
-    @MapKey()
+    @MapKeyGlobal()
     async def config_env(cls):
         """环境独有的配置文件
         """

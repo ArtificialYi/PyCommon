@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from ..tool.base import BaseTool
-from ..tool.map_tool import MapKey
+from ..tool.map_tool import MapKeyGlobal
 from ..configuration.norm.env import get_value_by_tag_and_field
 
 
@@ -49,7 +49,7 @@ class Mail:
 
 class MailManage:
     @staticmethod
-    @MapKey(BaseTool.return_self)
+    @MapKeyGlobal(BaseTool.return_self)
     async def create(tag: str):
         return Mail(*(await asyncio.gather(*(
             get_value_by_tag_and_field(tag, attr.name)

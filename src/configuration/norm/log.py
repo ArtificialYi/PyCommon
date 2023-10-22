@@ -6,7 +6,7 @@ from aiologger import Logger
 from aiologger.handlers.files import AsyncTimedRotatingFileHandler, RolloverInterval
 from aiologger.formatters.base import Formatter
 
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from .env import PROJECT_ROOT, ProjectEnv
 
 
@@ -18,7 +18,7 @@ class LoggerLocal:
     LEVEL = LogLevel.INFO
 
     @staticmethod
-    @MapKey()
+    @MapKeyGlobal()
     async def get_logger() -> Logger:
         project_name = await ProjectEnv.get_name()
         logger = Logger(name=project_name, level=LoggerLocal.LEVEL)
