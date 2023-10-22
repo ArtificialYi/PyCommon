@@ -105,9 +105,7 @@ class TestMapKeySelf:
     async def test_aself_norm(self):
         """MapKeySelf异步函数有Key测试"""
         tmp0 = MapKeyTmp()
-        obj0 = await tmp0.func_aself_norm(1)
-        obj1 = await tmp0.func_aself_norm(1)
-        obj2 = await tmp0.func_aself_norm(2)
+        obj0, obj1, obj2 = await asyncio.gather(tmp0.func_aself_norm(1), tmp0.func_aself_norm(1), tmp0.func_aself_norm(2))
         assert id(obj0) == id(obj1) != id(obj2)
         pass
     pass
