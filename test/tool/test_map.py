@@ -32,6 +32,8 @@ class MapKeyTmp:
 
 class TestMapKeyGlobal:
     def test_base(self):
+        """基础测试
+        """
         assert id(MapKeyTmp.func_norm()) != id(MapKeyTmp.func_norm())
 
     def test_norm_no_key(self):
@@ -40,15 +42,16 @@ class TestMapKeyGlobal:
 
     @PytestAsyncTimeout(1)
     async def test_async_no_key(self):
-        res0, res1 = await asyncio.gather(self.__func_async_no_key(), self.__func_async_no_key())
-        res2 = await self.__func_async_no_key()
+        res0, res1 = await asyncio.gather(MapKeyTmp.func_async_no_key(), MapKeyTmp.func_async_no_key())
+        res2 = await MapKeyTmp.func_async_no_key()
         assert id(res0) == id(res1) == id(res2)
         pass
 
     @PytestAsyncTimeout(1)
     async def test_async_norm(self):
-        res0 = await self.__func_async_norm()
-        res1 = await self.__func_async_norm()
-        assert id(res0) == id(res1)
+        res0 = await MapKeyTmp.func_async_norm(1)
+        res1 = await MapKeyTmp.func_async_norm(2)
+        res2 = await MapKeyTmp.func_async_norm(1)
+        assert id(res1) != id(res0) == id(res2)
         pass
     pass
