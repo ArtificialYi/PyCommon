@@ -104,7 +104,7 @@ class MapKeyGlobal:
 class MapKeySelf:
     class Sync:
         def __init__(self, func_key=None) -> None:
-            self.__map = dict()
+            self.__map_key = dict()
             self.__func_key = func_key
             pass
 
@@ -112,7 +112,7 @@ class MapKeySelf:
             @wraps(func_obj)
             def wrapper(obj, *args, **kwds) -> R:
                 key = MapKeyBase.get_key_sync(self.__func_key, obj, *args, **kwds)
-                map_now = DictTool.get_value_dict(self.__map, obj)
+                map_now = DictTool.get_value_dict(self.__map_key, obj)
                 if key not in map_now:
                     map_now[key] = func_obj(*args, **kwds)
                 return map_now[key]
