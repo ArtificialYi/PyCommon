@@ -5,13 +5,13 @@ from .sqlite import SqliteManageSync
 
 from ...tool.base import BaseTool
 from ...exception.db import UnsupportedSqlTypesError
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from ...configuration.sync.env import get_value_by_tag_and_field
 
 
 class SqlManageSync:
     @staticmethod
-    @MapKey(BaseTool.return_self)
+    @MapKeyGlobal(BaseTool.return_self)
     def get_instance_by_tag(tag: str):
         sql_type = get_value_by_tag_and_field(tag, 'sql_type')
         if sql_type == 'mysql':

@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from .base import ConnExecutor
 from ..data.rds import RDSConfigData
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from ...configuration.norm.log import LoggerLocal
 
 
@@ -51,7 +51,7 @@ async def get_conn(pool: aiomysql.Pool, use_transaction: bool = False):
     pass
 
 
-@MapKey(RDSConfigData.to_key)
+@MapKeyGlobal(RDSConfigData.to_key)
 async def get_pool(data: RDSConfigData) -> aiomysql.Pool:  # pragma: no cover
     return await aiomysql.create_pool(**{
         'maxsize': data.max_conn,

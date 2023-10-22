@@ -9,7 +9,7 @@ from ..tool.func_tool import ExceptTool
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 from ..configuration.norm.log import LoggerLocal
 from ..tool.loop_tool import LoopExecBg
-from ..tool.map_tool import MapKey
+from ..tool.map_tool import MapKeyGlobal
 from ..tool.base import AsyncBase
 from ..flow.client import FlowSendClient, FlowRecvClient
 
@@ -143,7 +143,7 @@ class TcpClient:
 
 class TcpClientManage:
     @classmethod
-    @MapKey(lambda _, *args: ':'.join((str(arg) for arg in args)))
+    @MapKeyGlobal(lambda _, *args: ':'.join((str(arg) for arg in args)))
     def __get_client(cls, host: str, port: int, api_delay: int, conn_timeout_base: int) -> TcpClient:
         return TcpClient(host, port, api_delay / 1000, conn_timeout_base / 1000)
 

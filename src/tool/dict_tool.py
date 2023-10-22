@@ -27,4 +27,11 @@ class DictTool:
         yield data
         data[key] = tmp
         pass
+
+    @staticmethod
+    def get_value_dict(data: dict, key):
+        if key not in data:
+            data[key] = dict()
+            pass
+        return data[key]
     pass

@@ -5,7 +5,7 @@ import os
 import logging
 from logging import Logger
 
-from ...tool.map_tool import MapKey
+from ...tool.map_tool import MapKeyGlobal
 from .env import PROJECT_ROOT, ProjectEnv
 
 
@@ -17,7 +17,7 @@ class LoggerLocal:
     LEVEL = logging.INFO
 
     @staticmethod
-    @MapKey()
+    @MapKeyGlobal()
     def get_logger() -> Logger:
         project_name = ProjectEnv.get_name()
         logger = logging.getLogger(name=project_name)

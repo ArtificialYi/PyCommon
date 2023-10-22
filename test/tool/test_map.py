@@ -1,15 +1,15 @@
 import asyncio
 
 from ..timeout import PytestAsyncTimeout
-from ...src.tool.map_tool import MapKey
+from ...src.tool.map_tool import MapKeyGlobal
 
 
 class TestMapKey:
-    @MapKey()
+    @MapKeyGlobal()
     def __func_norm_no_key(self):
         return object()
 
-    @MapKey()
+    @MapKeyGlobal()
     async def __func_async_no_key(self):
         await asyncio.sleep(0.1)
         return object()
@@ -17,7 +17,7 @@ class TestMapKey:
     def __key_norm(self):
         return self
 
-    @MapKey(__key_norm)
+    @MapKeyGlobal(__key_norm)
     async def __func_async_norm(self):
         await asyncio.sleep(0.1)
         return object()
