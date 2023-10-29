@@ -41,20 +41,20 @@ class TestRoute:
         node_tmp = route_unit.pop()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 4)
 
-        # 刷新1，1，4节点，下一个节点为1，2, 4
+        # 刷新1，1，4节点，下一个节点为1，1, 8
         assert route_unit.push(node_tmp.al, 0.9)
-        node_tmp = route_unit.pop()
-        assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 2, 4)
-
-        # 插入1，2，4节点失败，下一个节点为1，1，8
-        assert route_unit.push(node_tmp.al, 0.85)
         node_tmp = route_unit.pop()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 8)
 
-        # 刷新1，1，8节点，下一个节点为1，2, 8(1，1，8是1，2，8的前置而不是1，2，4)
+        # 插入1，1，8节点失败，下一个节点为1，2，4
+        assert route_unit.push(node_tmp.al, 0.85)
+        node_tmp = route_unit.pop()
+        assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 2, 4)
+
+        # 刷新1，2，4节点，下一个节点为1，1, 16(1，1，16的前置是1，1，8)
         assert route_unit.push(node_tmp.al, 0.8)
         node_tmp = route_unit.pop()
-        assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 2, 8) and node_tmp.loss_pre == 0.8
+        assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 16) and node_tmp.loss_pre == 0.85
         pass
 
     def test_add_pre(self):
