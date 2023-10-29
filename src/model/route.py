@@ -4,11 +4,28 @@ from typing import Dict, List, Optional
 from attr import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=False)
 class ArgsLatitude:
     length: int
     layer: int
     hidden: int
+
+    def __lt_unit(self, __value: 'ArgsLatitude') -> bool:
+        if self.length == __value.length:
+            if self.hidden == __value.hidden:
+                return self.layer < __value.layer
+            return self.hidden < __value.hidden
+        return self.length < __value.length
+
+    def __lt__(self, __value: object) -> bool:
+        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
+            raise TypeError("ArgsLatitude 只可以与 ArgsLatitude进行比较")
+        return self.__lt_unit(__value)
+
+    def __le__(self, __value: object) -> bool:
+        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
+            raise TypeError("ArgsLatitude 只可以与 ArgsLatitude进行比较")
+        return self < __value or self == __value
 
     def __next_length(self, length_max: int):
         length_next = self.length * 2
@@ -50,8 +67,8 @@ class ArgsLatitude:
         return [
             al for al in [
                 self.__next_length(al_max.length),
-                self.__next_layer(al_max.layer),
                 self.__next_hidden(al_max.hidden),
+                self.__next_layer(al_max.layer),
             ] if al is not None
         ]
 
@@ -59,8 +76,8 @@ class ArgsLatitude:
         return [
             al for al in [
                 self.__pre_length(al_min.length),
-                self.__pre_layer(al_min.layer),
                 self.__pre_hidden(al_min.hidden),
+                self.__pre_layer(al_min.layer),
             ] if al is not None
         ]
     pass
