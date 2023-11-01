@@ -58,7 +58,10 @@ class TestRoute:
         pass
 
     def test_add_pre(self):
+        al_tmp = ArgsLatitude(1, 1, 4)
         heap_pre = RouteHeap(RouteDict())
+        assert not heap_pre.push(al_tmp, 1, True)
+
         node_tmp = heap_pre.pop()
         assert node_tmp is not None and node_tmp.al == ArgsLatitude(1, 1, 2)
         assert heap_pre.push(node_tmp.al, 1)

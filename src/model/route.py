@@ -158,10 +158,16 @@ class RouteHeap:
         self.__route_dict = route_dict
         pass
 
-    def push(self, al: ArgsLatitude, loss: float, loss_valid: bool = False) -> bool:
-        al_bool = loss_valid and loss >= self.__route_dict.loss_pre(al)
-        # 过滤al
-        if al_bool or not self.__route_dict.can_push(al):
+    def __can_push(self, al: ArgsLatitude, loss: float):
+        tol = 1e-4
+        if not self.__route_dict.can_push(al):
+            return False
+
+        loss_pre = self.__route_dict.loss_pre(al)
+        return loss < loss_pre and not math.isclose(loss, loss_pre, rel_tol=tol, abs_tol=tol)
+
+    def push(self, al: ArgsLatitude, loss: float, valid: bool = False) -> bool:
+        if valid and not self.__can_push(al, loss):
             return False
 
         # 已训练字典更新
