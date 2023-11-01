@@ -3,15 +3,13 @@ from attr import fields
 
 from .rds import MysqlManage, RDSConfigData
 from .sqlite import SqliteManage
-from ...tool.base import BaseTool
-from ...tool.map_tool import MapKeyGlobal
+
 from ...exception.db import UnsupportedSqlTypesError
 from ...configuration.norm.env import get_value_by_tag_and_field
 
 
 class SqlManage:
     @staticmethod
-    @MapKeyGlobal(BaseTool.return_self)
     async def get_instance_by_tag(tag: str):
         sql_type = await get_value_by_tag_and_field(tag, 'sql_type')
         if sql_type == 'mysql':
