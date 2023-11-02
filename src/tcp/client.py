@@ -151,10 +151,12 @@ class TcpClientManage:
         return cls.__get_client(host, port, int(api_delay * 1000), int(conn_timeout_base * 1000))
 
     @staticmethod
-    async def create(tag: str, api_delay: float = 2, conn_timeout_base: float = 1) -> TcpClient:  # pragma: no cover
+    async def create(
+        tag: str, idx_server: int, api_delay: float = 2, conn_timeout_base: float = 1,
+    ) -> TcpClient:  # pragma: no cover
         host, port = await asyncio.gather(
             get_value_by_tag_and_field(tag, 'host'),
             get_value_by_tag_and_field(tag, 'port'),
         )
-        return TcpClientManage(host, int(port), api_delay, conn_timeout_base)
+        return TcpClientManage(host, int(port) + idx_server, api_delay, conn_timeout_base)
     pass
