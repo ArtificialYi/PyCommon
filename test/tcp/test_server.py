@@ -12,6 +12,24 @@ from ...src.tcp.server import TcpServer
 LOCAL_HOST = '127.0.0.1'
 
 
+class ClientTest:
+    def __init__(self, ip: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
+        self.__client = TcpClientManage(
+            ip, port,
+            api_delay=api_delay,
+            conn_timeout_base=conn_timeout_base,
+        )
+        pass
+
+    async def __aenter__(self):
+        return self.__client
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.__client.close()
+        pass
+    pass
+
+
 class TestServer:
     """测试端口范围: 10000-10009
     """
@@ -43,7 +61,7 @@ class TestServer:
         # # 调用不存在的服务
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client,
+            ClientTest(LOCAL_HOST, port) as client,
         ):
             t, data = await client.api('')
             assert t == 'ServiceNotFoundException'
@@ -60,10 +78,12 @@ class TestServer:
         port = 10002
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client
+            ClientTest(LOCAL_HOST, port) as client,
         ):
             with pytest.raises(ServiceTimeoutError):
                 await client.api('test/tcp/server/timeout/func_timeout')
+                pass
+            pass
         pass
 
     @staticmethod
@@ -77,7 +97,7 @@ class TestServer:
         port = 10003
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client
+            ClientTest(LOCAL_HOST, port) as client
         ):
             t, data = await client.api('test/tcp/server/norm/func_norm')
             assert t == 'bool'

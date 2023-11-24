@@ -1,11 +1,12 @@
 import asyncio
 import pytest
 
+from .test_server import ClientTest
+
 from ..timeout import PytestAsyncTimeout
 
 from ...src.tcp.server import TcpServer
 from ...src.exception.tcp import ConnTimeoutError, ServiceTimeoutError
-from ...src.tcp.client import TcpClientManage
 
 
 LOCAL_HOST = '127.0.0.1'
@@ -17,10 +18,9 @@ class TestClient:
         """没有服务端测试
         """
         port = 10010
-        client = TcpClientManage(LOCAL_HOST, port)
-        t, _ = await client.api_no_raise('')
-        assert t == 'ConnTimeoutError'
-        await client.close()
+        async with ClientTest(LOCAL_HOST, port) as client:
+            t, _ = await client.api_no_raise('')
+            assert t == 'ConnTimeoutError'
         pass
 
     @PytestAsyncTimeout(1)
@@ -28,8 +28,8 @@ class TestClient:
         port = 10011
         # 启动服务
         server = await TcpServer(LOCAL_HOST, port).start()
-        client = TcpClientManage(LOCAL_HOST, port)
-        await client.api('')
+        async with ClientTest(LOCAL_HOST, port) as client:
+            await client.api('')
         # 关闭服务
         await server.close()
         with pytest.raises(ConnTimeoutError):
@@ -41,7 +41,7 @@ class TestClient:
         """
         """
         port = 10012
-        async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
+        async with ClientTest(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
             # 连接失败
             with pytest.raises(ConnTimeoutError):
                 await client.api('')
@@ -62,7 +62,7 @@ class TestClient:
         """长期失败后重连成功
         """
         port = 10013
-        async with TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
+        async with ClientTest(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
             # 连接失败
             with pytest.raises(ConnTimeoutError):
                 await client.api('')
@@ -83,7 +83,7 @@ class TestClient:
         port = 10014
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port, api_delay=0.5) as client,
+            ClientTest(LOCAL_HOST, port, api_delay=0.5) as client,
         ):
             await client.api('')
             await asyncio.sleep(1)
@@ -94,7 +94,7 @@ class TestClient:
         port = 10015
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port, api_delay=0) as client,
+            ClientTest(LOCAL_HOST, port, api_delay=0) as client,
         ):
             with pytest.raises(ServiceTimeoutError):
                 await client.api('')
