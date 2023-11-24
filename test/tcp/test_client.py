@@ -2,6 +2,7 @@ import asyncio
 import pytest
 
 from ..timeout import PytestAsyncTimeout
+
 from ...src.tcp.server import TcpServer
 from ...src.exception.tcp import ConnTimeoutError, ServiceTimeoutError
 from ...src.tcp.client import TcpClientManage
@@ -17,11 +18,6 @@ class TestClient:
         """
         port = 10010
         client = TcpClientManage(LOCAL_HOST, port)
-        async with client:
-            t, _ = await client.api_no_raise('')
-            assert t == 'ConnTimeoutError'
-            pass
-
         t, _ = await client.api_no_raise('')
         assert t == 'ConnTimeoutError'
         await client.close()
@@ -32,13 +28,12 @@ class TestClient:
         port = 10011
         # 启动服务
         server = await TcpServer(LOCAL_HOST, port).start()
-        async with TcpClientManage(LOCAL_HOST, port) as client:
+        client = TcpClientManage(LOCAL_HOST, port)
+        await client.api('')
+        # 关闭服务
+        await server.close()
+        with pytest.raises(ConnTimeoutError):
             await client.api('')
-            # 关闭服务
-            await server.close()
-            with pytest.raises(ConnTimeoutError):
-                await client.api('')
-            pass
         pass
 
     @PytestAsyncTimeout(1)

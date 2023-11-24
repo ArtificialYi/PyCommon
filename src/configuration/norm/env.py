@@ -28,6 +28,7 @@ class ProjectEnv:
         """
         path_project_root = os.path.join(PROJECT_ROOT, 'tox.ini')
         if not os.path.exists(path_project_root):
+            print(f'项目缺少必备文件:{path_project_root}')
             raise Exception(f'项目缺少必备文件:{path_project_root}')
 
         return await ConfigTool.get_config(path_project_root)

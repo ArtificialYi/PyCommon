@@ -23,6 +23,11 @@ def logger_pre(mocker: MockerFixture):
     return mocker
 
 
+@pytest.fixture(scope='function', autouse=True)
+def config_pre(mocker: MockerFixture):
+    pass
+
+
 @pytest.fixture(scope='function')
 async def mysql_cursor(mocker: MockerFixture) -> tuple[MockCursorRDS, MysqlManage]:
     cursor = MockCursorRDS.mock_init(mocker)

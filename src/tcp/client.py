@@ -1,17 +1,24 @@
 import asyncio
-from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
+
 from typing import Any, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
+from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
-from ..configuration.norm.env import get_value_by_tag_and_field
-
-from ..tool.func_tool import ExceptTool
-from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
-from ..configuration.norm.log import LoggerLocal
-from ..tool.loop_tool import LoopExecBg
-from ..tool.map_tool import MapKeyGlobal
 from ..tool.base import AsyncBase
 from ..flow.client import FlowSendClient, FlowRecvClient
+from ..tool.map_tool import MapKeyGlobal
+from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
+from ..tool.func_tool import ExceptTool
+from ..tool.loop_tool import LoopExecBg
+from ..configuration.norm.log import LoggerLocal
+from ..configuration.norm.env import get_value_by_tag_and_field
+
+
+class TcpConfigManage:
+    @staticmethod
+    async def get_trans_bytes():
+        return int(await get_value_by_tag_and_field('tcp', 'trans_bytes'))
+    pass
 
 
 class TcpConn:
@@ -70,17 +77,18 @@ class TcpClient:
     def __init__(self, host: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
         self.__conn = TcpConn(host, port, conn_timeout_base)
         self.__loop_bg = LoopExecBg(self.__flow_run)
-        self.__loop_bg.run()
         self.__future: asyncio.Future[Tuple[FlowSendClient, FlowRecvClient]] = AsyncBase.get_future()
+        self.__loop_bg.run()
 
         self.__api_delay = api_delay
         pass
 
     async def __flow_run(self):
         reader, writer = await self.__conn.conn()
+        # num_bytes = await TcpConfigManage.get_trans_bytes()
         async with (
             FlowSendClient(writer) as flow_send,
-            FlowRecvClient(reader) as flow_recv,
+            FlowRecvClient(reader, 2) as flow_recv,
         ):
             self.__future.set_result((flow_send, flow_recv))
             tasks_flow = {flow_send.task, flow_recv.task}
@@ -132,12 +140,6 @@ class TcpClient:
             ExceptTool.raise_not_exception(e)
             return type(e).__name__, e
         pass
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *args):
-        await self.close()
     pass
 
 
