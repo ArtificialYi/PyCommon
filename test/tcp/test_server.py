@@ -1,33 +1,17 @@
 import asyncio
 import pytest
 
+
 from ..timeout import PytestAsyncTimeout
+
 from ...src.tool.base import AsyncBase
-from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
-from ...src.tcp.client import TcpClientManage
-from ...src.tool.server_tool import ServerRegister
 from ...src.tcp.server import TcpServer
+from ...src.tcp.client import TcpClientAgen
+from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
+from ...src.tool.server_tool import ServerRegister
 
 
 LOCAL_HOST = '127.0.0.1'
-
-
-class ClientTest:
-    def __init__(self, ip: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
-        self.__client = TcpClientManage(
-            ip, port,
-            api_delay=api_delay,
-            conn_timeout_base=conn_timeout_base,
-        )
-        pass
-
-    async def __aenter__(self):
-        return self.__client
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.__client.close()
-        pass
-    pass
 
 
 class TestServer:
@@ -61,7 +45,7 @@ class TestServer:
         # # 调用不存在的服务
         async with (
             TcpServer(LOCAL_HOST, port),
-            ClientTest(LOCAL_HOST, port) as client,
+            TcpClientAgen(LOCAL_HOST, port) as client,
         ):
             t, data = await client.api('')
             assert t == 'ServiceNotFoundException'
@@ -78,7 +62,7 @@ class TestServer:
         port = 10002
         async with (
             TcpServer(LOCAL_HOST, port),
-            ClientTest(LOCAL_HOST, port) as client,
+            TcpClientAgen(LOCAL_HOST, port) as client,
         ):
             with pytest.raises(ServiceTimeoutError):
                 await client.api('test/tcp/server/timeout/func_timeout')
@@ -97,7 +81,7 @@ class TestServer:
         port = 10003
         async with (
             TcpServer(LOCAL_HOST, port),
-            ClientTest(LOCAL_HOST, port) as client
+            TcpClientAgen(LOCAL_HOST, port) as client
         ):
             t, data = await client.api('test/tcp/server/norm/func_norm')
             assert t == 'bool'

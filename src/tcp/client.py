@@ -162,3 +162,21 @@ class TcpClientManage:
         )
         return TcpClientManage(host, int(port) + idx_server, api_delay, conn_timeout_base)
     pass
+
+
+class TcpClientAgen:
+    def __init__(self, ip: str, port: int, api_delay: float = 2, conn_timeout_base: float = 1) -> None:
+        self.__client = TcpClientManage(
+            ip, port,
+            api_delay=api_delay,
+            conn_timeout_base=conn_timeout_base,
+        )
+        pass
+
+    async def __aenter__(self):
+        return self.__client
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.__client.close()
+        pass
+    pass
