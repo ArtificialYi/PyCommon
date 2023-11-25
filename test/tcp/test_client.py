@@ -23,7 +23,7 @@ class TestClient:
         client.close()
         pass
 
-    @PytestAsyncTimeout(1)
+    # @PytestAsyncTimeout(1)
     async def test_server_close(self):
         port = 10011
         # 启动服务

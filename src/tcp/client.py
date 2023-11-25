@@ -17,7 +17,7 @@ from ..configuration.norm.env import get_value_by_tag_and_field
 class TcpConfigManage:
     @staticmethod
     async def get_trans_bytes():
-        return int(await get_value_by_tag_and_field('tcp', 'trans_bytes'))
+        return int(await get_value_by_tag_and_field('common_tcp', 'trans_bytes'))
     pass
 
 
@@ -85,10 +85,10 @@ class TcpClient:
 
     async def __flow_run(self):
         reader, writer = await self.__conn.conn()
-        # num_bytes = await TcpConfigManage.get_trans_bytes()
+        num_bytes = await TcpConfigManage.get_trans_bytes()
         async with (
             FlowSendClient(writer) as flow_send,
-            FlowRecvClient(reader, 2) as flow_recv,
+            FlowRecvClient(reader, num_bytes) as flow_recv,
         ):
             self.__future.set_result((flow_send, flow_recv))
             tasks_flow = {flow_send.task, flow_recv.task}
