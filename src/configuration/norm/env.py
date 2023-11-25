@@ -3,7 +3,7 @@ from configparser import ConfigParser
 from enum import Enum
 import os
 
-from .. import COMMON_CONFIG_DIR, CONFIG_ROOT, PROJECT_ROOT
+from .. import COMMON_CONFIG_DIR, COMMON_ROOT, CONFIG_ROOT, PROJECT_ROOT
 from ...tool.map_tool import MapKeyGlobal
 from .tool import ConfigTool
 
@@ -26,12 +26,14 @@ class ProjectEnv:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
         """
-        path_project_root = os.path.join(PROJECT_ROOT, 'tox.ini')
-        if not os.path.exists(path_project_root):
-            print(f'项目缺少必备文件:{path_project_root}')
-            raise Exception(f'项目缺少必备文件:{path_project_root}')
-
-        return await ConfigTool.get_config(path_project_root)
+        path_base = os.path.join(PROJECT_ROOT, 'tox.ini')
+        if not os.path.exists(path_base):
+            # tox.ini修改为可选项
+            # print(f'项目缺少必备文件:{path_base}')
+            # raise Exception(f'项目缺少必备文件:{path_base}')
+            path_base = os.path.join(COMMON_ROOT, 'tox.ini')
+            pass
+        return await ConfigTool.get_config(path_base)
 
     @classmethod
     async def get_env(cls):

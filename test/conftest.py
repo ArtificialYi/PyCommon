@@ -1,7 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ..src.tcp import client
 from ..mock.log import MockLogger, MockLoggerSync
 from ..mock.db.rds import MockCursor as MockCursorRDS
 from ..mock.db.sqlite import MockCursor as MockCursorSqlite
@@ -19,16 +18,6 @@ from ..src.dependency.db_sync.sqlite import SqliteManageSync
 def logger_pre(mocker: MockerFixture):
     MockLogger.mock_init(mocker)
     MockLoggerSync.mock_init(mocker)
-    return mocker
-
-
-@pytest.fixture(scope='function')
-def tcp_pre(mocker: MockerFixture):
-    async def mock_get_for(tag: str, field: str):
-        return {
-            'trans_bytes': 2
-        }.get(field, 1)
-    mocker.patch(f'{client.__name__}.get_value_by_tag_and_field', new=mock_get_for)
     return mocker
 
 
