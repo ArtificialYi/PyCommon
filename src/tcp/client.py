@@ -174,6 +174,7 @@ class TcpClientAgen:
         pass
 
     async def __aenter__(self):
+        await self.__client.wait_conn()
         return self.__client
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
