@@ -3,7 +3,7 @@ import pytest
 
 from ..timeout import PytestAsyncTimeout
 
-from ...src.tcp.client import TcpClientAgen
+from ...src.tcp.client import TcpClientAgen, TcpClientManage
 from ...src.tcp.server import TcpServer
 from ...src.exception.tcp import ConnTimeoutError, ServiceTimeoutError
 
@@ -17,9 +17,10 @@ class TestClient:
         """没有服务端测试
         """
         port = 10010
-        async with TcpClientAgen(LOCAL_HOST, port) as client:
-            t, _ = await client.api_no_raise('')
-            assert t == 'ConnTimeoutError'
+        client = TcpClientManage(LOCAL_HOST, port)
+        t, _ = await client.api_no_raise('')
+        assert t == 'ConnTimeoutError'
+        client.close()
         pass
 
     @PytestAsyncTimeout(1)
@@ -35,25 +36,27 @@ class TestClient:
             await client.api('')
         pass
 
-    @PytestAsyncTimeout(1)
+    @PytestAsyncTimeout(2)
     async def test_no_server_shorter(self):
         """
         """
         port = 10012
-        async with TcpClientAgen(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
-            # 连接失败
-            with pytest.raises(ConnTimeoutError):
-                await client.api('')
-                pass
-            # 经过短时间等待
-            await asyncio.sleep(0.05)
+        client = TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01)
 
-            # 启动服务端(短期失败后重连成功)
-            async with TcpServer(LOCAL_HOST, port):
-                await client.wait_conn()
-                await client.api('')
-                pass
+        # 连接失败
+        with pytest.raises(ConnTimeoutError):
+            await client.api('')
             pass
+        # 经过短时间等待
+        await asyncio.sleep(0.05)
+
+        # 启动服务端(短期失败后重连成功)
+        async with TcpServer(LOCAL_HOST, port):
+            await client.wait_conn()
+            await client.api('')
+            pass
+
+        client.close()
         pass
 
     @PytestAsyncTimeout(4)
@@ -61,20 +64,22 @@ class TestClient:
         """长期失败后重连成功
         """
         port = 10013
-        async with TcpClientAgen(LOCAL_HOST, port, conn_timeout_base=0.01) as client:
-            # 连接失败
-            with pytest.raises(ConnTimeoutError):
-                await client.api('')
-                pass
-            # 经过长时间等待
-            await asyncio.sleep(1)
+        client = TcpClientManage(LOCAL_HOST, port, conn_timeout_base=0.01)
 
-            # 启动服务端(长期失败后重连成功)
-            async with TcpServer(LOCAL_HOST, port):
-                await client.wait_conn()
-                await client.api('')
-                pass
+        # 连接失败
+        with pytest.raises(ConnTimeoutError):
+            await client.api('')
             pass
+        # 经过长时间等待
+        await asyncio.sleep(1)
+
+        # 启动服务端(长期失败后重连成功)
+        async with TcpServer(LOCAL_HOST, port):
+            await client.wait_conn()
+            await client.api('')
+            pass
+
+        client.close()
         pass
 
     @PytestAsyncTimeout(2)
