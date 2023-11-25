@@ -3,7 +3,7 @@ from configparser import ConfigParser
 from enum import Enum
 import os
 
-from .. import CONFIG_ROOT, PROJECT_ROOT
+from .. import COMMON_CONFIG_DIR, CONFIG_ROOT, PROJECT_ROOT
 from ...tool.map_tool import MapKeyGlobal
 from .tool import ConfigTool
 
@@ -68,9 +68,17 @@ class ConfigEnv:
         env_project = await ProjectEnv.get_env()
         path_env = os.path.join(CONFIG_ROOT, f'{env_project.lower()}.ini')
         return await ConfigTool.get_config(path_env)
+
+    @classmethod
+    @MapKeyGlobal()
+    async def config_common(cls):
+        path_default = os.path.join(COMMON_CONFIG_DIR, 'default.ini')
+        return await ConfigTool.get_config(path_default)
     pass
 
 
 async def get_value_by_tag_and_field(tag: str, field: str):
-    config_env, config_default = await asyncio.gather(ConfigEnv.config_env(), ConfigEnv.config_default())
-    return ConfigTool.get_value(tag, field, config_default, config_env)
+    config_env, config_default, config_common = await asyncio.gather(
+        ConfigEnv.config_env(), ConfigEnv.config_default(), ConfigEnv.config_common(),
+    )
+    return ConfigTool.get_value(tag, field, config_common, config_default, config_env)

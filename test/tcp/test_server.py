@@ -40,7 +40,7 @@ class TestServer:
         pass
 
     @PytestAsyncTimeout(1)
-    async def test_not_exist(self):
+    async def test_not_exist(self, tcp_pre):
         port = 10001
         # # 调用不存在的服务
         async with (
@@ -58,7 +58,7 @@ class TestServer:
         return await asyncio.sleep(2)
 
     @PytestAsyncTimeout(3)
-    async def test_service_timeout(self):
+    async def test_service_timeout(self, tcp_pre):
         port = 10002
         async with (
             TcpServer(LOCAL_HOST, port),
@@ -77,7 +77,7 @@ class TestServer:
         return True
 
     @PytestAsyncTimeout(1)
-    async def test_service_norm(self):
+    async def test_service_norm(self, tcp_pre):
         port = 10003
         async with (
             TcpServer(LOCAL_HOST, port),

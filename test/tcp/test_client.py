@@ -23,8 +23,8 @@ class TestClient:
         client.close()
         pass
 
-    # @PytestAsyncTimeout(1)
-    async def test_server_close(self):
+    @PytestAsyncTimeout(1)
+    async def test_server_close(self, tcp_pre):
         port = 10011
         # 启动服务
         server = await TcpServer(LOCAL_HOST, port).start()
@@ -37,7 +37,7 @@ class TestClient:
         pass
 
     @PytestAsyncTimeout(2)
-    async def test_no_server_shorter(self):
+    async def test_no_server_shorter(self, tcp_pre):
         """
         """
         port = 10012
@@ -60,7 +60,7 @@ class TestClient:
         pass
 
     @PytestAsyncTimeout(4)
-    async def test_no_server_longer(self):
+    async def test_no_server_longer(self, tcp_pre):
         """长期失败后重连成功
         """
         port = 10013
@@ -83,7 +83,7 @@ class TestClient:
         pass
 
     @PytestAsyncTimeout(2)
-    async def test_map_future_del_ok(self):
+    async def test_map_future_del_ok(self, tcp_pre):
         port = 10014
         async with (
             TcpServer(LOCAL_HOST, port),
@@ -94,7 +94,7 @@ class TestClient:
             pass
 
     @PytestAsyncTimeout(1)
-    async def test_map_future_del_early(self):
+    async def test_map_future_del_early(self, tcp_pre):
         port = 10015
         async with (
             TcpServer(LOCAL_HOST, port),

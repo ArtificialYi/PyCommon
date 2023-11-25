@@ -1,10 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ..src.dependency.db_sync.sqlite import SqliteManageSync
-
-from ..src.dependency.db.sqlite import SqliteManage
-
+from ..src.tcp import client
 from ..mock.log import MockLogger, MockLoggerSync
 from ..mock.db.rds import MockCursor as MockCursorRDS
 from ..mock.db.sqlite import MockCursor as MockCursorSqlite
@@ -12,8 +9,10 @@ from ..mock.db_sync.rds import MockCursorSync as MockCursorRDSSync
 from ..mock.db_sync.sqlite import MockCursorSync as MockCursorSqliteSync
 from ..src.dependency.db.rds import MysqlManage
 from ..src.dependency.db.manage import SqlManage
+from ..src.dependency.db.sqlite import SqliteManage
 from ..src.dependency.db_sync.rds import MysqlManageSync
 from ..src.dependency.db_sync.manage import SqlManageSync
+from ..src.dependency.db_sync.sqlite import SqliteManageSync
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -23,9 +22,14 @@ def logger_pre(mocker: MockerFixture):
     return mocker
 
 
-@pytest.fixture(scope='function', autouse=True)
-def config_pre(mocker: MockerFixture):
-    pass
+@pytest.fixture(scope='function')
+def tcp_pre(mocker: MockerFixture):
+    async def mock_get_for(tag: str, field: str):
+        return {
+            'trans_bytes': 2
+        }.get(field, 1)
+    mocker.patch(f'{client.__name__}.get_value_by_tag_and_field', new=mock_get_for)
+    return mocker
 
 
 @pytest.fixture(scope='function')
