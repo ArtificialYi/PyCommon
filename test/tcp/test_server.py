@@ -1,12 +1,14 @@
 import asyncio
 import pytest
 
+
 from ..timeout import PytestAsyncTimeout
+
 from ...src.tool.base import AsyncBase
-from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
-from ...src.tcp.client import TcpClientManage
-from ...src.tool.server_tool import ServerRegister
 from ...src.tcp.server import TcpServer
+from ...src.tcp.client import TcpClientAgen
+from ...src.exception.tcp import ServerAlreadyStartError, ServiceTimeoutError
+from ...src.tool.server_tool import ServerRegister
 
 
 LOCAL_HOST = '127.0.0.1'
@@ -43,7 +45,7 @@ class TestServer:
         # # 调用不存在的服务
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client,
+            TcpClientAgen(LOCAL_HOST, port) as client,
         ):
             t, data = await client.api('')
             assert t == 'ServiceNotFoundException'
@@ -60,10 +62,12 @@ class TestServer:
         port = 10002
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client
+            TcpClientAgen(LOCAL_HOST, port) as client,
         ):
             with pytest.raises(ServiceTimeoutError):
                 await client.api('test/tcp/server/timeout/func_timeout')
+                pass
+            pass
         pass
 
     @staticmethod
@@ -77,7 +81,7 @@ class TestServer:
         port = 10003
         async with (
             TcpServer(LOCAL_HOST, port),
-            TcpClientManage(LOCAL_HOST, port) as client
+            TcpClientAgen(LOCAL_HOST, port) as client
         ):
             t, data = await client.api('test/tcp/server/norm/func_norm')
             assert t == 'bool'

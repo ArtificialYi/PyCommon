@@ -1,10 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
 
-from ..src.dependency.db_sync.sqlite import SqliteManageSync
-
-from ..src.dependency.db.sqlite import SqliteManage
-
 from ..mock.log import MockLogger, MockLoggerSync
 from ..mock.db.rds import MockCursor as MockCursorRDS
 from ..mock.db.sqlite import MockCursor as MockCursorSqlite
@@ -12,8 +8,10 @@ from ..mock.db_sync.rds import MockCursorSync as MockCursorRDSSync
 from ..mock.db_sync.sqlite import MockCursorSync as MockCursorSqliteSync
 from ..src.dependency.db.rds import MysqlManage
 from ..src.dependency.db.manage import SqlManage
+from ..src.dependency.db.sqlite import SqliteManage
 from ..src.dependency.db_sync.rds import MysqlManageSync
 from ..src.dependency.db_sync.manage import SqlManageSync
+from ..src.dependency.db_sync.sqlite import SqliteManageSync
 
 
 @pytest.fixture(scope='function', autouse=True)

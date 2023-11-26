@@ -67,12 +67,13 @@ class JsonDeal:
 class FlowRecvClient(NormLoop):
     """持续运行的TCP接收流
     """
-    def __init__(self, reader: StreamReader) -> None:
+    def __init__(self, reader: StreamReader, num_bytes: int) -> None:
         self.__reader = reader
         NormLoop.__init__(self, self.__recv)
         self.__json_online = JsonOnline()
         self.__json_deal = JsonDeal()
         self.__tcp_id = 0
+        self.__num_bytes = num_bytes
         pass
 
     def prepare_id_future(self, timeout: float):
@@ -82,7 +83,7 @@ class FlowRecvClient(NormLoop):
         return self.__tcp_id, future
 
     async def __recv(self):
-        data = await self.__reader.read(1)
+        data = await self.__reader.read(self.__num_bytes)
         if not data:
             raise ConnException('服务端断开连接')
 

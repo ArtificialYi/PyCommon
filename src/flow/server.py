@@ -64,17 +64,19 @@ class FlowRecvServer(NormLoop):
     def __init__(
         self, reader: StreamReader,
         flow_send: FlowSendServer,
+        num_bytes: int,
         timeout: float = 1,
     ) -> None:
         self.__reader = reader
         self.__json_online = JsonOnline()
         self.__json_deal = JsonDeal(flow_send)
+        self.__num_bytes = num_bytes
         self.__timeout = timeout
         NormLoop.__init__(self, self.__recv)
         pass
 
     async def __recv(self):
-        data = await self.__reader.read(1)
+        data = await self.__reader.read(self.__num_bytes)
         if not data:
             raise ConnException('客户端断开连接')
 
