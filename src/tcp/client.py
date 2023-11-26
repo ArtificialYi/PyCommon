@@ -4,6 +4,8 @@ from typing import Any, Optional, Tuple
 from asyncio import StreamReader, StreamWriter
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
+from ..configuration.tcp import TcpConfigManage
+
 from ..tool.base import AsyncBase
 from ..flow.client import FlowSendClient, FlowRecvClient
 from ..tool.map_tool import MapKeyGlobal
@@ -12,13 +14,6 @@ from ..tool.func_tool import ExceptTool
 from ..tool.loop_tool import LoopExecBg
 from ..configuration.norm.log import LoggerLocal
 from ..configuration.norm.env import get_value_by_tag_and_field
-
-
-class TcpConfigManage:
-    @staticmethod
-    async def get_trans_bytes():
-        return int(await get_value_by_tag_and_field('common_tcp', 'trans_bytes'))
-    pass
 
 
 class TcpConn:

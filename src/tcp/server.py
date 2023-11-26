@@ -2,6 +2,8 @@ from asyncio import StreamReader, StreamWriter
 import asyncio
 from concurrent.futures import ALL_COMPLETED, FIRST_COMPLETED
 
+from ..configuration.tcp import TcpConfigManage
+
 from ..exception.tcp import ServerAlreadyStartError
 from ..tool.base import AsyncBase
 from ..tool.map_tool import LockManage
@@ -18,10 +20,10 @@ class ServerFlow:
 
     async def flow(self, timeout: float = 1):
         await LoggerLocal.info(f'服务端：Connection from {self.__addr}')
-
+        num_bytes = await TcpConfigManage.get_trans_bytes()
         async with (
             FlowSendServer(self.__writer) as flow_send,
-            FlowRecvServer(self.__reader, flow_send, timeout) as flow_recv,
+            FlowRecvServer(self.__reader, flow_send, num_bytes, timeout) as flow_recv,
         ):
             tasks_flow = {flow_send.task, flow_recv.task}
             try:
