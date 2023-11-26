@@ -1,17 +1,16 @@
 from asyncio import StreamReader, StreamWriter
 import asyncio
 import json
-from typing import Any, Optional
+from typing import Any
 
-from ..configuration.norm.log import LoggerLocal
-
-from ..tool.json_tool import HyJsonEncoder
-
-from ..tool.loop_tool import NormLoop, OrderApi
-from ..exception.tcp import ConnException
 from .tcp import JsonOnline
-from ..tool.server_tool import ServerRegister
+
+from ..exception.tcp import ConnException
+from ..tool.json_tool import HyJsonEncoder
+from ..tool.loop_tool import NormLoop, OrderApi
 from ..tool.bytes_tool import CODING
+from ..tool.server_tool import ServerRegister
+from ..configuration.norm.log import LoggerLocal
 
 
 class FlowSendServer(OrderApi):
@@ -23,7 +22,7 @@ class FlowSendServer(OrderApi):
         OrderApi.__init__(self, self.send)
         pass
 
-    async def send(self, id: Optional[int], code: int, data: Any):
+    async def send(self, id: int, data: Any):
         name_type = type(data).__name__
         str_json = json.dumps({
             'id': id,
@@ -52,7 +51,7 @@ class JsonDeal:
         kwds = json_obj.get("kwds", {})
         await LoggerLocal.info(f'服务端:收到请求|{id}|{service_name}')
         res_service = await ServerRegister.call(service_name, *args, **kwds)
-        await self.__flow_send.send(id, 1 if isinstance(res_service, Exception) else 0, res_service)
+        await self.__flow_send.send(id, res_service)
         pass
     pass
 
