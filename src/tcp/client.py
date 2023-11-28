@@ -140,7 +140,7 @@ class TcpClient:
 
 class TcpClientManage:
     @classmethod
-    @MapKeyGlobal(lambda _, *args: ':'.join((str(arg) for arg in args)))
+    @MapKeyGlobal(lambda _, *args: ':'.join((str(arg) for arg in args)), is_loop=True)
     def __get_client(cls, host: str, port: int, api_delay: int, conn_timeout_base: int) -> TcpClient:
         return TcpClient(host, port, api_delay / 1000, conn_timeout_base / 1000)
 
