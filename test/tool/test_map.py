@@ -8,18 +8,18 @@ from ...src.tool.map_tool import MapKeyGlobal, MapKeySelf
 
 class MapKeyTmp:
     @staticmethod
-    @MapKeyGlobal()
+    @MapKeyGlobal(is_loop=True)
     def func_norm_no_key():
         return object()
 
     @staticmethod
-    @MapKeyGlobal()
+    @MapKeyGlobal(is_loop=True)
     async def func_async_no_key():
         await asyncio.sleep(0.1)
         return object()
 
     @staticmethod
-    @MapKeyGlobal(BaseTool.return_self)
+    @MapKeyGlobal(BaseTool.return_self, is_loop=True)
     async def func_async_norm(key):
         await asyncio.sleep(0.1)
         return object()
