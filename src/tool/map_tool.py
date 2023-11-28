@@ -8,14 +8,17 @@ from .dict_tool import DictTool, LoopDict
 
 class LockManage:
     def __init__(self) -> None:
-        self.__map_lock = dict()
+        self.__loop = None
+        self.__lock = None
         pass
 
     def get_lock(self) -> asyncio.Lock:
         loop = asyncio.get_event_loop()
-        if self.__map_lock.get(loop) is None:
-            self.__map_lock[loop] = asyncio.Lock()
-        return self.__map_lock[loop]
+        if loop != self.__loop:
+            self.__lock = asyncio.Lock()
+            self.__loop = loop
+            pass
+        return self.__lock
 
     @staticmethod
     def get_for_map(data: dict[Any, 'LockManage'], key) -> 'LockManage':
@@ -113,7 +116,7 @@ class MapKeySelf:
             @wraps(func_obj)
             def wrapper(obj, *args, **kwds) -> R:
                 key = MapKeyBase.get_key_sync(self.__func_key, obj, *args, **kwds)
-                map_now = DictTool.get_value_dict(self.__map_key, obj)
+                map_now = DictTool.get_loop(self.__map_key, obj)
                 if key not in map_now:
                     map_now[key] = func_obj(obj, *args, **kwds)
                 return map_now[key]
@@ -135,7 +138,7 @@ class MapKeySelf:
 
         async def __wrapper(self, func_obj: Callable, obj, *args, **kwds):
             key = await MapKeyBase.get_key_async(self.__func_key, obj, *args, **kwds)
-            map_now = DictTool.get_value_dict(self.__map_key, obj)
+            map_now = DictTool.get_loop(self.__map_key, obj)
             if key in map_now:
                 return map_now[key]
 

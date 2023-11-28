@@ -8,37 +8,6 @@ class KeyNotExistError(Exception):
     pass
 
 
-class DictTool:
-    @staticmethod
-    def assert_key_exist(data: dict, key):
-        if data.get(key) is None:
-            raise KeyNotExistError(f'data: {data} key: {key} not exist')
-
-    @staticmethod
-    def assert_keys_exist(data: dict, keys: Iterable):
-        for key in keys:
-            DictTool.assert_key_exist(data, key)
-            pass
-        pass
-
-    @staticmethod
-    @contextmanager
-    def swap_value(data: dict, key, value):
-        tmp = data[key]
-        data[key] = value
-        yield data
-        data[key] = tmp
-        pass
-
-    @staticmethod
-    def get_value_dict(data: dict, key):
-        if key not in data:
-            data[key] = dict()
-            pass
-        return data[key]
-    pass
-
-
 class LoopDict:
     def __init__(self):
         self.__dict = dict()
@@ -64,4 +33,35 @@ class LoopDict:
         self.__loop_init()
         self.__dict[__key] = __value
         pass
+    pass
+
+
+class DictTool:
+    @staticmethod
+    def assert_key_exist(data: dict, key):
+        if key not in data:
+            raise KeyNotExistError(f'data: {data} key: {key} not exist')
+
+    @staticmethod
+    def assert_keys_exist(data: dict, keys: Iterable):
+        for key in keys:
+            DictTool.assert_key_exist(data, key)
+            pass
+        pass
+
+    @staticmethod
+    @contextmanager
+    def swap_value(data: dict, key, value):
+        tmp = data[key]
+        data[key] = value
+        yield data
+        data[key] = tmp
+        pass
+
+    @staticmethod
+    def get_loop(data: dict, key) -> LoopDict:
+        if key not in data:
+            data[key] = LoopDict()
+            pass
+        return data[key]
     pass
