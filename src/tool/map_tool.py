@@ -50,7 +50,7 @@ class MapKeyBase:
 
 class MapKeyGlobal:
     class Sync:
-        def __init__(self, func_key: Optional[Callable[..., R]], is_loop: bool = False) -> None:
+        def __init__(self, func_key: Optional[Callable[..., R]], is_loop: bool) -> None:
             self.__map: dict[R, Any] = LoopDict() if is_loop else dict()
             self.__func_key = func_key
             pass
@@ -67,8 +67,8 @@ class MapKeyGlobal:
         pass
 
     class Async:
-        def __init__(self, func_key) -> None:
-            self.__map = dict()
+        def __init__(self, func_key, is_loop: bool) -> None:
+            self.__map = LoopDict() if is_loop else dict()
             self.__func_key = func_key
             self.__lock = LockManage()
             pass
@@ -92,15 +92,16 @@ class MapKeyGlobal:
             return self.__map[key]
         pass
 
-    def __init__(self, func_key: Optional[Callable] = None) -> None:
+    def __init__(self, func_key: Optional[Callable] = None, is_loop: bool = False) -> None:
         self.__func_key = func_key
+        self.__is_loop = is_loop
         pass
 
     def __call__(self, func_obj: R) -> R:
         return (
-            MapKeyGlobal.Async(self.__func_key)(func_obj)
+            MapKeyGlobal.Async(self.__func_key, self.__is_loop)(func_obj)
             if asyncio.iscoroutinefunction(func_obj)
-            else MapKeyGlobal.Sync(self.__func_key)(func_obj)
+            else MapKeyGlobal.Sync(self.__func_key, self.__is_loop)(func_obj)
         )
     pass
 
