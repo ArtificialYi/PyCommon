@@ -1,6 +1,7 @@
 import asyncio
-from contextlib import contextmanager
+
 from typing import Any, Iterable
+from contextlib import contextmanager
 
 
 class KeyNotExistError(Exception):
@@ -38,24 +39,29 @@ class DictTool:
     pass
 
 
-class LoopDict(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class LoopDict:
+    def __init__(self):
+        self.__dict = dict()
         self.__loop = None
         pass
 
     def __loop_init(self):
         loop = asyncio.get_event_loop()
         if self.__loop != loop:
-            self.clear()
+            self.__dict.clear()
             self.__loop = loop
             pass
 
+    def __contains__(self, __key: Any) -> bool:
+        self.__loop_init()
+        return __key in self.__dict
+
     def __getitem__(self, __key: Any) -> Any:
         self.__loop_init()
-        return super().__getitem__(__key)
+        return self.__dict[__key]
 
     def __setitem__(self, __key: Any, __value: Any) -> None:
         self.__loop_init()
-        return super().__setitem__(__key, __value)
+        self.__dict[__key] = __value
+        pass
     pass

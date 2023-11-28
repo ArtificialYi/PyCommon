@@ -1,5 +1,6 @@
+import asyncio
 import pytest
-from ...src.tool.dict_tool import DictTool, KeyNotExistError
+from ...src.tool.dict_tool import DictTool, KeyNotExistError, LoopDict
 
 
 class TestDictTool:
@@ -20,5 +21,20 @@ class TestDictTool:
             assert data_tmp['a'] == 1
             pass
         assert data_tmp['a'] == 0
+        pass
+    pass
+
+
+class TestLoopDict:
+    def test(self):
+        # 初始化
+        tmp = LoopDict()
+        assert 'a' not in tmp
+        tmp['a'] = 0
+        assert tmp['a'] == 0
+
+        # 重置loop
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        assert 'a' not in tmp
         pass
     pass

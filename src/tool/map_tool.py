@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, Callable, Optional, TypeVar
 from functools import wraps
 
-from .dict_tool import DictTool
+from .dict_tool import DictTool, LoopDict
 
 
 class LockManage:
@@ -47,8 +47,8 @@ class MapKeyBase:
 
 class MapKeyGlobal:
     class Sync:
-        def __init__(self, func_key: Optional[Callable[..., R]]) -> None:
-            self.__map: dict[R, Any] = dict()
+        def __init__(self, func_key: Optional[Callable[..., R]], is_loop: bool = False) -> None:
+            self.__map: dict[R, Any] = LoopDict() if is_loop else dict()
             self.__func_key = func_key
             pass
 
