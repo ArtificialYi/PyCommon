@@ -115,14 +115,14 @@ class RouteDict:
 
     def pre_is_all_trained(self, al: ArgsLatitude) -> bool:
         for al_pre in al.pre(self.__al_min):
-            if self.__dict_trained.get(al_pre) is None:
+            if al_pre not in self.__dict_trained:
                 return False
             pass
         return True
 
     def can_push(self, al: ArgsLatitude) -> bool:
         # 节点在范围内 and 当前未训练 and 所有前置已训练
-        return self.__al_min <= al <= self.__al_max and self.__dict_trained.get(al) is None and self.pre_is_all_trained(al)
+        return self.__al_min <= al <= self.__al_max and al not in self.__dict_trained and self.pre_is_all_trained(al)
 
     def iter_next(self, al: ArgsLatitude):
         for al_next in al.next(self.__al_max):

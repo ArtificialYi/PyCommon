@@ -1,15 +1,45 @@
+import asyncio
+
+from typing import Any, Iterable
 from contextlib import contextmanager
-from typing import Iterable
 
 
 class KeyNotExistError(Exception):
     pass
 
 
+class LoopDict:
+    def __init__(self):
+        self.__dict = dict()
+        self.__loop = None
+        pass
+
+    def __loop_init(self):
+        loop = asyncio.get_event_loop()
+        if self.__loop != loop:
+            self.__dict.clear()
+            self.__loop = loop
+            pass
+
+    def __contains__(self, __key: Any) -> bool:
+        self.__loop_init()
+        return __key in self.__dict
+
+    def __getitem__(self, __key: Any) -> Any:
+        self.__loop_init()
+        return self.__dict[__key]
+
+    def __setitem__(self, __key: Any, __value: Any) -> None:
+        self.__loop_init()
+        self.__dict[__key] = __value
+        pass
+    pass
+
+
 class DictTool:
     @staticmethod
     def assert_key_exist(data: dict, key):
-        if data.get(key) is None:
+        if key not in data:
             raise KeyNotExistError(f'data: {data} key: {key} not exist')
 
     @staticmethod
@@ -29,9 +59,9 @@ class DictTool:
         pass
 
     @staticmethod
-    def get_value_dict(data: dict, key):
+    def get_loop(data: dict, key) -> LoopDict:
         if key not in data:
-            data[key] = dict()
+            data[key] = LoopDict()
             pass
         return data[key]
     pass
