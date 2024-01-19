@@ -20,20 +20,23 @@ class TestClient:
         client = TcpClientManage(LOCAL_HOST, port)
         t, _ = await client.api_no_raise('')
         assert t == 'ConnTimeoutError'
-        client.close()
+        await client.close()
         pass
 
     @PytestAsyncTimeout(1)
     async def test_server_close(self):
         port = 10011
-        # 启动服务
-        server = await TcpServer(LOCAL_HOST, port).start()
-        async with TcpClientAgen(LOCAL_HOST, port) as client:
+
+        async with (
+            TcpServer(LOCAL_HOST, port),
+            TcpClientAgen(LOCAL_HOST, port) as client
+        ):
             await client.api('')
-        # 关闭服务
-        await server.close()
+            pass
         with pytest.raises(ConnTimeoutError):
             await client.api('')
+            pass
+        await client.close()
         pass
 
     @PytestAsyncTimeout(2)
@@ -56,7 +59,7 @@ class TestClient:
             await client.api('')
             pass
 
-        client.close()
+        await client.close()
         pass
 
     @PytestAsyncTimeout(4)
@@ -79,7 +82,7 @@ class TestClient:
             await client.api('')
             pass
 
-        client.close()
+        await client.close()
         pass
 
     @PytestAsyncTimeout(2)
@@ -92,6 +95,7 @@ class TestClient:
             await client.api('')
             await asyncio.sleep(1)
             pass
+        pass
 
     @PytestAsyncTimeout(1)
     async def test_map_future_del_early(self):
@@ -103,4 +107,5 @@ class TestClient:
             with pytest.raises(ServiceTimeoutError):
                 await client.api('')
             pass
+        pass
     pass

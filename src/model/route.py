@@ -113,6 +113,9 @@ class RouteDict:
         self.__al_max: ArgsLatitude = ArgsLatitude(length_max, layer_max, 2 ** layer_max)
         pass
 
+    def __len__(self) -> int:
+        return len(self.__dict_trained)
+
     def pre_is_all_trained(self, al: ArgsLatitude) -> bool:
         for al_pre in al.pre(self.__al_min):
             if al_pre not in self.__dict_trained:
@@ -157,6 +160,9 @@ class RouteHeap:
         # 已训练字典
         self.__route_dict = route_dict
         pass
+
+    def __len__(self) -> int:
+        return len(self.__route_dict)
 
     def __can_push(self, al: ArgsLatitude, loss: float):
         tol = 1e-4
