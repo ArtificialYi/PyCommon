@@ -1,6 +1,14 @@
 from ...src.model.route import AlLossUnit, ArgsLatitude, RouteDict, RouteHeap, RouteUnit
 
 
+class TestRouteHeap:
+    def test_len(self):
+        heap_tmp = RouteHeap(RouteDict())
+        assert len(heap_tmp) == 0
+        pass
+    pass
+
+
 class TestRoute:
     def test_init(self):
         # 初始化route
