@@ -9,7 +9,9 @@ lint-local:
 
 test: test-local clean
 test-local:
-	pytest --cov-report=term --cov-report=xml --cov=src -n=6 test
+	pytest --cov-report=term --cov-report=xml --cov=src -n=$(shell \
+		pytest --collect-only test | grep 'Function' | wc -l | awk '{print int(log($$1)+1)}' \
+	) test
 	@echo 'test done.'
 
 clean: clean-pytest clean-python

@@ -17,10 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+        matrix:
+          python-version:
+            - "3.11"
     steps:
       - name: pytest
         uses: ArtificialYi/actions/python_test@master
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           numpy: true
           sql: true

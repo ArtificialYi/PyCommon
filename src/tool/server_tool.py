@@ -18,7 +18,7 @@ class ServerRegister:
         pass
 
     def __call__(self, func: C) -> C:
-        path = f'{ "" if self.__path is None else self.__path}/{func.__name__}'
+        path = f'{"" if self.__path is None else self.__path}/{func.__name__}'
         if path in self.__class__.__TABLE:  # pragma: no cover
             raise ServiceExistException(f'服务已存在，无法注册:{path}')
         self.__class__.__TABLE[path] = func, asyncio.iscoroutinefunction(func)
