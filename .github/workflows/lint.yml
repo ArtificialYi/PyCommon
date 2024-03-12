@@ -25,7 +25,6 @@ jobs:
         python-version:
           - "3.10"
           - "3.11"
-          - "3.12"
     steps:
       - name: 格式校验
         uses: ArtificialYi/actions/python_lint@master

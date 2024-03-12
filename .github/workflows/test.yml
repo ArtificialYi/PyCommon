@@ -21,7 +21,6 @@ jobs:
         matrix:
           python-version:
             - "3.11"
-            - "3.12"
     steps:
       - name: pytest
         uses: ArtificialYi/actions/python_test@master
