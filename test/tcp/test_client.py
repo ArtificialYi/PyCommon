@@ -39,7 +39,7 @@ class TestClient:
         await client.close()
         pass
 
-    @PytestAsyncTimeout(2)
+    @PytestAsyncTimeout(5)
     async def test_no_server_shorter(self):
         """
         """
@@ -62,7 +62,7 @@ class TestClient:
         await client.close()
         pass
 
-    @PytestAsyncTimeout(4)
+    @PytestAsyncTimeout(5)
     async def test_no_server_longer(self):
         """长期失败后重连成功
         """

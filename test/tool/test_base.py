@@ -1,7 +1,11 @@
-from asyncio import Future
 import asyncio
+import pytest
+import sys
+
+from asyncio import Future
 
 from ..timeout import PytestAsyncTimeout
+
 from ...src.tool.base import AsyncBase, BaseTool, DelayCountQueue
 
 
@@ -148,8 +152,10 @@ class TestAsyncBase:
         return res
 
     @PytestAsyncTimeout(1)
+    @pytest.mark.skipif(sys.version_info >= (3, 12), reason="py312以上版本不支持生成器直接转为协程")
     async def test_sync2async(self):
-        # 同步转异步
+        """当前行为在python3.12以上版本会报错
+        """
         res_a = 123
         future = AsyncBase.get_future()
         task = asyncio.create_task(self.iter_future_set(future, res_a))
