@@ -1,22 +1,14 @@
 import asyncio
-from configparser import ConfigParser
-from enum import Enum
 import os
 
-from .. import COMMON_CONFIG_DIR, COMMON_ROOT, CONFIG_ROOT, PROJECT_ROOT
-from ...tool.map_tool import MapKeyGlobal
+from configparser import ConfigParser
+
 from .tool import ConfigTool
 
+from .. import COMMON_CONFIG_DIR, COMMON_ROOT, CONFIG_ROOT, PROJECT_ROOT
 
-class EnvEnum(Enum):
-    TEST = 'TEST'
-    DEV = 'DEV'
-    PROD = 'PROD'
-
-    def lower(self) -> str:
-        str_tmp: str = self.value
-        return str_tmp.lower()
-    pass
+from ...tool.env_tool import EnvEnum
+from ...tool.map_tool import MapKeyGlobal
 
 
 class ProjectEnv:
