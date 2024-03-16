@@ -64,7 +64,7 @@ class MysqlManageSync:
         return get_pool(self.__data)
 
     @contextmanager
-    def __call__(self, use_transaction: bool = False) -> Generator[ConnExecutorSync, bool, None]:
+    def __call__(self, use_transaction: bool = False) -> Generator[ConnExecutorSync, None, None]:
         with get_conn(self.pool(), use_transaction) as conn:
             yield ConnExecutorSync(conn)
         pass

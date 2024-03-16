@@ -29,7 +29,7 @@ class ActionIterSync:
 
     def __call__(
         self, cursor: SSDictCursor | sqlite3.Cursor,
-    ) -> Generator[dict[str, Any], SSDictCursor | sqlite3.Cursor, None]:
+    ) -> Generator[dict[str, Any], None, None]:
         sql = self.__sql if isinstance(cursor, SSDictCursor) else Mysql2Other.sqlite(self.__sql)
         cursor.execute(sql, self.__args)
         while (row := cursor.fetchone()) is not None:
@@ -50,7 +50,7 @@ class ConnExecutorSync:
         cursor.close()
         return res
 
-    def iter(self, gen: ActionIterSync) -> Generator[dict, ActionIterSync, None]:
+    def iter(self, gen: ActionIterSync) -> Generator[dict, None, None]:
         cursor = self.__conn.cursor()
         for row in gen(cursor):
             yield row

@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from contextlib import asynccontextmanager
+from typing import Generator
 import aiosqlite
 from pytest_mock import MockerFixture
 
@@ -113,7 +114,8 @@ class MockConnection(MockDelay, aiosqlite.Connection):
 
 class MockDB:
     @staticmethod
-    async def db_create(db_name: str) -> AsyncGenerator[SqliteManage, None]:
+    @asynccontextmanager
+    def db_create(db_name: str) -> Generator[SqliteManage, None, None]:
         local_name = TimeTool.file2local(db_name)
         try:
             yield SqliteManage(local_name)
