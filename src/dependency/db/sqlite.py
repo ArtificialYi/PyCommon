@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
-from .base import ConnExecutor
+from .base import ActionNorm, ConnExecutor
 
 from ..sqlite import dict_factory
 
@@ -59,4 +59,13 @@ class SqliteManage:
         async with get_conn(self.__db_name, use_transaction) as conn:
             yield ConnExecutor(conn)
         pass
+    pass
+
+
+class ServiceNorm:
+    @staticmethod
+    async def table_exist(sql_manage: SqliteManage, table_name: str) -> bool:
+        async with sql_manage() as conn:
+            row = await conn.row_one(ActionNorm.table_exist(table_name))
+            return row['COUNT'] > 0
     pass
