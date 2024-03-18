@@ -65,3 +65,13 @@ class ConnExecutor:
                 pass
             return res_row
     pass
+
+
+class ActionNorm:
+    @staticmethod
+    def table_exist(table_name: str) -> ActionIter:
+        sql = """
+SELECT COUNT(1) as COUNT FROM sqlite_master WHERE type='table' AND name=?;
+"""
+        return ActionIter(sql, (table_name,))
+    pass

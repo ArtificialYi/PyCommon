@@ -7,11 +7,11 @@ from ...src.dependency.db_sync.sqlite import SqliteManageSync
 from ..timeout import PytestAsyncTimeout
 
 from ...mock.func import MockException
-from ...mock.db.sqlite import MockCursor
+from ...mock.db.sqlite import MockCursor, MockDB
 from ...src.exception.db import MultipleResultsFound
 from ...mock.db_sync.sqlite import MockCursorSync
 from ...src.dependency.db.base import ActionExec, ActionIter
-from ...src.dependency.db.sqlite import SqliteManage
+from ...src.dependency.db.sqlite import ServiceNorm, SqliteManage
 
 
 class TestSqliteManage:
@@ -72,6 +72,30 @@ class TestSqliteManage:
             with pytest.raises(MultipleResultsFound):
                 await exec.row_one(ActionIter('sql'))
                 pass
+            pass
+        pass
+
+    # @PytestAsyncTimeout(1)
+    async def test_create(self):
+        """测试创建DB库
+        1. 库中无表
+        2. 创建一张表
+        3. 库中有表
+        """
+        table_name = 'test_table'
+        sql = f"""
+CREATE TABLE "main"."{table_name}" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+        """
+        action = ActionExec(sql)
+
+        with MockDB.db_create('test.db') as sql_manage:
+            assert not await ServiceNorm.table_exist(sql_manage, table_name)
+            async with sql_manage(True) as conn:
+                assert await conn.exec(action) == -1
+                pass
+            assert await ServiceNorm.table_exist(sql_manage, table_name)
             pass
         pass
     pass
