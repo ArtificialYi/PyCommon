@@ -90,7 +90,7 @@ CREATE TABLE "main"."{table_name}" (
         """
         action = ActionExec(sql)
 
-        with MockDB.db_create('test.db') as sql_manage:
+        with MockDB('test.db') as sql_manage:
             assert not await ServiceNorm.table_exist(sql_manage, table_name)
             async with sql_manage(True) as conn:
                 assert await conn.exec(action) == -1
