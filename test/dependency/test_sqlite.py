@@ -117,6 +117,13 @@ CREATE TABLE "main"."{table_name}" (
             assert await self.__sql_exec(db_create, action) == -1
             pass
         pass
+
+    @PytestAsyncTimeout(1)
+    async def test_sql_type(self, db_create: MockDB):
+        async with db_create() as conn:
+            assert conn.sql_type == 'sqlite'
+            pass
+        pass
     pass
 
 
