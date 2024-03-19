@@ -39,7 +39,12 @@ class ActionIter:
 class ConnExecutor:
     def __init__(self, conn: Union[aiomysql.Connection, aiosqlite.Connection]) -> None:
         self.__conn = conn
+        self.__sql_type = 'mysql' if isinstance(conn, aiomysql.Connection) else 'sqlite'
         pass
+
+    @property
+    def sql_type(self) -> str:
+        return self.__sql_type
 
     async def exec(self, coro: ActionExec) -> int:
         async with self.__conn.cursor() as cursor:
