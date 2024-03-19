@@ -1,4 +1,4 @@
-.PHONY: test main lint clean
+.PHONY: test main lint clean branch
 main: lint-local test-local clean
 
 lint: lint-local clean
@@ -22,3 +22,9 @@ clean-pytest:
 	find . -name '.coverage' -exec rm -r {} +
 clean-python:
 	find . -name '__pycache__' -exec rm -r {} +
+
+branch:
+	git checkout master
+	git fetch --prune
+	git merge
+	git branch --merged master | grep -v "\* master" | xargs -n 1 git branch -d
