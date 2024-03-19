@@ -1,3 +1,4 @@
+import sqlite3
 import pytest
 
 from ...src.dependency.db_sync.base import ActionExecSync, ActionIterSync
@@ -75,13 +76,31 @@ class TestSqliteManage:
             pass
         pass
 
-    # @PytestAsyncTimeout(1)
-    async def test_create(self):
-        """测试创建DB库
-        1. 库中无表
-        2. 创建一张表
-        3. 库中有表
-        """
+    async def __sql_exec(self, sql_manage: MockDB, action: ActionExec):
+        async with sql_manage(True) as conn:
+            return await conn.exec(action)
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_db_create(self):
+        with MockDB('test.db') as sql_manage:
+            assert isinstance(sql_manage, MockDB)
+            assert not await ServiceNorm.table_exist(sql_manage, 'test')
+            pass
+
+        with pytest.raises(AttributeError):
+            await ServiceNorm.table_exist(sql_manage, 'test')
+        pass
+
+    @pytest.fixture
+    def db_create(self):
+        with MockDB('test.db') as sql_manage:
+            yield sql_manage
+            pass
+        pass
+
+    @PytestAsyncTimeout(1)
+    async def test_table_create(self, db_create: MockDB):
         table_name = 'test_table'
         sql = f"""
 CREATE TABLE "main"."{table_name}" (
@@ -90,12 +109,12 @@ CREATE TABLE "main"."{table_name}" (
         """
         action = ActionExec(sql)
 
-        with MockDB('test.db') as sql_manage:
-            assert not await ServiceNorm.table_exist(sql_manage, table_name)
-            async with sql_manage(True) as conn:
-                assert await conn.exec(action) == -1
-                pass
-            assert await ServiceNorm.table_exist(sql_manage, table_name)
+        assert not await ServiceNorm.table_exist(db_create, table_name)
+        assert await self.__sql_exec(db_create, action) == -1
+        assert await ServiceNorm.table_exist(db_create, table_name)
+
+        with pytest.raises(sqlite3.OperationalError):
+            assert await self.__sql_exec(db_create, action) == -1
             pass
         pass
     pass
