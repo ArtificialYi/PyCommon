@@ -4,7 +4,17 @@ import aiosqlite
 
 from ...exception.db import MultipleResultsFound
 
-from ...tool.sql_tool import Mysql2Other
+from ...tool.sql_tool import SQLTool
+
+
+class SqlConv:
+    def __init__(self, cursor: aiomysql.SSDictCursor | aiosqlite.Cursor) -> None:
+        self.__conv = SQLTool.to_mysql if isinstance(cursor, aiomysql.SSDictCursor) else SQLTool.to_sqlite
+        pass
+
+    def __call__(self, sql: str) -> str:
+        return self.__conv(sql)
+    pass
 
 
 class ActionExec:
@@ -14,7 +24,7 @@ class ActionExec:
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> int:
-        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        sql = SqlConv(cursor)(self.__sql)
         await cursor.execute(sql, self.__args)
         return cursor.rowcount
     pass
@@ -27,7 +37,7 @@ class ActionIter:
         pass
 
     async def __call__(self, cursor: Union[aiomysql.SSDictCursor, aiosqlite.Cursor]) -> AsyncGenerator[dict, None]:
-        sql = self.__sql if isinstance(cursor, aiomysql.SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        sql = SqlConv(cursor)(self.__sql)
         await cursor.execute(sql, self.__args)
         while (row := await cursor.fetchone()) is not None:
             yield dict(row)
