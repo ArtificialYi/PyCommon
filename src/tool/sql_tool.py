@@ -2,13 +2,6 @@ import re
 from typing import List
 
 
-class Mysql2Other:
-    @staticmethod
-    def sqlite(sql: str):
-        return sql.replace('%s', '?')
-    pass
-
-
 class SQLTool:
     __FIELD_RE = re.compile(r'_lst\.')
 
@@ -35,4 +28,12 @@ class SQLTool:
     @staticmethod
     def to_sql_format(fields: List[str]):
         return ','.join(f'%({field})s' for field in fields)
+
+    @staticmethod
+    def to_sqlite(sql: str):
+        return sql.replace('%s', '?')
+
+    @staticmethod
+    def to_mysql(sql: str):
+        return sql.replace('?', '%s')
     pass

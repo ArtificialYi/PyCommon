@@ -5,7 +5,17 @@ import sqlite3
 
 from ...exception.db import MultipleResultsFound
 
-from ...tool.sql_tool import Mysql2Other
+from ...tool.sql_tool import SQLTool
+
+
+class SqlConv:
+    def __init__(self, cursor: SSDictCursor | sqlite3.Cursor) -> None:
+        self.__conv = SQLTool.to_mysql if isinstance(cursor, SSDictCursor) else SQLTool.to_sqlite
+        pass
+
+    def __call__(self, sql: str) -> str:
+        return self.__conv(sql)
+    pass
 
 
 class ActionExecSync:
@@ -15,7 +25,7 @@ class ActionExecSync:
         pass
 
     def __call__(self, cursor: Union[SSDictCursor, sqlite3.Cursor]) -> int:
-        sql = self.__sql if isinstance(cursor, SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        sql = SqlConv(cursor)(self.__sql)
         cursor.execute(sql, self.__args)
         return cursor.rowcount
     pass
@@ -30,7 +40,7 @@ class ActionIterSync:
     def __call__(
         self, cursor: SSDictCursor | sqlite3.Cursor,
     ) -> Generator[dict[str, Any], None, None]:
-        sql = self.__sql if isinstance(cursor, SSDictCursor) else Mysql2Other.sqlite(self.__sql)
+        sql = SqlConv(cursor)(self.__sql)
         cursor.execute(sql, self.__args)
         while (row := cursor.fetchone()) is not None:
             yield dict(row)
