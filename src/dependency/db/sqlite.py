@@ -25,12 +25,12 @@ from ...configuration.norm.log import LoggerLocal
 @asynccontextmanager
 async def __transaction(conn: aiosqlite.Connection):
     try:
-        await conn.execute('BEGIN')
+        await conn.execute('BEGIN;')
         yield conn
-        await conn.execute('COMMIT')
+        await conn.execute('COMMIT;')
     except BaseException as e:
         await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
-        await conn.execute('ROLLBACK') if isinstance(e, Exception) else None
+        await conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 
 
@@ -38,6 +38,7 @@ async def __transaction(conn: aiosqlite.Connection):
 async def get_conn(db_name: str, use_transaction: bool = False) -> AsyncGenerator[aiosqlite.Connection, None]:
     async with aiosqlite.connect(db_name) as conn:
         conn.row_factory = dict_factory
+        await conn.execute('PRAGMA journal_mode=WAL;')
         if not use_transaction:
             yield conn
             return

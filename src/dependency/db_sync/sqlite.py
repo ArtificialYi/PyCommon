@@ -13,12 +13,12 @@ from ...configuration.sync.log import LoggerLocal
 @contextmanager
 def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
     try:
-        conn.execute('BEGIN')
+        conn.execute('BEGIN;')
         yield
-        conn.execute('COMMIT')
+        conn.execute('COMMIT;')
     except BaseException as e:
         LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
-        conn.execute('ROLLBACK') if isinstance(e, Exception) else None
+        conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 
 
@@ -26,6 +26,7 @@ def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
 def get_conn(db_name: str, use_transaction: bool) -> Generator[sqlite3.Connection, None, None]:
     with sqlite3.connect(db_name) as conn:
         conn.row_factory = dict_factory
+        conn.execute('PRAGMA journal_mode=WAL;')
         if not use_transaction:
             yield conn
             return
