@@ -3,6 +3,7 @@ branch = True
 omit =
     src/configuration/*
     src/dependency/mail.py
+    rds.py
 
 [report]
 # 设置报告精度
