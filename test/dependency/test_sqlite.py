@@ -13,11 +13,6 @@ from ...src.dependency.db.sqlite import ServiceNorm, SqliteManage
 
 
 class TestSqliteManage:
-    async def __sql_exec(self, sql_manage: SqliteManage, sql: str, args: tuple):
-        async with sql_manage(True) as conn:
-            return await conn.exec(sql, args)
-        pass
-
     @PytestAsyncTimeout(1)
     async def test_db_create(self):
         with MockDB('test.db') as sql_manage:
@@ -46,11 +41,15 @@ CREATE TABLE "main"."{table_name}" (
         """
 
         assert not await ServiceNorm.table_exist(db_create, table_name)
-        assert await self.__sql_exec(db_create, sql, []) == -1
+        async with db_create(True) as conn:
+            assert await conn.exec(sql, []) == -1
+            pass
         assert await ServiceNorm.table_exist(db_create, table_name)
 
         with pytest.raises(sqlite3.OperationalError):
-            assert await self.__sql_exec(db_create, sql, []) == -1
+            async with db_create(True) as conn:
+                await conn.exec(sql, []) == -1
+                pass
             pass
         pass
 
