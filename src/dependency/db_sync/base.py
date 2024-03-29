@@ -54,13 +54,15 @@ class ConnExecutorSync:
         self.__conn = conn
         pass
 
-    def exec(self, func: ActionExecSync) -> int:
+    def exec(self, sql: str, args: tuple) -> int:
+        func = ActionExecSync(sql, args)
         cursor = self.__conn.cursor()
         res = func(cursor)
         cursor.close()
         return res
 
-    def iter(self, gen: ActionIterSync) -> Generator[dict, None, None]:
+    def iter(self, sql: str, args: tuple) -> Generator[dict, None, None]:
+        gen = ActionIterSync(sql, args)
         cursor = self.__conn.cursor()
         for row in gen(cursor):
             yield row
@@ -68,7 +70,8 @@ class ConnExecutorSync:
         cursor.close()
         pass
 
-    def row_one(self, gen: ActionIterSync) -> Optional[dict]:
+    def row_one(self, sql: str, args: tuple) -> Optional[dict]:
+        gen = ActionIterSync(sql, args)
         res_row = None
         i = 0
         cursor = self.__conn.cursor()

@@ -1,8 +1,6 @@
 import sqlite3
 import pytest
 
-from ...src.dependency.db_sync.base import ActionExecSync, ActionIterSync
-
 from ...src.dependency.db_sync.sqlite import SqliteManageSync
 
 from ..timeout import PytestAsyncTimeout
@@ -11,7 +9,6 @@ from ...mock.func import MockException
 from ...mock.db.sqlite import MockCursor, MockDB
 from ...src.exception.db import MultipleResultsFound
 from ...mock.db_sync.sqlite import MockCursorSync
-from ...src.dependency.db.base import ActionExec, ActionIter
 from ...src.dependency.db.sqlite import ServiceNorm, SqliteManage
 
 
@@ -34,7 +31,7 @@ class TestSqliteManage:
         async with sql_mange() as exec:
             cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}, {'id': 3}])
             i = 0
-            async for _ in exec.iter(ActionIter('sql')):
+            async for _ in exec.iter('sql', []):
                 i += 1
                 pass
             assert i == 3
@@ -48,7 +45,7 @@ class TestSqliteManage:
         # 事务开启+exec
         async with sql_mange(True) as exec:
             # 正常提交事务
-            assert await exec.exec(ActionExec('sql')) == 1
+            assert await exec.exec('sql', []) == 1
             pass
         pass
 
@@ -60,25 +57,25 @@ class TestSqliteManage:
         async with sql_mange() as exec:
             # 一行数据
             cursor.mock_set_fetch_all([{'id': 1}])
-            row = await exec.row_one(ActionIter('sql'))
+            row = await exec.row_one('sql', [])
             assert row['id'] == 1
 
             # 无数据
             cursor.mock_set_fetch_all([])
-            row = await exec.row_one(ActionIter('sql'))
+            row = await exec.row_one('sql', [])
             assert row is None
 
             # 多行数据
             cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
             with pytest.raises(MultipleResultsFound):
-                await exec.row_one(ActionIter('sql'))
+                await exec.row_one('sql', [])
                 pass
             pass
         pass
 
-    async def __sql_exec(self, sql_manage: MockDB, action: ActionExec):
+    async def __sql_exec(self, sql_manage: MockDB, sql: str, args: tuple):
         async with sql_manage(True) as conn:
-            return await conn.exec(action)
+            return await conn.exec(sql, args)
         pass
 
     @PytestAsyncTimeout(1)
@@ -107,14 +104,13 @@ CREATE TABLE "main"."{table_name}" (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
 );
         """
-        action = ActionExec(sql)
 
         assert not await ServiceNorm.table_exist(db_create, table_name)
-        assert await self.__sql_exec(db_create, action) == -1
+        assert await self.__sql_exec(db_create, sql, []) == -1
         assert await ServiceNorm.table_exist(db_create, table_name)
 
         with pytest.raises(sqlite3.OperationalError):
-            assert await self.__sql_exec(db_create, action) == -1
+            assert await self.__sql_exec(db_create, sql, []) == -1
             pass
         pass
 
@@ -144,7 +140,7 @@ class TestSqliteManageSync:
         with sql_mange() as exec:
             cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}, {'id': 3}])
             i = 0
-            for _ in exec.iter(ActionIterSync('sql')):
+            for _ in exec.iter('sql', []):
                 i += 1
                 pass
             assert i == 3
@@ -157,7 +153,7 @@ class TestSqliteManageSync:
         # 事务开启+exec
         with sql_mange(True) as exec:
             # 正常提交事务
-            assert exec.exec(ActionExecSync('sql')) == 1
+            assert exec.exec('sql', []) == 1
             pass
         pass
 
@@ -168,18 +164,18 @@ class TestSqliteManageSync:
         with sql_mange() as exec:
             # 一行数据
             cursor.mock_set_fetch_all([{'id': 1}])
-            row = exec.row_one(ActionIterSync('sql'))
+            row = exec.row_one('sql', [])
             assert row['id'] == 1
 
             # 无数据
             cursor.mock_set_fetch_all([])
-            row = exec.row_one(ActionIterSync('sql'))
+            row = exec.row_one('sql', [])
             assert row is None
 
             # 多行数据
             cursor.mock_set_fetch_all([{'id': 1}, {'id': 2}])
             with pytest.raises(MultipleResultsFound):
-                exec.row_one(ActionIterSync('sql'))
+                exec.row_one('sql', [])
                 pass
             pass
         pass

@@ -67,6 +67,7 @@ class ServiceNorm:
     @staticmethod
     async def table_exist(sql_manage: SqliteManage, table_name: str) -> bool:
         async with sql_manage() as conn:
-            row = await conn.row_one(ActionNorm.table_exist(table_name))
+            sql, args = ActionNorm.table_exist(table_name)
+            row = await conn.row_one(sql, args)
             return row['COUNT'] > 0
     pass
