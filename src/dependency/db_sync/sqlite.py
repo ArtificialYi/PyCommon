@@ -3,11 +3,11 @@ import sqlite3
 from typing import Generator
 from contextlib import contextmanager
 
+from ..action import ActionNorm
+
 from .base import ConnExecutorSync
 
 from ..sqlite import dict_factory
-
-from ...configuration.sync.log import LoggerLocal
 
 
 @contextmanager
@@ -17,7 +17,7 @@ def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
         yield
         conn.execute('COMMIT;')
     except BaseException as e:
-        LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 
@@ -48,4 +48,14 @@ class SqliteManageSync:
             yield ConnExecutorSync(conn)
             pass
         pass
+    pass
+
+
+class ServiceNorm:
+    @staticmethod
+    def table_exist(sql_manage: SqliteManageSync, table_name: str) -> bool:
+        with sql_manage() as conn:
+            sql, args = ActionNorm.table_exist(table_name)
+            row = conn.row_one(sql, args)
+            return row['COUNT'] > 0
     pass

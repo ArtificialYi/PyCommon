@@ -12,7 +12,6 @@ from ..tool.map_tool import MapKeyGlobal
 from ..exception.tcp import ConnTimeoutError, ServiceTimeoutError
 from ..tool.func_tool import ExceptTool
 from ..tool.loop_tool import LoopExecBg
-from ..configuration.norm.log import LoggerLocal
 from ..configuration.norm.env import get_value_by_tag_and_field
 
 
@@ -35,7 +34,7 @@ class TcpConn:
         try:
             return await asyncio.open_connection(self.__host, self.__port)
         except BaseException as e:
-            await LoggerLocal.exception(e, f'连接失败原因:{type(e).__name__}|{e}')
+            print(f'连接失败原因:{type(e).__name__}|{e}')
             ExceptTool.raise_not_exception(e)
             return None
 
@@ -54,10 +53,10 @@ class TcpConn:
         # 无限重试
         rw = None
         while (rw := await self.__conn_unit()) is None:
-            await LoggerLocal.error(f'TCP服务重连接失败:{self.__host}:{self.__port}')
+            print(f'TCP服务重连接失败:{self.__host}:{self.__port}')
             await asyncio.sleep(60 * self.__base)
             pass
-        await LoggerLocal.info(f'TCP服务重连接成功:{self.__host}:{self.__port}')
+        print(f'TCP服务重连接成功:{self.__host}:{self.__port}')
         return rw
 
     async def conn(self) -> Tuple[StreamReader, StreamWriter]:
@@ -91,7 +90,7 @@ class TcpClient:
                 done, _ = await asyncio.wait(tasks_flow, return_when=FIRST_COMPLETED)
                 done.pop().result()
             except BaseException as e:
-                await LoggerLocal.exception(e, f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
+                print(f'客户端异常:{self.__conn.host}:{self.__conn.port}|{type(e).__name__}|{e}')
                 ExceptTool.raise_not_exception(e)
             finally:
                 for task_flow in tasks_flow:
@@ -131,7 +130,7 @@ class TcpClient:
         try:
             return await self.api(path, *args, **kwds)
         except BaseException as e:
-            await LoggerLocal.exception(e, f'服务调用异常:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
+            print(f'服务调用异常:{self.__conn.host}:{self.__conn.port}:{path}:{args}:{kwds}')
             ExceptTool.raise_not_exception(e)
             return type(e).__name__, e
         pass

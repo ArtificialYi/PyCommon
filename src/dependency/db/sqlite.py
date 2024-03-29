@@ -2,11 +2,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
-from .base import ActionNorm, ConnExecutor
+from ..action import ActionNorm
+
+from .base import ConnExecutor
 
 from ..sqlite import dict_factory
-
-from ...configuration.norm.log import LoggerLocal
 
 
 # async def __rollback_unit(conn: aiosqlite.Connection):
@@ -16,7 +16,7 @@ from ...configuration.norm.log import LoggerLocal
 #     try:
 #         await conn.execute('ROLLBACK')
 #     except BaseException as e:
-#         await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
+#         print(f'rollback失败:{type(e).__name__}|{e}')
 #         ExceptTool.raise_not_exception(e)
 #         pass
 #     pass
@@ -29,7 +29,7 @@ async def __transaction(conn: aiosqlite.Connection):
         yield conn
         await conn.execute('COMMIT;')
     except BaseException as e:
-        await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         await conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 
@@ -67,6 +67,7 @@ class ServiceNorm:
     @staticmethod
     async def table_exist(sql_manage: SqliteManage, table_name: str) -> bool:
         async with sql_manage() as conn:
-            row = await conn.row_one(ActionNorm.table_exist(table_name))
+            sql, args = ActionNorm.table_exist(table_name)
+            row = await conn.row_one(sql, args)
             return row['COUNT'] > 0
     pass

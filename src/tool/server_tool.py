@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from .func_tool import ExceptTool
 
-from ..configuration.norm.log import LoggerLocal
 from ..exception.tcp import ServiceExistException, ServiceNotFoundException
 
 
@@ -37,7 +36,7 @@ class ServerRegister:
         try:
             return await cls.__call_unit(path, *args, **kwds)
         except BaseException as e:
-            await LoggerLocal.exception(e, f'服务:{path}|{args}|{kwds}|遇到|{type(e).__name__}|{e}')
+            print(f'服务:{path}|{args}|{kwds}|遇到|{type(e).__name__}|{e}')
             ExceptTool.raise_not_exception(e)
             return e
     pass

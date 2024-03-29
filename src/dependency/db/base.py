@@ -56,11 +56,13 @@ class ConnExecutor:
     def sql_type(self) -> str:
         return self.__sql_type
 
-    async def exec(self, coro: ActionExec) -> int:
+    async def exec(self, sql: str, args: tuple) -> int:
+        coro = ActionExec(sql, args)
         async with self.__conn.cursor() as cursor:
             return await coro(cursor)
 
-    async def iter(self, gen: ActionIter) -> AsyncGenerator[dict, None]:
+    async def iter(self, sql: str, args: tuple) -> AsyncGenerator[dict, None]:
+        gen = ActionIter(sql, args)
         async with self.__conn.cursor() as cursor:
             async for row in gen(cursor):
                 yield row
@@ -68,7 +70,8 @@ class ConnExecutor:
             pass
         pass
 
-    async def row_one(self, gen: ActionIter) -> Optional[dict]:
+    async def row_one(self, sql: str, args: tuple) -> Optional[dict]:
+        gen = ActionIter(sql, args)
         res_row = None
         i = 0
         async with self.__conn.cursor() as cursor:
@@ -79,14 +82,4 @@ class ConnExecutor:
                 res_row = row
                 pass
             return res_row
-    pass
-
-
-class ActionNorm:
-    @staticmethod
-    def table_exist(table_name: str) -> ActionIter:
-        sql = """
-SELECT COUNT(1) as COUNT FROM sqlite_master WHERE type='table' AND name=?;
-"""
-        return ActionIter(sql, (table_name,))
     pass
