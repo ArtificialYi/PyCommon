@@ -4,7 +4,7 @@ from configparser import ConfigParser
 
 from .tool import ConfigTool
 
-from .. import CONFIG_ROOT, PROJECT_ROOT
+from .. import COMMON_CONFIG_DIR, COMMON_ROOT, CONFIG_ROOT, PROJECT_ROOT
 
 from ...tool.map_tool import MapKeyGlobal
 from ...tool.env_tool import EnvEnum
@@ -17,11 +17,13 @@ class ProjectEnv:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
         """
-        path_project_root = os.path.join(PROJECT_ROOT, 'tox.ini')
-        if not os.path.exists(path_project_root):
-            raise Exception(f'项目缺少必备文件:{path_project_root}')
+        path_base = os.path.join(PROJECT_ROOT, 'tox.ini')
+        if not os.path.exists(path_base):
+            # raise Exception(f'项目缺少必备文件:{path_project_root}')
+            path_base = os.path.join(COMMON_ROOT, 'tox.ini')
+            pass
 
-        return ConfigTool.get_config(path_project_root)
+        return ConfigTool.get_config(path_base)
 
     @classmethod
     def get_env(cls):
@@ -58,9 +60,16 @@ class ConfigEnv:
         env_project = ProjectEnv.get_env()
         path_env = os.path.join(CONFIG_ROOT, f'{env_project.lower()}.ini')
         return ConfigTool.get_config(path_env)
+
+    @classmethod
+    @MapKeyGlobal()
+    def config_common(cls):
+        path_common = os.path.join(COMMON_CONFIG_DIR, 'default.ini')
+        return ConfigTool.get_config(path_common)
     pass
 
 
 def get_value_by_tag_and_field(tag: str, field: str):
     config_env, config_default = ConfigEnv.config_env(), ConfigEnv.config_default()
-    return ConfigTool.get_value(tag, field, config_default, config_env)
+    config_common = ConfigEnv.config_common()
+    return ConfigTool.get_value(tag, field, config_common, config_default, config_env)

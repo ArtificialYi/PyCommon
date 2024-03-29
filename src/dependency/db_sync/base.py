@@ -52,7 +52,12 @@ class ActionIterSync:
 class ConnExecutorSync:
     def __init__(self, conn: pymysql.Connection | sqlite3.Connection) -> None:
         self.__conn = conn
+        self.__sql_type = 'mysql' if isinstance(conn, pymysql.Connection) else 'sqlite'
         pass
+
+    @property
+    def sql_type(self) -> str:
+        return self.__sql_type
 
     def exec(self, sql: str, args: tuple) -> int:
         func = ActionExecSync(sql, args)

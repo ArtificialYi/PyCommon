@@ -2,7 +2,9 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 import aiosqlite
 
-from .base import ActionNorm, ConnExecutor
+from ..action import ActionNorm
+
+from .base import ConnExecutor
 
 from ..sqlite import dict_factory
 

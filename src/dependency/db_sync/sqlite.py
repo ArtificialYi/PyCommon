@@ -3,6 +3,8 @@ import sqlite3
 from typing import Generator
 from contextlib import contextmanager
 
+from ..action import ActionNorm
+
 from .base import ConnExecutorSync
 
 from ..sqlite import dict_factory
@@ -46,4 +48,14 @@ class SqliteManageSync:
             yield ConnExecutorSync(conn)
             pass
         pass
+    pass
+
+
+class ServiceNorm:
+    @staticmethod
+    def table_exist(sql_manage: SqliteManageSync, table_name: str) -> bool:
+        with sql_manage() as conn:
+            sql, args = ActionNorm.table_exist(table_name)
+            row = conn.row_one(sql, args)
+            return row['COUNT'] > 0
     pass

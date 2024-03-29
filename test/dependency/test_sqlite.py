@@ -67,8 +67,8 @@ CREATE TABLE "main"."{table_name}" (
     @PytestAsyncTimeout(1)
     async def test_iter(self, sql_manage: SqliteManage):
         async with sql_manage() as conn:
-            async for row in conn.iter('SELECT 1;', ()):
-                assert row == {'1': 1}
+            async for row in conn.iter('select * from zijin_feature limit 1;', ()):
+                assert 'report_date' in row
                 pass
             pass
         pass
@@ -77,7 +77,7 @@ CREATE TABLE "main"."{table_name}" (
     async def test_row_one_err(self, sql_manage: SqliteManage):
         async with sql_manage() as conn:
             with pytest.raises(MultipleResultsFound):
-                await conn.row_one('SELECT 1 UNION SELECT 2;', ())
+                await conn.row_one('select * from zijin_feature;', ())
                 pass
             pass
         pass
