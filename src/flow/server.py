@@ -10,7 +10,6 @@ from ..tool.json_tool import HyJsonEncoder
 from ..tool.loop_tool import NormLoop, OrderApi
 from ..tool.bytes_tool import CODING
 from ..tool.server_tool import ServerRegister
-from ..configuration.norm.log import LoggerLocal
 
 
 class FlowSendServer(OrderApi):
@@ -31,7 +30,7 @@ class FlowSendServer(OrderApi):
         }, cls=HyJsonEncoder)
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
         await self.__writer.drain()
-        await LoggerLocal.info(f'服务端:发送响应|{id}|{name_type}')
+        print(f'服务端:发送响应|{id}|{name_type}')
         pass
     pass
 
@@ -49,7 +48,7 @@ class JsonDeal:
         service_name = json_obj.get('service')
         args = json_obj.get("args", [])
         kwds = json_obj.get("kwds", {})
-        await LoggerLocal.info(f'服务端:收到请求|{id}|{service_name}')
+        print(f'服务端:收到请求|{id}|{service_name}')
         res_service = await ServerRegister.call(service_name, *args, **kwds)
         await self.__flow_send.send(id, res_service)
         pass

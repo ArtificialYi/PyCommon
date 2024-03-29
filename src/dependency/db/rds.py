@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from .base import ConnExecutor
 from ..data.rds import RDSConfigData
 from ...tool.map_tool import MapKeyGlobal
-from ...configuration.norm.log import LoggerLocal
 
 
 # async def __rollback_unit(conn: aiomysql.Connection):
@@ -15,7 +14,7 @@ from ...configuration.norm.log import LoggerLocal
 #     try:
 #         await conn.rollback()
 #     except BaseException as e:
-#         await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
+#         print(f'rollback失败:{type(e).__name__}|{e}')
 #         ExceptTool.raise_not_exception(e)
 #         pass
 #     pass
@@ -31,7 +30,7 @@ async def __transaction(conn: aiomysql.Connection):
         yield
         await conn.commit()
     except BaseException as e:
-        await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         await conn.rollback()
         raise
     pass

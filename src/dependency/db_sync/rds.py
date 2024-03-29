@@ -7,7 +7,6 @@ from pymysql.cursors import SSDictCursor
 from .base import ConnExecutorSync
 from ..data.rds import RDSConfigData
 from ...tool.map_tool import MapKeyGlobal
-from ...configuration.sync.log import LoggerLocal
 
 
 @contextmanager
@@ -20,7 +19,7 @@ def __transaction(conn: pymysql.Connection):
         yield
         conn.commit()
     except BaseException as e:
-        LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         conn.rollback()
         raise
     pass

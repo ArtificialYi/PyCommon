@@ -4,8 +4,6 @@ from typing import Any
 
 from ..tool.base import AsyncBase
 
-from ..configuration.norm.log import LoggerLocal
-
 from ..exception.tcp import ConnException
 from .tcp import JsonOnline
 from ..tool.loop_tool import NormLoop, OrderApi
@@ -30,7 +28,7 @@ class FlowSendClient(OrderApi):
         })
         self.__writer.write(f'{str_json}\r\n'.encode(CODING))
         await self.__writer.drain()
-        await LoggerLocal.info(f'客户端：发送请求|{id}|{service}')
+        print(f'客户端：发送请求|{id}|{service}')
         pass
     pass
 
@@ -50,16 +48,16 @@ class JsonDeal:
     async def deal_json(self, json_obj: dict):
         id = json_obj.get('id')
         if id is None:  # pragma: no cover
-            await LoggerLocal.warning(f'客户端：未接收到id:{json_obj}')
+            print(f'客户端：未接收到id:{json_obj}')
             return
 
         future = self.__map_future.pop(id, None)
         if future is None:  # pragma: no cover
-            await LoggerLocal.error(f'客户端：未找到对应的future:{json_obj}')
+            print(f'客户端：未找到对应的future:{json_obj}')
             return
         # 将data结果写入future（超时限制）
         future.set_result((json_obj.get('type'), json_obj.get('data')))
-        await LoggerLocal.info(f'客户端：收到响应|{id}|{json_obj.get("type")}')
+        print(f'客户端：收到响应|{id}|{json_obj.get("type")}')
         pass
     pass
 

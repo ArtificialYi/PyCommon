@@ -6,8 +6,6 @@ from .base import ActionNorm, ConnExecutor
 
 from ..sqlite import dict_factory
 
-from ...configuration.norm.log import LoggerLocal
-
 
 # async def __rollback_unit(conn: aiosqlite.Connection):
 #     """执行SQL回滚
@@ -16,7 +14,7 @@ from ...configuration.norm.log import LoggerLocal
 #     try:
 #         await conn.execute('ROLLBACK')
 #     except BaseException as e:
-#         await LoggerLocal.exception(e, f'rollback失败:{type(e).__name__}|{e}')
+#         print(f'rollback失败:{type(e).__name__}|{e}')
 #         ExceptTool.raise_not_exception(e)
 #         pass
 #     pass
@@ -29,7 +27,7 @@ async def __transaction(conn: aiosqlite.Connection):
         yield conn
         await conn.execute('COMMIT;')
     except BaseException as e:
-        await LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         await conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 

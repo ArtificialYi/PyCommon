@@ -7,8 +7,6 @@ from .base import ConnExecutorSync
 
 from ..sqlite import dict_factory
 
-from ...configuration.sync.log import LoggerLocal
-
 
 @contextmanager
 def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
@@ -17,7 +15,7 @@ def __transaction(conn: sqlite3.Connection) -> Generator[None, None, None]:
         yield
         conn.execute('COMMIT;')
     except BaseException as e:
-        LoggerLocal.exception(e, f'db_conn事务异常:{type(e).__name__}|{e}')
+        print(f'db_conn事务异常:{type(e).__name__}|{e}')
         conn.execute('ROLLBACK;') if isinstance(e, Exception) else None
         raise e
 
