@@ -37,7 +37,7 @@ class MapKeyTmp:
         await asyncio.sleep(0.1)
         return object()
 
-    @MapKeySelf(lambda _, key: key)
+    @MapKeySelf(lambda key: key)
     async def func_aself_norm(self, key):
         await asyncio.sleep(0.1)
         return object()

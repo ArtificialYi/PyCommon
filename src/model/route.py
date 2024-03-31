@@ -1,214 +1,166 @@
-import heapq
-import math
-from typing import Dict, List, Optional
-from attr import dataclass
+import sys
+from typing import Generator, Optional
+from attr import dataclass, ib
+
+from ..tool.map_tool import MapKeySelf
 
 
-@dataclass(frozen=True, order=False)
+@dataclass(hash=True)
 class ArgsLatitude:
-    length: int
-    layer: int
-    hidden: int
+    """普通的数据类
+    1. hidden_max=2**layer_max
+    2. hidden >= 2**layer >= 2
+    3. layer_min = 1
+    """
+    hidden: int = ib(converter=int, kw_only=True)
+    layer: int = ib(converter=int, kw_only=True)
+    loss: float = ib(default=float('inf'), converter=float, kw_only=True, eq=False)
 
-    def __lt_unit(self, __value: 'ArgsLatitude') -> bool:
-        if self.length == __value.length:
-            if self.hidden == __value.hidden:
-                return self.layer < __value.layer
-            return self.hidden < __value.hidden
-        return self.length < __value.length
+    def __attrs_post_init__(self):
+        if not self.__valid(self.hidden, self.layer):
+            raise ValueError(f'DataNorm不支持该参数组合:hidden-{self.hidden},layer-{self.layer}')
 
-    def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("ArgsLatitude 只可以与 ArgsLatitude进行比较")
-        return self.__lt_unit(__value)
+    @staticmethod
+    def __valid(hidden: int, layer: int, hidden_min: int = 2, hidden_max: int = sys.maxsize):
+        hidden_bool = hidden_min <= hidden <= hidden_max
+        return hidden_bool and 2 <= 2 ** layer <= hidden
 
-    def __le__(self, __value: object) -> bool:
-        if not isinstance(__value, ArgsLatitude):  # pragma: no cover
-            raise TypeError("ArgsLatitude 只可以与 ArgsLatitude进行比较")
-        return self < __value or self == __value
-
-    def __next_length(self, length_max: int):
-        length_next = self.length * 2
-        if length_next > length_max:
-            return None
-        return ArgsLatitude(length_next, self.layer, self.hidden)
-
-    def __pre_length(self, length_min: int):
-        length_pre = self.length // 2
-        if length_pre < length_min:
-            return None
-        return ArgsLatitude(length_pre, self.layer, self.hidden)
-
-    def __next_layer(self, layer_max: int):
+    def iter_next(self, hidden_max: int) -> Generator[tuple[int, int], None, None]:
         layer_next = self.layer + 1
-        if layer_next > layer_max or 2 ** layer_next > self.hidden:
-            return None
-        return ArgsLatitude(self.length, layer_next, self.hidden)
+        if self.__valid(self.hidden, layer_next, hidden_max=hidden_max):
+            yield self.hidden, layer_next
+            pass
 
-    def __pre_layer(self, layer_min: int):
-        layer_pre = self.layer - 1
-        if layer_pre < layer_min:
-            return None
-        return ArgsLatitude(self.length, layer_pre, self.hidden)
-
-    def __next_hidden(self, hidden_max: int):
         hidden_next = self.hidden * 2
-        if hidden_next > hidden_max:
-            return None
-        return ArgsLatitude(self.length, self.layer, hidden_next)
-
-    def __pre_hidden(self, hidden_min: int):
-        hidden_pre = self.hidden // 2
-        if hidden_pre < hidden_min or hidden_pre < 2 ** self.layer:
-            return None
-        return ArgsLatitude(self.length, self.layer, hidden_pre)
-
-    def next(self, al_max: 'ArgsLatitude'):
-        return [
-            al for al in [
-                self.__next_length(al_max.length),
-                self.__next_hidden(al_max.hidden),
-                self.__next_layer(al_max.layer),
-            ] if al is not None
-        ]
-
-    def pre(self, al_min: 'ArgsLatitude'):
-        return [
-            al for al in [
-                self.__pre_length(al_min.length),
-                self.__pre_hidden(al_min.hidden),
-                self.__pre_layer(al_min.layer),
-            ] if al is not None
-        ]
-    pass
-
-
-class AlLossUnit:
-    def __init__(self, al: ArgsLatitude, loss_pre: float) -> None:
-        self.al = al
-
-        self.loss_pre = loss_pre
-        self.loss_now = None
-        pass
-
-    def __eq__(self, __value: object) -> bool:
-        if not isinstance(__value, AlLossUnit):  # pragma: no cover
-            raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
-        return math.isclose(self.loss_pre, __value.loss_pre, rel_tol=1e-4, abs_tol=1e-4) and self.al == __value.al
-
-    def __lt__(self, __value: object) -> bool:
-        if not isinstance(__value, AlLossUnit):  # pragma: no cover
-            raise TypeError("TrainUnit 只可以与 TrainUnit进行比较")
-        if math.isclose(self.loss_pre, __value.loss_pre, rel_tol=1e-4, abs_tol=1e-4):
-            return self.al > __value.al
-        return self.loss_pre > __value.loss_pre
-    pass
-
-
-class RouteDict:
-    def __init__(self, length_max: int = 1, layer_max: int = 1, length_min: int = 1, layer_min: int = 1) -> None:
-        self.__dict_trained: Dict[ArgsLatitude, float] = dict()
-
-        self.__al_min: ArgsLatitude = ArgsLatitude(length_min, layer_min, 2 ** layer_min)
-        self.__al_max: ArgsLatitude = ArgsLatitude(length_max, layer_max, 2 ** layer_max)
-        pass
-
-    def __len__(self) -> int:
-        return len(self.__dict_trained)
-
-    def pre_is_all_trained(self, al: ArgsLatitude) -> bool:
-        for al_pre in al.pre(self.__al_min):
-            if al_pre not in self.__dict_trained:
-                return False
-            pass
-        return True
-
-    def can_push(self, al: ArgsLatitude) -> bool:
-        # 节点在范围内 and 当前未训练 and 所有前置已训练
-        return self.__al_min <= al <= self.__al_max and al not in self.__dict_trained and self.pre_is_all_trained(al)
-
-    def iter_next(self, al: ArgsLatitude):
-        for al_next in al.next(self.__al_max):
-            if self.pre_is_all_trained(al_next):
-                yield al_next
+        if self.__valid(hidden_next, self.layer, hidden_max=hidden_max):
+            yield hidden_next, self.layer
             pass
         pass
 
-    def loss_pre(self, al: ArgsLatitude) -> float:
-        loss_pre = float('inf')
-        for al_pre in al.pre(self.__al_min):
-            loss = self.__dict_trained.get(al_pre)
-            if loss < loss_pre:
-                loss_pre = loss
+    def iter_pre(self, hidden_min: int) -> Generator[tuple[int, int], None, None]:
+        layer_next = self.layer - 1
+        if self.__valid(self.hidden, layer_next, hidden_min=hidden_min):
+            yield self.hidden, layer_next
+            pass
+
+        hidden_next = self.hidden // 2
+        if self.__valid(hidden_next, self.layer, hidden_min=hidden_min):
+            yield hidden_next, self.layer
+            pass
+        pass
+
+    def set_loss(self, loss: float):
+        if loss < self.loss:
+            self.loss = loss
+            pass
+        pass
+
+    @staticmethod
+    def key_sorted(obj: 'ArgsLatitude') -> tuple[float, int, int]:
+        return (-obj.loss, obj.hidden, obj.layer)
+    pass
+
+
+class ArgsLatitudeManage:
+    def __init__(self, hidden_max: int):
+        self.__hidden_max = hidden_max
+        pass
+
+    @MapKeySelf(ArgsLatitude)
+    def __data_create(self, *, hidden: int, layer: int) -> ArgsLatitude:
+        return ArgsLatitude(hidden=hidden, layer=layer)
+
+    def create(self, hidden: int, layer: int, loss: float = float('inf')) -> ArgsLatitude:
+        data = self.__data_create(hidden=hidden, layer=layer)
+        data.set_loss(loss)
+        return data
+
+    def get_next(self, data: ArgsLatitude, loss: float) -> Optional[set[ArgsLatitude]]:
+        if loss >= data.loss:
+            return None
+
+        return {
+            self.create(hidden=hidden, layer=layer, loss=loss)
+            for hidden, layer in data.iter_next(self.__hidden_max)
+        }
+    pass
+
+
+class RouteManage:
+    """Route管理类
+    """
+    def __init__(self, hidden_min: int, hidden_max: int) -> None:
+        self.__data_manage = ArgsLatitudeManage(hidden_max)
+        self.__hidden_min = hidden_min
+
+        self.__set_next: set[ArgsLatitude] = set()
+        self.__set_pop: set[ArgsLatitude] = set()
+        self.__set_pop_id: set[int] = set()
+        self.__set_old: set[ArgsLatitude] = set()
+        self.__set_all: set[ArgsLatitude] = set()
+
+        self.__next_add(self.__data_manage.create(hidden=self.__hidden_min, layer=1))
+        pass
+
+    def __check(self):  # pragma: no cover
+        if self.__set_old & self.__set_pop & self.__set_next:
+            raise Exception(f'业务错误: old集合{self.__set_old} 与 pop集合{self.__set_pop} 与 next集合{self.__set_next} 有交集')
+        pass
+
+    def __next2pop(self, unit: ArgsLatitude):
+        self.__set_next.remove(unit)
+        self.__set_pop.add(unit)
+        self.__set_pop_id.add(id(unit))
+        pass
+
+    def __pop2old(self, unit: ArgsLatitude):
+        self.__set_pop.remove(unit)
+        self.__set_pop_id.remove(id(unit))
+        self.__set_old.add(unit)
+        pass
+
+    def __next_add(self, unit: ArgsLatitude):
+        self.__set_next.add(unit)
+        self.__set_all.add(unit)
+        pass
+
+    def pop(self) -> ArgsLatitude:
+        """弹出一个元素
+        1. 从next集合中弹出一个元素至pop集合
+        """
+        self.__check()
+        if not self.__set_next:
+            return None
+
+        unit = sorted(self.__set_next, key=ArgsLatitude.key_sorted, reverse=True).pop()
+        self.__next2pop(unit)
+        return unit
+
+    def __iter_pre(self, set_next: set[ArgsLatitude]) -> Generator[ArgsLatitude, None, None]:
+        for data in set_next:
+            if data not in self.__set_all and all(
+                self.__data_manage.create(hidden=hidden, layer=layer) in self.__set_old
+                for hidden, layer in data.iter_pre(self.__hidden_min)
+            ):
+                yield data
                 pass
             pass
-        return loss_pre
-
-    def set(self, al: ArgsLatitude, loss: float):
-        self.__dict_trained[al] = loss
         pass
 
-    def get(self, al: ArgsLatitude) -> Optional[float]:
-        return self.__dict_trained.get(al)
-    pass
+    def __push_err(self, unit: ArgsLatitude) -> bool:
+        if id(unit) not in self.__set_pop_id:
+            raise Exception(f'业务错误: {unit}不在可push集合{list(self.__set_pop)}中')
 
+    def push(self, unit: ArgsLatitude, loss: float) -> bool:
+        self.__push_err(unit)
 
-class RouteHeap:
-    def __init__(self, route_dict: RouteDict) -> None:
-        # 待训练堆
-        self.__heap: List[AlLossUnit] = [AlLossUnit(ArgsLatitude(1, 1, 2), float('inf'))]
-        # 已训练字典
-        self.__route_dict = route_dict
-        pass
-
-    def __len__(self) -> int:
-        return len(self.__route_dict)
-
-    def __can_push(self, al: ArgsLatitude, loss: float):
-        tol = 1e-4
-        if not self.__route_dict.can_push(al):
+        set_next = self.__data_manage.get_next(unit, loss)
+        if set_next is None:
             return False
 
-        loss_pre = self.__route_dict.loss_pre(al)
-        return loss < loss_pre and not math.isclose(loss, loss_pre, rel_tol=tol, abs_tol=tol)
-
-    def push(self, al: ArgsLatitude, loss: float, valid: bool = False) -> bool:
-        if valid and not self.__can_push(al, loss):
-            return False
-
-        # 已训练字典更新
-        self.__route_dict.set(al, loss)
-        # 生成全新节点
-        for al_next in self.__route_dict.iter_next(al):
-            heapq.heappush(self.__heap, AlLossUnit(al_next, self.__route_dict.loss_pre(al_next)))
+        self.__pop2old(unit)
+        for data in self.__iter_pre(set_next):
+            self.__next_add(data)
             pass
         return True
-
-    def pop(self) -> Optional[AlLossUnit]:
-        if len(self.__heap) == 0:
-            return None
-        return heapq.heappop(self.__heap)
-
-    def get(self, al: ArgsLatitude) -> Optional[float]:
-        return self.__route_dict.get(al)
-    pass
-
-
-class RouteUnit:
-    def __init__(self, heap_now: RouteHeap, heap_pre: RouteHeap) -> None:
-        self.__heap_now = heap_now
-        self.__heap_pre = heap_pre
-        pass
-
-    def push(self, al: ArgsLatitude, loss: Optional[float]) -> bool:
-        if loss is None:
-            return False
-        return self.__heap_now.push(al, loss, True)
-
-    def pop(self):
-        node_now = self.__heap_now.pop()
-        while node_now is not None and self.push(node_now.al, self.__heap_pre.get(node_now.al)):
-            node_now = self.__heap_now.pop()
-            pass
-        return node_now
     pass
