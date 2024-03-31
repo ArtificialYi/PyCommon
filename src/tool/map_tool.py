@@ -116,7 +116,7 @@ class MapKeySelf:
         def __call__(self, func_obj: Callable[..., R]) -> Callable[..., R]:
             @wraps(func_obj)
             def wrapper(obj, *args, **kwds) -> R:
-                key = MapKeyBase.get_key_sync(self.__func_key, obj, *args, **kwds)
+                key = MapKeyBase.get_key_sync(self.__func_key, *args, **kwds)
                 map_now = DictTool.get_loop(self.__map_key, obj)
                 if key not in map_now:
                     map_now[key] = func_obj(obj, *args, **kwds)
@@ -138,7 +138,7 @@ class MapKeySelf:
             return wrapper
 
         async def __wrapper(self, func_obj: Callable, obj, *args, **kwds):
-            key = await MapKeyBase.get_key_async(self.__func_key, obj, *args, **kwds)
+            key = await MapKeyBase.get_key_async(self.__func_key, *args, **kwds)
             map_now = DictTool.get_loop(self.__map_key, obj)
             if key in map_now:
                 return map_now[key]

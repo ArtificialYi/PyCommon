@@ -26,6 +26,8 @@ class MockDB:
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.__sql_manage
         OSTool.remove(self.__local_name)
+        OSTool.remove(self.__local_name + '-wal')
+        OSTool.remove(self.__local_name + '-shm')
         pass
     pass
 
@@ -45,5 +47,7 @@ class MockDBSync:
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.__sql_manage
         OSTool.remove(self.__local_name)
+        OSTool.remove(self.__local_name + '-wal')
+        OSTool.remove(self.__local_name + '-shm')
         pass
     pass
