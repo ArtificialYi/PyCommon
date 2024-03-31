@@ -3,7 +3,7 @@ import pytest
 from ...src.model.route import ArgsLatitudeManage, ArgsLatitude, RouteManage
 
 
-class TestData:
+class TestAL:
     def test_data_eq(self):
         a = ArgsLatitude(hidden=2, layer=1, loss=3)
         b = ArgsLatitude(hidden=2, layer=1, loss=3)
@@ -74,7 +74,7 @@ class TestData:
     pass
 
 
-class TestDataManage:
+class TestALManage:
     def test_create(self):
         a = ArgsLatitude(hidden=2, layer=1, loss=3)
         b = ArgsLatitude(hidden=2, layer=1, loss=3)
@@ -148,4 +148,16 @@ class TestRoute:
         assert c == ArgsLatitude(hidden=16, layer=1)
         assert c.loss == 10
         pass
+
+    def test_clear(self):
+        route = RouteManage(8, 32)
+        a = route.pop()
+        assert a is not None
+        assert route.pop() is None
+        b = route.reset().pop()
+        assert b is not None
+        assert route.pop() is None
+
+        assert a == b
+        assert id(a) == id(b)
     pass

@@ -136,6 +136,16 @@ class RouteManage:
         self.__next2pop(unit)
         return unit
 
+    def reset(self) -> 'RouteManage':
+        """pop2next
+        """
+        while self.__set_pop:
+            unit = self.__set_pop.pop()
+            self.__set_pop_id.remove(id(unit))
+            self.__set_next.add(unit)
+            pass
+        return self
+
     def __iter_pre(self, set_next: set[ArgsLatitude]) -> Generator[ArgsLatitude, None, None]:
         for data in set_next:
             if data not in self.__set_all and all(
