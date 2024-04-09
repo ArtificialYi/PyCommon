@@ -147,6 +147,12 @@ class TestRoute:
         c = route.pop()
         assert c == ArgsLatitude(hidden=16, layer=1)
         assert c.loss == 10
+        assert route.push(c, 9.5)
+
+        # 因为(16,2)的前置是(8,2)不是(16,1)，所以(32,1)先出
+        d = route.pop()
+        assert d == ArgsLatitude(hidden=32, layer=1)
+        assert d.loss == 9.5
         pass
 
     def test_clear(self):
