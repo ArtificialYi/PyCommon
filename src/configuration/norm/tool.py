@@ -2,9 +2,14 @@ from configparser import ConfigParser
 import os
 import aiofiles
 
+from ...tool.base import BaseTool
+
+from ...tool.map_tool import MapKeyGlobal
+
 
 class ConfigTool:
     @staticmethod
+    @MapKeyGlobal(BaseTool.return_self)
     async def get_config(path: str):
         config = ConfigParser()
         if os.path.exists(path):

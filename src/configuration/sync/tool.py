@@ -1,9 +1,14 @@
 from configparser import ConfigParser
 import os
 
+from ...tool.base import BaseTool
+
+from ...tool.map_tool import MapKeyGlobal
+
 
 class ConfigTool:
     @staticmethod
+    @MapKeyGlobal(BaseTool.return_self)
     def get_config(path: str):
         config = ConfigParser()
         if os.path.exists(path):
