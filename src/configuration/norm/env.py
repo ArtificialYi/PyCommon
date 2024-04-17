@@ -8,12 +8,10 @@ from .tool import ConfigTool
 from .. import COMMON_CONFIG_DIR, COMMON_ROOT, CONFIG_ROOT, PROJECT_ROOT
 
 from ...tool.env_tool import EnvEnum
-from ...tool.map_tool import MapKeyGlobal
 
 
 class ProjectEnv:
     @classmethod
-    @MapKeyGlobal()
     async def __config_project(cls) -> ConfigParser:
         """获取项目的基础配置
         项目的基础配置 不存在 => 抛出异常
@@ -47,7 +45,6 @@ class ConfigEnv:
     2. 项目单测调用时需要mock
     """
     @classmethod
-    @MapKeyGlobal()
     async def config_default(cls):
         """默认的项目配置文件
         """
@@ -55,7 +52,6 @@ class ConfigEnv:
         return await ConfigTool.get_config(path_default)
 
     @classmethod
-    @MapKeyGlobal()
     async def config_env(cls):
         """环境独有的配置文件
         """
@@ -64,7 +60,6 @@ class ConfigEnv:
         return await ConfigTool.get_config(path_env)
 
     @classmethod
-    @MapKeyGlobal()
     async def config_common(cls):
         path_default = os.path.join(COMMON_CONFIG_DIR, 'default.ini')
         return await ConfigTool.get_config(path_default)
