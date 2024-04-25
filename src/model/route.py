@@ -62,8 +62,9 @@ class ArgsLatitude:
 
 
 class ArgsLatitudeManage:
-    def __init__(self, hidden_max: int):
+    def __init__(self, hidden_max: int, err: float):
         self.__hidden_max = hidden_max
+        self.__err = 1 + err
         pass
 
     @MapKeySelf(ArgsLatitude)
@@ -76,7 +77,7 @@ class ArgsLatitudeManage:
         return data
 
     def get_next(self, data: ArgsLatitude, loss: float) -> Optional[set[ArgsLatitude]]:
-        if loss >= data.loss:
+        if loss >= data.loss * self.__err:
             return None
 
         return {
@@ -89,8 +90,8 @@ class ArgsLatitudeManage:
 class RouteManage:
     """Route管理类
     """
-    def __init__(self, hidden_min: int, hidden_max: int) -> None:
-        self.__data_manage = ArgsLatitudeManage(hidden_max)
+    def __init__(self, hidden_min: int, hidden_max: int, err: float = 0.05) -> None:
+        self.__data_manage = ArgsLatitudeManage(hidden_max, err)
         self.__hidden_min = hidden_min
 
         self.__set_next: set[ArgsLatitude] = set()
