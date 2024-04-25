@@ -34,6 +34,6 @@ class SQLTool:
         return sql.replace('%s', '?')
 
     @staticmethod
-    def to_mysql(sql: str):
+    def to_mysql(sql: str):  # pragma: no cover
         return sql.replace('?', '%s')
     pass

@@ -80,7 +80,7 @@ class TestALManage:
         b = ArgsLatitude(hidden=2, layer=1, loss=3)
         assert id(a) != id(b)
 
-        manage = ArgsLatitudeManage(2)
+        manage = ArgsLatitudeManage(2, 100)
 
         c = manage.create(hidden=2, layer=1, loss=4)
         assert a == c
@@ -100,11 +100,10 @@ class TestALManage:
     def test_next(self):
         a = ArgsLatitude(hidden=2, layer=1, loss=3)
 
-        manage = ArgsLatitudeManage(4)
+        manage = ArgsLatitudeManage(4, 0.5)
 
-        assert manage.get_next(a, 4) is None
-        assert manage.get_next(a, 3) is None
-        assert len(manage.get_next(a, 2)) == 1
+        assert manage.get_next(a, 4.5) is None
+        assert len(manage.get_next(a, 4)) == 1
         pass
     pass
 
