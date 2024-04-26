@@ -90,7 +90,7 @@ class ArgsLatitudeManage:
 class RouteManage:
     """Route管理类
     """
-    def __init__(self, hidden_min: int, hidden_max: int, err: float = 0.05) -> None:
+    def __init__(self, hidden_min: int, hidden_max: int, loss_first: float = float('inf'), err: float = 0.05) -> None:
         self.__data_manage = ArgsLatitudeManage(hidden_max, err)
         self.__hidden_min = hidden_min
 
@@ -100,7 +100,7 @@ class RouteManage:
         self.__set_old: set[ArgsLatitude] = set()
         self.__set_all: set[ArgsLatitude] = set()
 
-        self.__next_add(self.__data_manage.create(hidden=self.__hidden_min, layer=1))
+        self.__next_add(self.__data_manage.create(hidden=self.__hidden_min, layer=1, loss=loss_first))
         pass
 
     def __check(self):  # pragma: no cover

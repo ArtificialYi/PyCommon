@@ -165,4 +165,14 @@ class TestRoute:
 
         assert a == b
         assert id(a) == id(b)
+
+    def test_loss(self):
+        route = RouteManage(8, 32)
+        a = route.pop()
+        assert a.loss == float('inf')
+
+        route = RouteManage(8, 32, 0.5)
+        a = route.pop()
+        assert a.loss == 0.5
+        pass
     pass
