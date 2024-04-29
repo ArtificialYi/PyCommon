@@ -68,12 +68,28 @@ class MysqlManage:
         self.__data = data
         pass
 
-    async def pool(self):
+    async def __pool(self):
         return await get_pool(self.__data)
 
     @asynccontextmanager
     async def __call__(self, use_transaction: bool = False) -> AsyncGenerator[ConnExecutor, None]:
-        async with get_conn(await self.pool(), use_transaction) as conn:
+        async with get_conn(await self.__pool(), use_transaction) as conn:
             yield ConnExecutor(conn)
+        pass
+
+    async def __clear(self):
+        pool = await self.__pool()
+        while pool.freesize:
+            async with pool.acquire() as conn:
+                conn.close()
+                pass
+            pass
+        pass
+
+    async def __aenter__(self) -> 'MysqlManage':
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.__clear()
         pass
     pass
