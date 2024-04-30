@@ -31,9 +31,9 @@ class SQLTool:
 
     @staticmethod
     def to_sqlite(sql: str):
-        return sql.replace('%s', '?')
+        return sql.replace('%s', '?').replace('INSERT IGNORE', 'INSERT OR IGNORE')
 
     @staticmethod
     def to_mysql(sql: str):  # pragma: no cover
-        return sql.replace('?', '%s')
+        return sql.replace('?', '%s').replace('INSERT OR', 'INSERT')
     pass
